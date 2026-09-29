@@ -1,0 +1,22 @@
+export const qk = {
+    session: ['session'] as const,
+    statuses: ['reference', 'statuses'] as const,
+    projects: ['reference', 'projects'] as const,
+    savedQueries: ['reference', 'saved-queries'] as const,
+    issue: (id: number) => ['issue', id] as const,
+    issueTitle: (id: number) => ['issue-title', id] as const,
+    allowed: (id: number, updatedOn: string) => ['allowed', id, updatedOn] as const,
+    myQueue: ['issues', 'my-queue'] as const,
+    boardIssues: (boardId: string) => ['board-issues', boardId] as const,
+    boardIssuesAll: ['board-issues'] as const,
+    sprints: ['sprints'] as const,
+    versionStats: (id: number) => ['version-stats', id] as const,
+    versionIssues: (id: number) => ['version-issues', id] as const,
+    inspectProject: (id: number) => ['inspect-project', id] as const,
+    calendar: ['calendar'] as const,
+    notifications: ['notifications'] as const,
+    monitorStatus: ['monitor-status'] as const,
+    permission: ['permission'] as const,
+    activityLog: ['activity-log'] as const,
+    appInfo: ['app-info'] as const
+}

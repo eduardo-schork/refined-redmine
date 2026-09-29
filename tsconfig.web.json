@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "composite": true,
+    "noEmit": true,
+    "paths": {
+      "@/*": ["./src/renderer/src/*"],
+      "@domain/*": ["./src/domain/*"],
+      "@contracts/*": ["./src/contracts/*"],
+      "@application/*": ["./src/application/*"],
+      "@shared/*": ["./src/shared/*"]
+    }
+  },
+  "include": ["src/renderer/src/**/*", "src/preload/*.d.ts", "src/domain/**/*", "src/contracts/**/*", "src/shared/**/*", "src/application/dto.ts"],
+  "exclude": ["src/**/*.test.ts"]
+}

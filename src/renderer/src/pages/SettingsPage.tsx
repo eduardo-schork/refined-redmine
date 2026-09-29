@@ -1,0 +1,79 @@
+import { useState, type ReactNode } from 'react'
+import { Bell, Briefcase, CalendarDays, Palette, UserRound } from 'lucide-react'
+import { useI18n } from '@/lib/i18n'
+import type { SettingsTab } from '@/lib/router'
+import { NavItem } from '@/ui/molecules/NavItem'
+import { AppearanceSection } from '@/ui/organisms/settings/AppearanceSection'
+import { MonitorsSection } from '@/ui/organisms/settings/MonitorsSection'
+import {
+    AboutSection,
+    AccountSection,
+    CalendarSection,
+    HomeSection,
+    LanguageSection,
+    MonitoringSection,
+    ScheduleSection,
+    SprintsSection
+} from '@/ui/organisms/settings/sections'
+import { PageLayout } from '@/ui/templates/layouts'
+
+const TAB_ICONS: Record<SettingsTab, ReactNode> = {
+    general: <UserRound size={15} />,
+    appearance: <Palette size={15} />,
+    notifications: <Bell size={15} />,
+    calendar: <CalendarDays size={15} />,
+    work: <Briefcase size={15} />
+}
+
+const TAB_SECTIONS: Record<SettingsTab, () => ReactNode> = {
+    general: () => (
+        <>
+            <AccountSection />
+            <LanguageSection />
+            <AboutSection />
+        </>
+    ),
+    appearance: () => <AppearanceSection />,
+    notifications: () => (
+        <>
+            <MonitoringSection />
+            <MonitorsSection />
+            <ScheduleSection />
+        </>
+    ),
+    calendar: () => <CalendarSection />,
+    work: () => (
+        <>
+            <SprintsSection />
+            <HomeSection />
+        </>
+    )
+}
+
+const TAB_ORDER: SettingsTab[] = ['general', 'appearance', 'notifications', 'calendar', 'work']
+
+export default function SettingsPage({ tab = 'general' }: { tab?: SettingsTab }) {
+    const { t } = useI18n()
+    const [current, setCurrent] = useState<SettingsTab>(tab)
+    return (
+        <PageLayout title={t('nav.settings')}>
+            <div className="flex min-h-0 flex-1">
+                <nav className="flex w-52 shrink-0 flex-col gap-0.5 border-r border-line p-3">
+                    {TAB_ORDER.map((candidate) => (
+                        <NavItem
+                            key={candidate}
+                            active={current === candidate}
+                            onClick={() => setCurrent(candidate)}
+                            icon={TAB_ICONS[candidate]}
+                        >
+                            {t(`settings.tab.${candidate}`)}
+                        </NavItem>
+                    ))}
+                </nav>
+                <div className="flex-1 overflow-y-auto">
+                    <div className="mx-auto flex max-w-3xl flex-col gap-6 px-5 py-5">{TAB_SECTIONS[current]()}</div>
+                </div>
+            </div>
+        </PageLayout>
+    )
+}
