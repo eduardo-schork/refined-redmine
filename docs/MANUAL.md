@@ -1,6 +1,6 @@
 # Refined Redmine — Manual do usuário
 
-O Refined Redmine é um app de desktop (macOS e Windows) que fica por cima do Redmine da empresa. Ele junta um painel com o seu dia, quadros kanban que mudam o status no Redmine ao arrastar, uma visão das sprints, uma agenda com lembretes e notificações do sistema operacional.
+O Refined Redmine é um app de desktop (macOS; Windows em breve) que fica por cima do Redmine da empresa. Ele junta um painel com o seu dia, quadros kanban que mudam o status no Redmine ao arrastar, uma visão das sprints, uma agenda com lembretes e notificações do sistema operacional.
 
 Não há servidor próprio: o app fala direto com o Redmine usando a sua chave de API, e tudo o que é local (quadros, agenda, histórico de notificações) fica salvo só no seu computador.
 
@@ -23,8 +23,19 @@ Não há servidor próprio: o app fala direto com o Redmine usando a sua chave d
 
 ### Instalar
 
-- **macOS**: abra o `.dmg` e arraste o Refined Redmine para Aplicativos.
-- **Windows**: rode o instalador `.exe`.
+A versão 0.1.0 é só para **macOS** (o Windows ainda não foi testado).
+
+1. Escolha o arquivo do seu Mac (menu Apple → **Sobre este Mac**): chip **Apple** (M1, M2…) → `Refined Redmine-0.1.0-arm64.dmg`; **Intel** → `Refined Redmine-0.1.0.dmg`.
+2. Abra o `.dmg` e arraste o **Refined Redmine** para **Aplicativos**.
+3. Na primeira abertura o macOS avisa que o desenvolvedor não foi verificado (o app ainda não tem assinatura da Apple). Vá em **Ajustes do Sistema → Privacidade e Segurança** e clique em **Abrir Mesmo Assim**. Outra opção é rodar uma vez no Terminal:
+
+   ```bash
+   xattr -dr com.apple.quarantine "/Applications/Refined Redmine.app"
+   ```
+
+4. Se o macOS pedir a senha para o app usar o Keychain ("Refined Redmine Safe Storage"), clique em **Sempre permitir**: é lá que a chave do Redmine fica guardada.
+
+Versões novas são instaladas do mesmo jeito, por cima da anterior; quadros, agenda e preferências são mantidos.
 
 ### Conectar ao Redmine
 
@@ -38,7 +49,9 @@ A chave é guardada criptografada pelo sistema (Keychain no macOS, DPAPI no Wind
 
 ### Permitir notificações
 
-Sempre que o app abre sem permissão para notificações, aparece a janela **Ativar notificações**. Clique em **Solicitar permissão** e confirme o aviso do sistema. Se as notificações estiverem bloqueadas, use **Abrir ajustes de notificações**: no macOS, em **Ajustes do Sistema → Notificações → Refined Redmine**, ative **Permitir notificações** com o estilo **Alertas** ou **Faixas**. Depois, use **Configurações → Enviar notificação de teste** para confirmar.
+Sempre que o app abre sem permissão para notificações, aparece a janela **Ativar notificações**. Clique em **Solicitar permissão** e confirme o aviso do sistema. Se as notificações estiverem bloqueadas, use **Abrir ajustes de notificações**: no macOS, em **Ajustes do Sistema → Notificações → Refined Redmine**, ative **Permitir notificações** com o estilo **Alertas** ou **Faixas**. Depois, use **Configurações → Notificações → Enviar notificação de teste** para confirmar.
+
+> **Importante no app instalado**: confira em **Ajustes do Sistema → Notificações → Refined Redmine** se **Permitir notificações** está ligado. O macOS pode deixar desligado na instalação, e o app não consegue perceber isso — a tela de Configurações pode mostrar "Permitidas" mesmo assim. Se a notificação de teste não aparecer, é aí que se resolve.
 
 ### Bandeja do sistema
 
@@ -316,7 +329,7 @@ As configurações ficam divididas em abas, na coluna à esquerda.
 ### Perguntas frequentes
 
 **As notificações não aparecem no macOS.**
-Confira em **Ajustes do Sistema → Notificações → Refined Redmine** se estão permitidas e se o modo Foco não está ativo. Depois use **Enviar notificação de teste**.
+Confira em **Ajustes do Sistema → Notificações → Refined Redmine** se **Permitir notificações** está ligado (no app instalado ele pode vir desligado, mesmo com o app mostrando "Permitidas") e se o modo Foco não está ativo. Depois use **Enviar notificação de teste**.
 
 **Arrastei um card e ele voltou para a coluna de origem.**
 O Redmine recusou a mudança (fluxo de trabalho ou campo obrigatório). A mensagem de erro explica o motivo; ajuste pela tela do Redmine se precisar preencher algo.
@@ -337,7 +350,7 @@ Crie um monitor com uma consulta salva ou um filtro por URL (**Configurações �
 Veja a tela **Log**: ela mostra cada requisição com o tempo de resposta e o erro, se houve.
 
 **As sprints não aparecem ou estão sem datas.**
-Em **Configurações → Sprints**, escolha o projeto certo e confira os campos de prazo dos devs e de publicação.
+Em **Configurações → Sprints e Início**, escolha o projeto certo e confira os campos de prazo dos devs e de publicação.
 
 **O app pediu para conectar de novo.**
 A chave salva não pôde ser lida neste computador (por exemplo, depois de instalar a versão nova, trocar de computador ou redefinir o Keychain). Informe a URL e a chave outra vez; quadros e preferências continuam lá.

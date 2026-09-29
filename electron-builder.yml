@@ -25,5 +25,5 @@ win:
   icon: build/icon.png
 nsis:
   oneClick: false
-  allowToChangeInstallationDir: true
+  allowToChangeInstallationDirectory: true
   shortcutName: Refined Redmine
