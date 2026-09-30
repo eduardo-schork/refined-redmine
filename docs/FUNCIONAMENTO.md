@@ -16,13 +16,14 @@ A interface só conversa com o processo principal pelo contrato IPC (`contracts/
 
 Todos passam pela porta `Scheduler` (`infra/system/system.ts`: `setTimeout`/`setInterval`). Nos testes ela é trocada por um agendador que não faz nada, e os ciclos são chamados direto.
 
-| Quem                | Tipo                                                    | Frequência                                                                       | Onde                       |
-| ------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------- |
-| Monitor             | `setTimeout` que se reagenda **depois** do fim do ciclo | `pollSeconds` (padrão 60 s, mínimo 30 s); o primeiro ciclo roda 1 s após iniciar | `MonitorService.schedule`  |
-| Lembretes           | `setInterval`                                           | 20 s (`REMINDER_TICK_MS`); também roda um ciclo ao iniciar                       | `ReminderDispatcher.start` |
-| Quadro aberto       | `refetchInterval` (TanStack Query)                      | 60 s                                                                             | `hooks/boards.ts`          |
-| Minha fila (Início) | `refetchInterval`                                       | 120 s                                                                            | `hooks/issues.ts`          |
-| Tela Log            | `refetchInterval`                                       | 5 s (lê o arquivo, sem Redmine)                                                  | `hooks/activity-log.ts`    |
+| Quem                | Tipo                                                    | Frequência                                                                                                                               | Onde                       |
+| ------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| Monitor             | `setTimeout` que se reagenda **depois** do fim do ciclo | `pollSeconds` (padrão 60 s, mínimo 30 s); o primeiro ciclo roda 1 s após iniciar                                                         | `MonitorService.schedule`  |
+| Lembretes           | `setInterval`                                           | 20 s (`REMINDER_TICK_MS`); também roda um ciclo ao iniciar                                                                               | `ReminderDispatcher.start` |
+| Quadro aberto       | `refetchInterval` (TanStack Query)                      | 60 s                                                                                                                                     | `hooks/boards.ts`          |
+| Minha fila (Início) | `refetchInterval`                                       | 120 s                                                                                                                                    | `hooks/issues.ts`          |
+| Tela Log            | `refetchInterval`                                       | 5 s (lê o arquivo, sem Redmine)                                                                                                          | `hooks/activity-log.ts`    |
+| Atualizações        | `setTimeout` + `setInterval`                            | 30 s após iniciar; depois `updates.intervalHours` (1, 4, 12, 24 ou 168 h; padrão 24 h). Mudar o intervalo ou o switch reinicia os timers | `UpdateService.start`      |
 
 - **Monitor sem sobreposição**: o próximo ciclo só é agendado no `finally` do atual, e a flag `running` impede dois ciclos ao mesmo tempo ("Verificar agora" durante um ciclo é ignorado).
 - **"Verificar agora"** (`runNow`): cancela o timer pendente, roda um ciclo na hora (ignorando o horário configurado) e reagenda.

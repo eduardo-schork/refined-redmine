@@ -47,4 +47,13 @@ describe('appearance', () => {
         expect(textOnAccent('#facc15')).toBe('#000000')
         expect(darkThemeAccent('#000000')).toBe('#383838')
     })
+
+    it('falls back to a daily update check for an unknown interval', () => {
+        expect(withDefaults({ updates: { autoCheck: true, intervalHours: 7 } } as never).updates.intervalHours).toBe(24)
+        expect(withDefaults({ updates: { autoCheck: false, intervalHours: 4 } } as never).updates).toEqual({
+            autoCheck: false,
+            intervalHours: 4
+        })
+        expect(withDefaults({ updates: { autoCheck: true } } as never).updates.intervalHours).toBe(24)
+    })
 })

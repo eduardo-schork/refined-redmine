@@ -478,8 +478,33 @@ export const enUS: Resources = {
         keys: '↑↓ navigate · Enter open · Esc close'
     },
     issue: {
+        assignToMe: {
+            label: 'Assign to me',
+            hint: 'Makes you the assignee in Redmine',
+            saving: 'Assigning…',
+            done: '#{{id}} assigned to you',
+            ignored:
+                'Redmine did not apply the assignee change. You may not be allowed as assignee at this workflow step.'
+        },
+        copy: {
+            label: 'Copy',
+            link: 'Link',
+            linkHint: 'Copy the issue link in Redmine',
+            number: 'Number',
+            numberHint: 'Copy the number, e.g. #1234',
+            title: 'Title',
+            titleHint: 'Copy the title only',
+            reference: '#Number and title',
+            referenceHint: 'Copy "#1234 Title", for messages and commits',
+            markdown: 'Markdown',
+            markdownHint: 'Copy a Markdown link: [#1234 Title](link)',
+            copied: 'Copied: {{text}}',
+            failed: 'Could not copy to the clipboard.'
+        },
         edit: {
             saved: '{{field}}: {{value}}',
+            searchPerson: 'Search person…',
+            noPerson: 'No one with that name.',
             ignored: 'Redmine did not apply: {{fields}}. That field is read-only for you at this workflow step.',
             nobody: 'Nobody',
             noVersion: 'No version',
@@ -875,7 +900,15 @@ export const enUS: Resources = {
         remove: 'Remove token',
         confirmRemove: 'Remove the token? The app stops looking for new versions.',
         autoCheck: 'Look for new versions automatically',
-        autoCheckHint: 'When the app opens (after 30 s) and once a day.',
+        autoCheckHint: 'When the app opens (after 30 s) and then {{interval}}.',
+        interval: 'Check',
+        every: {
+            h1: 'every hour',
+            h4: 'every 4 hours',
+            h12: 'every 12 hours',
+            h24: 'once a day',
+            h168: 'once a week'
+        },
         checkNow: 'Check now',
         phase: {
             disabled: 'Updates off: no GitHub token.',

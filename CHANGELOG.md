@@ -2,6 +2,14 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
+## 0.5.0 — ações rápidas e responsável mais seguro
+
+- **Ações rápidas no detalhe da tarefa**: abaixo das etiquetas, **Atribuir a mim** (um clique para pegar a tarefa) e botões para copiar o link, o número, o título, o "#número e título" ou um link em Markdown.
+- **Responsável só muda com clique**: o campo de responsável abre uma lista com busca, e a troca só acontece ao clicar no nome. Antes, digitar uma letra com o campo selecionado podia trocar o responsável sem querer.
+- **Intervalo das atualizações** (Configurações → Geral → Atualizações): procure versões novas a cada 1 hora, 4 horas, 12 horas, uma vez por dia ou uma vez por semana.
+
+Quem está na 0.4.0 recebe esta versão pelo próprio app.
+
 ## 0.4.0 — resumo do quadro e cards reformulados
 
 - **Resumo do quadro**: ao lado de cada quadro, a aba **Resumo** mostra os números do quadro, a distribuição por status, uma tabela por pessoa (clique para ver os cards dela), e as tarefas por tipo e por prioridade.

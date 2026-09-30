@@ -1,5 +1,11 @@
 import { withIssueStyleDefaults } from '@domain/redmine/issue-style'
-import { affectsMonitor, MIN_POLL_SECONDS, type SettingsPatch } from '@domain/settings/settings'
+import {
+    affectsMonitor,
+    MIN_POLL_SECONDS,
+    withUpdateDefaults,
+    type Settings,
+    type SettingsPatch
+} from '@domain/settings/settings'
 import type { SettingsView } from '../dto'
 import type { SecretStore, SettingsRepository } from '../ports/repositories'
 import type { Localization, LoginItem, ThemeController } from '../ports/system'
@@ -17,6 +23,19 @@ function cleanIssueStyle(patch: SettingsPatch): SettingsPatch {
     return { ...patch, issueStyle: withIssueStyleDefaults(patch.issueStyle) }
 }
 
+/** An interval outside the choices would make a timer that fires too often: it falls back to once a day. */
+function cleanUpdates(patch: SettingsPatch): SettingsPatch {
+    if (patch.updates === undefined) return patch
+    return { ...patch, updates: withUpdateDefaults(patch.updates) }
+}
+
+function updateScheduleChanged(previous: Settings, patch: SettingsPatch): boolean {
+    if (!patch.updates) return false
+    const autoCheckChanged = patch.updates.autoCheck !== previous.updates.autoCheck
+    const intervalChanged = patch.updates.intervalHours !== previous.updates.intervalHours
+    return autoCheckChanged || intervalChanged
+}
+
 /** Updates preferences and applies the side effects (monitor, open at login, language). */
 export class UpdateSettingsUseCase {
     constructor(
@@ -31,7 +50,7 @@ export class UpdateSettingsUseCase {
 
     execute(patch: SettingsPatch): SettingsView {
         const previous = this.settings.get()
-        const cleanPatch = cleanIssueStyle(clampPollSeconds(patch))
+        const cleanPatch = cleanUpdates(cleanIssueStyle(clampPollSeconds(patch)))
         this.settings.save({ ...previous, ...cleanPatch })
 
         const { openAtLogin, language } = cleanPatch
@@ -42,8 +61,7 @@ export class UpdateSettingsUseCase {
         if (nextTheme && nextTheme !== previous.appearance.theme) this.theme.setThemeMode(nextTheme)
 
         if (affectsMonitor(previous, cleanPatch)) this.monitor.start()
-        const autoCheckChanged = cleanPatch.updates && cleanPatch.updates.autoCheck !== previous.updates.autoCheck
-        if (autoCheckChanged) this.updates.start()
+        if (updateScheduleChanged(previous, cleanPatch)) this.updates.start()
         return toView(this.settings, this.secrets)
     }
 }

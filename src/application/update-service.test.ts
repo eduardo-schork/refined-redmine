@@ -30,7 +30,7 @@ class FakeSource implements ReleaseSource {
     }
 }
 
-function setup(token: string | null = 'ghp_token') {
+function setup(token: string | null = 'ghp_token', scheduler = noScheduler, settings = new MemorySettings()) {
     const source = new FakeSource()
     const tokens = {
         value: token,
@@ -50,10 +50,10 @@ function setup(token: string | null = 'ghp_token') {
         source,
         tokens,
         installer: { open: async (path) => void opened.push(path) },
-        settings: new MemorySettings(),
+        settings,
         events,
         clock: new FixedClock(new Date('2026-09-29T12:00:00Z')),
-        scheduler: noScheduler,
+        scheduler,
         currentVersion: '0.2.0',
         platform: 'darwin',
         arch: 'arm64'
@@ -62,6 +62,39 @@ function setup(token: string | null = 'ghp_token') {
 }
 
 describe('UpdateService', () => {
+    it('checks at the interval chosen in the settings', () => {
+        const intervals: number[] = []
+        const scheduler = {
+            after: () => () => {},
+            every: (ms: number) => {
+                intervals.push(ms)
+                return () => {}
+            }
+        }
+        const settings = new MemorySettings()
+        settings.value = { ...settings.value, updates: { autoCheck: true, intervalHours: 4 } }
+        setup('ghp_token', scheduler, settings).service.start()
+        expect(intervals).toEqual([4 * 60 * 60 * 1000])
+    })
+
+    it('does not schedule anything with automatic checks off', () => {
+        const calls: string[] = []
+        const scheduler = {
+            after: () => {
+                calls.push('after')
+                return () => {}
+            },
+            every: () => {
+                calls.push('every')
+                return () => {}
+            }
+        }
+        const settings = new MemorySettings()
+        settings.value = { ...settings.value, updates: { autoCheck: false, intervalHours: 24 } }
+        setup('ghp_token', scheduler, settings).service.start()
+        expect(calls).toEqual([])
+    })
+
     it('without a token it stays disabled and never asks GitHub', async () => {
         const { service, source } = setup(null)
         source.failWith = new AppError('update.http', { status: 500 })

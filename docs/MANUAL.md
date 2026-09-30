@@ -162,10 +162,13 @@ Clicar em uma tarefa, em qualquer tela, abre o detalhe sem sair do app. As taref
 - **Descrição**, com formatação (listas, tabelas, negrito, links).
 - **Anexos**, **Relações** e **Histórico** (comentários e mudanças de campos).
 - **Resumo no topo**, abaixo do título: status, prioridade, previsão (colorida quando está perto ou vencida) e versão.
+- **Ações rápidas**, logo abaixo:
+  - **Atribuir a mim** passa a tarefa para você no Redmine, com um clique. Só aparece quando a tarefa não é sua; um aviso confirma, ou diz se o Redmine não aplicou (o fluxo pode não deixar você ser responsável naquela etapa).
+  - Os outros botões copiam para a área de transferência o **Link** da tarefa no Redmine, o **Número** (`#1234`), o **Título**, o **#Número e título** (`#1234 Título`, para mensagens e commits) ou um link em **Markdown** (`[#1234 Título](link)`). Um aviso mostra o que foi copiado.
 - **Status**: troque direto pelo seletor; só aparecem os status permitidos para a tarefa.
 - **Adicionar comentário**: aceita Markdown e é publicado no Redmine.
 - **Campos editáveis na lateral**: prioridade, responsável, versão, início, previsão e % concluído. Cada mudança é salva no Redmine na hora e confirmada com um aviso.
-  - **Responsável**: lista os membros do projeto; "Ninguém" tira o responsável.
+  - **Responsável**: clique no campo para abrir a lista dos membros do projeto; digite para filtrar e **clique no nome** para trocar. Digitar ou usar as setas nunca troca o responsável sozinho, e `Esc` fecha a lista sem mudar nada. "Ninguém" tira o responsável.
   - **Versão**: lista as versões abertas do projeto; "Sem versão" tira a versão.
   - **Datas**: são salvas quando você sai do campo ou aperta `Enter`. Apague a data para limpá-la. O início não pode ser depois da previsão.
   - **% concluído**: de 10 em 10.
@@ -317,7 +320,7 @@ As configurações ficam divididas em abas, na coluna à esquerda.
 - **Conta**: o Redmine e o usuário conectados. **Desconectar** apaga a chave deste computador.
 - **Idioma**: Português (Brasil), English (US) ou o idioma do sistema.
 - **Sobre**: a versão instalada, o sistema e a pasta de dados; **Abrir pasta de dados** abre essa pasta no Finder/Explorer. **Copiar informações de suporte** copia um texto com versão, sistema, estado do monitor, notificações e erros recentes (sem a chave de API) para colar na conversa com quem vai ajudar.
-- **Atualizações**: com um token do GitHub (veja [Atualizações automáticas](INSTALACAO.md#atualizações-automáticas)), o app procura versões novas ao abrir e uma vez por dia. Quando sai uma, aparece um aviso na barra lateral e, aqui, o botão **Baixar versão…** com as novidades. Depois de baixar: no Windows, **Reiniciar e atualizar**; no Mac, **Abrir instalador** (o app fecha para você arrastar a versão nova para Aplicativos). **Verificar agora** força a consulta; o switch **Procurar versões novas automaticamente** desliga a verificação. Sem token, o app funciona normalmente e só não avisa sobre versões novas.
+- **Atualizações**: com um token do GitHub (veja [Atualizações automáticas](INSTALACAO.md#atualizações-automáticas)), o app procura versões novas 30 segundos depois de abrir e depois no intervalo escolhido em **Procurar**: a cada 1 hora, 4 horas, 12 horas, uma vez por dia (padrão) ou uma vez por semana. Quando sai uma, aparece um aviso na barra lateral e, aqui, o botão **Baixar versão…** com as novidades. Depois de baixar: no Windows, **Reiniciar e atualizar**; no Mac, **Abrir instalador** (o app fecha para você arrastar a versão nova para Aplicativos). **Verificar agora** força a consulta; o switch **Procurar versões novas automaticamente** desliga a verificação. Sem token, o app funciona normalmente e só não avisa sobre versões novas.
 
 ### Aparência
 

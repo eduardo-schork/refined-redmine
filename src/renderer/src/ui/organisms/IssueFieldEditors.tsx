@@ -7,6 +7,7 @@ import { usePriorities } from '@/hooks/reference'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/cn'
 import { Input, Select } from '../atoms/fields'
+import { PickList } from '../molecules/PickList'
 import { Property } from '../molecules/surfaces'
 import { useToast } from '../molecules/Toast'
 
@@ -165,11 +166,14 @@ export function IssueFieldEditors({ issue, busy }: { issue: IssueDetail; busy: b
                 />
             </Property>
             <Property label={t('issue.assignee')}>
-                <SelectField
+                {/* Changing the assignee notifies the other person: only a click on a name changes it. */}
+                <PickList
                     value={issue.assigned_to ? String(issue.assigned_to.id) : NONE}
                     options={assigneeOptions}
                     disabled={disabled || !options}
-                    onChange={(value, label) => save({ assignedToId: idOrNull(value) }, 'assignedToId', label)}
+                    searchPlaceholder={t('issue.edit.searchPerson')}
+                    noMatches={t('issue.edit.noPerson')}
+                    onPick={(option) => save({ assignedToId: idOrNull(option.value) }, 'assignedToId', option.label)}
                 />
             </Property>
             <Property label={t('issue.version')}>

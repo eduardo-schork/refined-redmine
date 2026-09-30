@@ -30,9 +30,29 @@ export interface Settings {
     calendar: CalendarPreferences
     openAtLogin: boolean
     sound: boolean
-    updates: { autoCheck: boolean }
+    updates: UpdatePreferences
     /** Last version whose "What's new" was shown. */
     lastSeenVersion?: string
+}
+
+export interface UpdatePreferences {
+    autoCheck: boolean
+    /** Hours between automatic update checks (one of UPDATE_CHECK_HOURS). */
+    intervalHours: number
+}
+
+/** 1 h, 4 h, 12 h, 1 day, 1 week. GitHub allows 5,000 authenticated calls per hour, so even hourly is cheap. */
+export const UPDATE_CHECK_HOURS = [1, 4, 12, 24, 168] as const
+
+const DEFAULT_UPDATE_PREFERENCES: UpdatePreferences = { autoCheck: true, intervalHours: 24 }
+
+/** An interval that is not one of the choices (hand-edited file) falls back to once a day. */
+export function withUpdateDefaults(loaded: Partial<UpdatePreferences> = {}): UpdatePreferences {
+    const allowed = (UPDATE_CHECK_HOURS as readonly number[]).includes(Number(loaded.intervalHours))
+    return {
+        autoCheck: loaded.autoCheck ?? DEFAULT_UPDATE_PREFERENCES.autoCheck,
+        intervalHours: allowed ? Number(loaded.intervalHours) : DEFAULT_UPDATE_PREFERENCES.intervalHours
+    }
 }
 
 export type SettingsPatch = Partial<Omit<Settings, 'user' | 'baseUrl'>>
@@ -56,7 +76,7 @@ export const DEFAULT_SETTINGS: Settings = {
     calendar: DEFAULT_CALENDAR_PREFERENCES,
     openAtLogin: false,
     sound: true,
-    updates: { autoCheck: true }
+    updates: DEFAULT_UPDATE_PREFERENCES
 }
 
 type LegacyAlertOn = 'any' | 'increase' | 'decrease'
@@ -125,7 +145,7 @@ export function withDefaults(loaded: Partial<Settings> & LegacySettings): Settin
         sprints: { ...defaults.sprints, ...loaded.sprints },
         dashboard: { ...defaults.dashboard, ...loaded.dashboard },
         issueStyle: withIssueStyleDefaults(loaded.issueStyle),
-        updates: { ...defaults.updates, ...loaded.updates },
+        updates: withUpdateDefaults(loaded.updates),
         calendar: { ...defaults.calendar, ...loaded.calendar, layers: calendarLayers }
     }
 }

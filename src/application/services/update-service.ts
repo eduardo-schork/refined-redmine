@@ -5,9 +5,9 @@ import type { SettingsRepository } from '../ports/repositories'
 import type { AppEventsPublisher, Cancel, Clock, Scheduler } from '../ports/system'
 import type { Installer, ReleaseSource, UpdateTokenStore } from '../ports/updates'
 
-// The first check waits for the app to settle; afterwards once a day is enough for a small team.
+// The first check waits for the app to settle; afterwards the interval chosen in the settings (1 day by default).
 const FIRST_CHECK_DELAY_MS = 30_000
-const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000
+const HOUR_MS = 60 * 60 * 1000
 const PROGRESS_STEP = 0.02
 
 export interface UpdateDeps {
@@ -42,11 +42,12 @@ export class UpdateService {
 
     start(): void {
         this.stop()
-        if (!this.deps.settings.get().updates.autoCheck) return
+        const { autoCheck, intervalHours } = this.deps.settings.get().updates
+        if (!autoCheck) return
         const check = () => void this.check()
         this.cancelTimers = [
             this.deps.scheduler.after(FIRST_CHECK_DELAY_MS, check),
-            this.deps.scheduler.every(CHECK_INTERVAL_MS, check)
+            this.deps.scheduler.every(intervalHours * HOUR_MS, check)
         ]
     }
 

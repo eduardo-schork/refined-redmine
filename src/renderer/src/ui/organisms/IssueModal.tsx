@@ -27,6 +27,7 @@ import { Alert, Property } from '../molecules/surfaces'
 import { useToast } from '../molecules/Toast'
 import { IssueFieldEditors } from './IssueFieldEditors'
 import { DueChip, PriorityChip, VersionChip } from '../molecules/issue-chips'
+import { IssueQuickActions } from './IssueQuickActions'
 import { StatusTag } from '../molecules/StatusTag'
 
 type Translate = ReturnType<typeof useI18n>['t']
@@ -93,6 +94,7 @@ function IssueModal({ id, onClose, canGoBack }: { id: number; onClose: () => voi
                 isError={issueQuery.isError}
                 canGoBack={canGoBack}
                 onClose={onClose}
+                issueUrl={links.issue(id)}
                 onOpenInRedmine={() => openExternal(links.issue(id))}
             />
 
@@ -122,6 +124,7 @@ function IssueHeader({
     isError,
     canGoBack,
     onClose,
+    issueUrl,
     onOpenInRedmine
 }: {
     id: number
@@ -129,6 +132,7 @@ function IssueHeader({
     isError: boolean
     canGoBack: boolean
     onClose: () => void
+    issueUrl: string
     onOpenInRedmine: () => void
 }) {
     const { t } = useI18n()
@@ -165,6 +169,7 @@ function IssueHeader({
                         <VersionChip issue={issue} />
                     </div>
                 )}
+                {issue && <IssueQuickActions issue={issue} url={issueUrl} />}
             </div>
             <Button variant="primary" onClick={onOpenInRedmine}>
                 <ExternalLink size={14} /> {t('common.openInRedmine')}

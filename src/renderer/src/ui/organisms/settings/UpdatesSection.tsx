@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Download, ExternalLink, RefreshCw } from 'lucide-react'
+import { UPDATE_CHECK_HOURS } from '@domain/settings/settings'
 import type { UpdateStatus } from '@domain/update/release'
 import { RedmineLinks } from '@domain/redmine/links'
 import { useAppInfo } from '@/hooks/app-info'
@@ -9,7 +10,7 @@ import { api } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/cn'
 import { Button } from '../../atoms/Button'
-import { Input } from '../../atoms/fields'
+import { Input, Select } from '../../atoms/fields'
 import { ProgressBar, TextLink } from '../../atoms/misc'
 import { Field, ToggleField } from '../../molecules/Field'
 import { Markdown } from '../../molecules/Markdown'
@@ -28,6 +29,9 @@ export function UpdatesSection() {
     if (!status) return null
 
     const saveAutoCheck = (autoCheck: boolean) => updateSettings.mutate({ updates: { ...settings.updates, autoCheck } })
+    const saveInterval = (intervalHours: number) =>
+        updateSettings.mutate({ updates: { ...settings.updates, intervalHours } })
+    const intervalLabel = t(`updates.every.h${settings.updates.intervalHours}` as 'updates.every.h24')
 
     return (
         <Card title={t('updates.title')} description={t('updates.hint')}>
@@ -39,8 +43,22 @@ export function UpdatesSection() {
                     checked={settings.updates.autoCheck}
                     onChange={saveAutoCheck}
                     label={t('updates.autoCheck')}
-                    description={t('updates.autoCheckHint')}
+                    description={t('updates.autoCheckHint', { interval: intervalLabel })}
                 />
+                <Field label={t('updates.interval')}>
+                    <Select
+                        className="w-56"
+                        value={settings.updates.intervalHours}
+                        disabled={!settings.updates.autoCheck}
+                        onChange={(event) => saveInterval(Number(event.target.value))}
+                    >
+                        {UPDATE_CHECK_HOURS.map((hours) => (
+                            <option key={hours} value={hours}>
+                                {t(`updates.every.h${hours}`)}
+                            </option>
+                        ))}
+                    </Select>
+                </Field>
             </div>
         </Card>
     )

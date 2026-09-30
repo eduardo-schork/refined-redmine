@@ -481,8 +481,33 @@ export const ptBR = {
         keys: '↑↓ navegar · Enter abrir · Esc fechar'
     },
     issue: {
+        assignToMe: {
+            label: 'Atribuir a mim',
+            hint: 'Passa a tarefa para você no Redmine',
+            saving: 'Atribuindo…',
+            done: '#{{id}} atribuída a você',
+            ignored:
+                'O Redmine não aplicou a mudança de responsável. Talvez você não possa ser responsável nesta etapa do fluxo.'
+        },
+        copy: {
+            label: 'Copiar',
+            link: 'Link',
+            linkHint: 'Copiar o link da tarefa no Redmine',
+            number: 'Número',
+            numberHint: 'Copiar o número, ex.: #1234',
+            title: 'Título',
+            titleHint: 'Copiar só o título',
+            reference: '#Número e título',
+            referenceHint: 'Copiar "#1234 Título", para mensagens e commits',
+            markdown: 'Markdown',
+            markdownHint: 'Copiar um link em Markdown: [#1234 Título](link)',
+            copied: 'Copiado: {{text}}',
+            failed: 'Não foi possível copiar para a área de transferência.'
+        },
         edit: {
             saved: '{{field}}: {{value}}',
+            searchPerson: 'Buscar pessoa…',
+            noPerson: 'Ninguém com esse nome.',
             ignored: 'O Redmine não aplicou: {{fields}}. Esse campo é somente leitura para você nesta etapa do fluxo.',
             nobody: 'Ninguém',
             noVersion: 'Sem versão',
@@ -879,7 +904,15 @@ export const ptBR = {
         remove: 'Remover token',
         confirmRemove: 'Remover o token? O app deixa de procurar versões novas.',
         autoCheck: 'Procurar versões novas automaticamente',
-        autoCheckHint: 'Ao abrir o app (depois de 30 s) e uma vez por dia.',
+        autoCheckHint: 'Ao abrir o app (depois de 30 s) e depois {{interval}}.',
+        interval: 'Procurar',
+        every: {
+            h1: 'a cada 1 hora',
+            h4: 'a cada 4 horas',
+            h12: 'a cada 12 horas',
+            h24: 'uma vez por dia',
+            h168: 'uma vez por semana'
+        },
         checkNow: 'Verificar agora',
         phase: {
             disabled: 'Atualizações desativadas: sem token do GitHub.',
