@@ -2,7 +2,12 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
-## Próxima versão — ações rápidas e responsável mais seguro
+## Próxima versão — publicação automática
+
+- **Versões novas publicadas automaticamente**: cada versão agora é gerada e publicada pelo próprio GitHub, sem depender de um computador específico. Para você nada muda: a atualização continua chegando pelo app.
+- A 0.5.0 não chegou a ser publicada. Quem está na 0.4.0 recebe as novidades dela junto com esta versão: ações rápidas no detalhe da tarefa (Atribuir a mim e copiar link, número e título), responsável que só muda com clique e intervalo configurável das atualizações.
+
+## 0.5.0 — ações rápidas e responsável mais seguro
 
 - **Ações rápidas no detalhe da tarefa**: abaixo das etiquetas, **Atribuir a mim** (um clique para pegar a tarefa) e botões para copiar o link, o número, o título, o "#número e título" ou um link em Markdown.
 - **Responsável só muda com clique**: o campo de responsável abre uma lista com busca, e a troca só acontece ao clicar no nome. Antes, digitar uma letra com o campo selecionado podia trocar o responsável sem querer.
