@@ -18,5 +18,6 @@ export const qk = {
     monitorStatus: ['monitor-status'] as const,
     permission: ['permission'] as const,
     activityLog: ['activity-log'] as const,
-    appInfo: ['app-info'] as const
+    appInfo: ['app-info'] as const,
+    updateStatus: ['update-status'] as const
 }

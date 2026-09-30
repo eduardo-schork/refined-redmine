@@ -1,7 +1,7 @@
 import type { AppNotification } from '@domain/notification/notification'
-import type { NotifyPermissionInfo, NotifyProbeResult } from '@domain/notification/permission'
-import type { NotificationRepository } from '../ports/repositories'
-import type { AppEventsPublisher, NotificationPermissionProbe, SystemNotifier } from '../ports/system'
+import type { AppCopy, NotifyPermissionInfo, NotifyProbeResult } from '@domain/notification/permission'
+import type { MonitorStateRepository, NotificationRepository } from '../ports/repositories'
+import type { AppEventsPublisher, Clock, NotificationPermissionProbe, SystemNotifier } from '../ports/system'
 
 export class NotificationFeed {
     constructor(
@@ -29,7 +29,10 @@ export class NotificationFeed {
 export class NotificationPermissionService {
     constructor(
         private readonly probe: NotificationPermissionProbe,
-        private readonly notifier: SystemNotifier
+        private readonly notifier: SystemNotifier,
+        private readonly state: MonitorStateRepository,
+        private readonly clock: Clock,
+        private readonly appCopy: AppCopy
     ) {}
 
     check(): Promise<NotifyPermissionInfo> {
@@ -42,5 +45,11 @@ export class NotificationPermissionService {
 
     sendTest(): Promise<NotifyProbeResult> {
         return this.notifier.probe()
+    }
+
+    /** The user says whether the test notification appeared: the only reliable proof that notifications work. */
+    confirm(seen: boolean): Promise<NotifyPermissionInfo> {
+        this.state.setConfirmation({ seen, at: this.clock.now().toISOString(), app: this.appCopy })
+        return this.probe.check()
     }
 }

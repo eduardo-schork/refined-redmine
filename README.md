@@ -11,17 +11,18 @@ npm install
 npm run dev
 ```
 
-No primeiro acesso, informe a URL do Redmine e a chave em **Minha conta → Chave de acesso à API**.
+No primeiro acesso, informe a URL do Redmine e a chave em **Minha conta → Chave de acesso à API**. Para instalar a partir do `.dmg`/`.exe`: [docs/INSTALACAO.md](docs/INSTALACAO.md).
 
 Como usar cada tela: [manual do usuário](docs/MANUAL.md).
 
-| Comando             | O que faz                                             |
-| ------------------- | ----------------------------------------------------- |
-| `npm run dev`       | App em modo desenvolvimento (hot reload na interface) |
-| `npm run typecheck` | Checagem de tipos                                     |
-| `npm run dist:mac`  | Gera `.dmg` em `dist/`                                |
-| `npm run dist:win`  | Gera instalador `.exe` (NSIS) em `dist/`              |
-| `npm run icons`     | Regera os ícones em `build/` e `resources/`           |
+| Comando             | O que faz                                                                |
+| ------------------- | ------------------------------------------------------------------------ |
+| `npm run dev`       | App em modo desenvolvimento (hot reload na interface)                    |
+| `npm run typecheck` | Checagem de tipos                                                        |
+| `npm run dist:mac`  | Gera `.dmg` em `dist/`                                                   |
+| `npm run dist:win`  | Gera instalador `.exe` (NSIS) em `dist/`                                 |
+| `npm run icons`     | Regera os ícones em `build/` e `resources/`                              |
+| `npm run release`   | Publica a versão no GitHub Releases ([docs/RELEASE.md](docs/RELEASE.md)) |
 
 ## Funcionalidades
 

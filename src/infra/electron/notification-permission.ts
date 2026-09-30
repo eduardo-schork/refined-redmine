@@ -3,11 +3,10 @@ import { execFile, execFileSync } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import type { MonitorStateRepository } from '@application/ports/repositories'
 import type { NotificationPermissionProbe } from '@application/ports/system'
-import type { NotifyPermissionInfo } from '@domain/notification/permission'
+import { resolvePermission, type AppCopy, type NotifyPermissionInfo } from '@domain/notification/permission'
 import { escapeRegex } from '@domain/shared/text'
 
 const isMac = process.platform === 'darwin'
-const ALERTS_AUTH_BIT = 4
 
 type PermissionBase = Pick<NotifyPermissionInfo, 'bundleId' | 'signed' | 'dev'>
 
@@ -27,23 +26,18 @@ function notificationCenterEntryPattern(bundleId: string): RegExp {
     return new RegExp(authPart + bundlePart)
 }
 
-function permissionFromAuth(base: PermissionBase, auth: number): NotifyPermissionInfo {
-    const alertsAllowed = (auth & ALERTS_AUTH_BIT) !== 0
-    if (!alertsAllowed) return { ...base, status: 'denied', reason: 'alertsOff' }
-    return { ...base, status: 'granted' }
-}
-
 /**
- * Electron does not expose the macOS notification permission. We combine:
- * 1. The Notification Center record (com.apple.ncprefs), when present. `auth` is the bitmask of what
- *    the user authorized (1 = badge, 2 = sound, 4 = alerts). On macOS 26, ad-hoc signed apps
- *    (like the dev Electron) do not show up there, and the usernoted database is protected.
- * 2. The last actual delivery result (persisted): 'show' = delivered, 'failed' = refused.
+ * Electron does not expose the notification permission, so the evidence is gathered here and judged by
+ * `resolvePermission`. On macOS the Notification Center record (com.apple.ncprefs) is read when present;
+ * on macOS 26 ad-hoc signed apps often do not show up there, and the usernoted database is protected.
  */
 export class DesktopNotificationPermission implements NotificationPermissionProbe {
     private bundle: string | undefined | null = null
 
-    constructor(private readonly state: MonitorStateRepository) {}
+    constructor(
+        private readonly state: MonitorStateRepository,
+        private readonly appCopy: AppCopy
+    ) {}
 
     private bundleId(): string | undefined {
         if (!isMac) return undefined
@@ -96,18 +90,19 @@ export class DesktopNotificationPermission implements NotificationPermissionProb
 
     async check(): Promise<NotifyPermissionInfo> {
         const base: PermissionBase = { bundleId: this.bundleId(), signed: this.isSigned(), dev: !app.isPackaged }
-        if (!Notification.isSupported()) return { ...base, status: 'unsupported', reason: 'unsupported' }
-
-        const lastDelivery = this.state.getDelivery()
-        if (lastDelivery && !lastDelivery.ok) {
-            return { ...base, status: 'denied', reason: 'refused', detail: lastDelivery.detail }
-        }
-        if (!isMac) return { ...base, status: 'granted' }
-        if (!base.signed) return { ...base, status: 'denied', reason: 'unsigned' }
-
-        const auth = base.bundleId ? await this.notificationCenterAuth(base.bundleId) : undefined
-        if (typeof auth === 'number') return permissionFromAuth(base, auth)
-        return { ...base, status: lastDelivery?.ok ? 'granted' : 'not-determined' }
+        const bundleId = base.bundleId
+        const canReadNotificationCenter = isMac && base.signed && bundleId !== undefined
+        const auth = canReadNotificationCenter ? await this.notificationCenterAuth(bundleId) : undefined
+        const verdict = resolvePermission({
+            supported: Notification.isSupported(),
+            isMac,
+            signed: base.signed,
+            notificationCenterAuth: typeof auth === 'number' ? auth : undefined,
+            lastDelivery: this.state.getDelivery(),
+            confirmation: this.state.getConfirmation(),
+            app: this.appCopy
+        })
+        return { ...base, ...verdict }
     }
 
     async openSettings(): Promise<void> {

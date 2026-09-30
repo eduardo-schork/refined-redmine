@@ -1,6 +1,6 @@
 # Refined Redmine — Manual do usuário
 
-O Refined Redmine é um app de desktop (macOS; Windows em breve) que fica por cima do Redmine da empresa. Ele junta um painel com o seu dia, quadros kanban que mudam o status no Redmine ao arrastar, uma visão das sprints, uma agenda com lembretes e notificações do sistema operacional.
+O Refined Redmine é um app de desktop (macOS e Windows) que fica por cima do Redmine da empresa. Ele junta um painel com o seu dia, quadros kanban que mudam o status no Redmine ao arrastar, uma visão das sprints, uma agenda com lembretes e notificações do sistema operacional.
 
 Não há servidor próprio: o app fala direto com o Redmine usando a sua chave de API, e tudo o que é local (quadros, agenda, histórico de notificações) fica salvo só no seu computador.
 
@@ -23,19 +23,7 @@ Não há servidor próprio: o app fala direto com o Redmine usando a sua chave d
 
 ### Instalar
 
-A versão 0.1.0 é só para **macOS** (o Windows ainda não foi testado).
-
-1. Escolha o arquivo do seu Mac (menu Apple → **Sobre este Mac**): chip **Apple** (M1, M2…) → `Refined Redmine-0.1.0-arm64.dmg`; **Intel** → `Refined Redmine-0.1.0.dmg`.
-2. Abra o `.dmg` e arraste o **Refined Redmine** para **Aplicativos**.
-3. Na primeira abertura o macOS avisa que o desenvolvedor não foi verificado (o app ainda não tem assinatura da Apple). Vá em **Ajustes do Sistema → Privacidade e Segurança** e clique em **Abrir Mesmo Assim**. Outra opção é rodar uma vez no Terminal:
-
-   ```bash
-   xattr -dr com.apple.quarantine "/Applications/Refined Redmine.app"
-   ```
-
-4. Se o macOS pedir a senha para o app usar o Keychain ("Refined Redmine Safe Storage"), clique em **Sempre permitir**: é lá que a chave do Redmine fica guardada.
-
-Versões novas são instaladas do mesmo jeito, por cima da anterior; quadros, agenda e preferências são mantidos.
+O passo a passo (macOS e Windows, com os avisos de segurança do sistema na primeira abertura) está em [Instalar o Refined Redmine](INSTALACAO.md). Versões novas são instaladas por cima da anterior; quadros, agenda e preferências são mantidos.
 
 ### Conectar ao Redmine
 
@@ -47,11 +35,12 @@ Versões novas são instaladas do mesmo jeito, por cima da anterior; quadros, ag
 
 A chave é guardada criptografada pelo sistema (Keychain no macOS, DPAPI no Windows) e nunca sai do seu computador, a não ser nas chamadas ao próprio Redmine.
 
-### Permitir notificações
+### Confirmar as notificações
 
-Sempre que o app abre sem permissão para notificações, aparece a janela **Ativar notificações**. Clique em **Solicitar permissão** e confirme o aviso do sistema. Se as notificações estiverem bloqueadas, use **Abrir ajustes de notificações**: no macOS, em **Ajustes do Sistema → Notificações → Refined Redmine**, ative **Permitir notificações** com o estilo **Alertas** ou **Faixas**. Depois, use **Configurações → Notificações → Enviar notificação de teste** para confirmar.
+Enquanto as notificações não estiverem confirmadas, o app abre a janela **Confirmar notificações**. Clique em **Enviar notificação de teste** e responda **Apareceu** ou **Não apareceu**. A confirmação é necessária porque o sistema não avisa o app quando descarta uma notificação (por exemplo, com as notificações do app desligadas nos Ajustes).
 
-> **Importante no app instalado**: confira em **Ajustes do Sistema → Notificações → Refined Redmine** se **Permitir notificações** está ligado. O macOS pode deixar desligado na instalação, e o app não consegue perceber isso — a tela de Configurações pode mostrar "Permitidas" mesmo assim. Se a notificação de teste não aparecer, é aí que se resolve.
+- **Não apareceu**: o app mostra onde ligar as notificações. No macOS, **Ajustes do Sistema → Notificações → Refined Redmine → Permitir notificações** (estilo **Alertas** ou **Faixas**); no Windows, **Configurações → Sistema → Notificações**. Depois clique em **Testar de novo** e confirme.
+- Dá para refazer o teste a qualquer momento em **Configurações → Notificações → Enviar notificação de teste**.
 
 ### Bandeja do sistema
 
@@ -84,6 +73,8 @@ Os quadros ficam na barra lateral, em **Quadros**. Cada coluna agrupa um ou mais
 - Os ícones no canto superior direito atualizam, editam e excluem o quadro.
 
 Cada card mostra número, tipo, título, responsável, projeto, versão, data de entrega (em vermelho quando vencida) e o percentual concluído.
+
+A **bolinha antes do número** é a prioridade: vermelha = Imediata/Urgente/Crítica, amarela = Alta, cinza clara = Baixa; sem bolinha = Normal. Passe o mouse sobre ela para ver o nome da prioridade.
 
 ### Raias por responsável
 
@@ -274,7 +265,8 @@ As configurações ficam divididas em abas, na coluna à esquerda.
 
 - **Conta**: o Redmine e o usuário conectados. **Desconectar** apaga a chave deste computador.
 - **Idioma**: Português (Brasil), English (US) ou o idioma do sistema.
-- **Sobre**: a versão instalada, o sistema e a pasta de dados; **Abrir pasta de dados** abre essa pasta no Finder/Explorer. Informe a versão ao reportar um problema.
+- **Sobre**: a versão instalada, o sistema e a pasta de dados; **Abrir pasta de dados** abre essa pasta no Finder/Explorer. **Copiar informações de suporte** copia um texto com versão, sistema, estado do monitor, notificações e erros recentes (sem a chave de API) para colar na conversa com quem vai ajudar.
+- **Atualizações**: com um token do GitHub (veja [Atualizações automáticas](INSTALACAO.md#atualizações-automáticas)), o app procura versões novas ao abrir e uma vez por dia. Quando sai uma, aparece um aviso na barra lateral e, aqui, o botão **Baixar versão…** com as novidades. Depois de baixar: no Windows, **Reiniciar e atualizar**; no Mac, **Abrir instalador** (o app fecha para você arrastar a versão nova para Aplicativos). **Verificar agora** força a consulta; o switch **Procurar versões novas automaticamente** desliga a verificação. Sem token, o app funciona normalmente e só não avisa sobre versões novas.
 
 ### Aparência
 
@@ -328,8 +320,8 @@ As configurações ficam divididas em abas, na coluna à esquerda.
 
 ### Perguntas frequentes
 
-**As notificações não aparecem no macOS.**
-Confira em **Ajustes do Sistema → Notificações → Refined Redmine** se **Permitir notificações** está ligado (no app instalado ele pode vir desligado, mesmo com o app mostrando "Permitidas") e se o modo Foco não está ativo. Depois use **Enviar notificação de teste**.
+**As notificações não aparecem.**
+Em **Configurações → Notificações**, use **Enviar notificação de teste** e responda se ela apareceu: o app mostra onde ligar as notificações no sistema. Confira também o modo Foco (macOS) ou o Não incomodar (Windows).
 
 **Arrastei um card e ele voltou para a coluna de origem.**
 O Redmine recusou a mudança (fluxo de trabalho ou campo obrigatório). A mensagem de erro explica o motivo; ajuste pela tela do Redmine se precisar preencher algo.
@@ -351,6 +343,9 @@ Veja a tela **Log**: ela mostra cada requisição com o tempo de resposta e o er
 
 **As sprints não aparecem ou estão sem datas.**
 Em **Configurações → Sprints e Início**, escolha o projeto certo e confira os campos de prazo dos devs e de publicação.
+
+**Como fico sabendo de uma versão nova?**
+Com as atualizações automáticas ligadas (Configurações → Geral → Atualizações), o app avisa na barra lateral. Depois de atualizar, ele mostra uma vez a janela **O que há de novo**.
 
 **O app pediu para conectar de novo.**
 A chave salva não pôde ser lida neste computador (por exemplo, depois de instalar a versão nova, trocar de computador ou redefinir o Keychain). Informe a URL e a chave outra vez; quadros e preferências continuam lá.

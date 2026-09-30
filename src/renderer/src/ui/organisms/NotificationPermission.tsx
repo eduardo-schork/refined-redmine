@@ -23,52 +23,69 @@ function useRefreshPermission() {
     }, [queryClient])
 }
 
-/** Sends a real notification (only shown if permission is already granted) and re-reads the state. */
-function useProbe() {
-    const refresh = useRefreshPermission()
-    return useCallback(async () => {
+type DeliveryCheckStep = 'idle' | 'sending' | 'asking'
+
+/**
+ * Sends a test notification and asks whether it appeared: Electron reports "shown" even when the system
+ * drops it, so only the user's answer proves that notifications work.
+ */
+function useDeliveryCheck() {
+    const queryClient = useQueryClient()
+    const [step, setStep] = useState<DeliveryCheckStep>('idle')
+
+    const send = async () => {
+        setStep('sending')
         await api.notifications.test()
-        return refresh()
-    }, [refresh])
+        setStep('asking')
+    }
+    const answer = async (seen: boolean) => {
+        const info = await api.notifications.confirm(seen)
+        queryClient.setQueryData(qk.permission, info)
+        setStep('idle')
+    }
+    return { step, send, answer }
 }
 
 function openSystemSettings() {
     void api.notifications.openSettings()
 }
 
+function DeliveryQuestion({ onAnswer }: { onAnswer: (seen: boolean) => void }) {
+    const { t } = useI18n()
+    return (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg bg-accent-soft px-3 py-2 text-[13px]">
+            <span className="flex-1">{t('permission.seenQuestion')}</span>
+            <Button variant="primary" onClick={() => onAnswer(true)}>
+                {t('permission.seenYes')}
+            </Button>
+            <Button onClick={() => onAnswer(false)}>{t('permission.seenNo')}</Button>
+        </div>
+    )
+}
+
+const PENDING_STATUSES: NotifyPermission[] = ['unconfirmed', 'denied']
+
 /**
- * On app start, checks the notification permission and, if pending or blocked, shows a modal.
- * Closes by itself once the permission is detected.
+ * On app start, if notifications are not confirmed or are blocked, shows a modal that sends a test
+ * and asks whether it appeared. Closes by itself once they are confirmed.
  */
 export function NotificationPermissionGate() {
     const { t } = useI18n()
     const toast = useToast()
     const info = usePermission().data
     const refresh = useRefreshPermission()
-    const probe = useProbe()
     const [dismissed, setDismissed] = useState(false)
     const wasPending = useRef(false)
-    const pending = info && (info.status === 'not-determined' || info.status === 'denied')
-    const denied = info?.status === 'denied'
+    const pending = Boolean(info && PENDING_STATUSES.includes(info.status))
 
-    // Re-reads every 3 s; when blocked, confirms with a real notification on returning to the window.
+    // Coming back from the system settings: macOS may have recorded the new choice.
     useEffect(() => {
         if (!pending || dismissed) return
         wasPending.current = true
-        const onFocus = () => {
-            if (denied) {
-                void probe()
-                return
-            }
-            void refresh()
-        }
+        const onFocus = () => void refresh()
         window.addEventListener('focus', onFocus)
-        const timer = setInterval(() => void refresh(), 3000)
-        return () => {
-            window.removeEventListener('focus', onFocus)
-            clearInterval(timer)
-        }
-    }, [pending, dismissed, denied, probe, refresh])
+        return () => window.removeEventListener('focus', onFocus)
+    }, [pending, dismissed, refresh])
 
     useEffect(() => {
         const justGranted = info?.status === 'granted' && wasPending.current
@@ -78,53 +95,24 @@ export function NotificationPermissionGate() {
     }, [info, toast, t])
 
     if (!info || !pending || dismissed) return null
-    return <PermissionDialog info={info} onClose={() => setDismissed(true)} onRefresh={refresh} onProbe={probe} />
+    return <PermissionDialog info={info} onClose={() => setDismissed(true)} />
 }
 
-function PermissionDialog({
-    info,
-    onClose,
-    onRefresh,
-    onProbe
-}: {
-    info: NotifyPermissionInfo
-    onClose: () => void
-    onRefresh: () => Promise<unknown>
-    onProbe: () => Promise<unknown>
-}) {
+function PermissionDialog({ info, onClose }: { info: NotifyPermissionInfo; onClose: () => void }) {
     const { t } = useI18n()
-    const [asked, setAsked] = useState(false)
-    const [busy, setBusy] = useState(false)
+    const check = useDeliveryCheck()
     const appName = info.dev ? 'Electron' : t('app.name')
-    const notDetermined = info.status === 'not-determined'
-    const canRequest = notDetermined && !asked
-    const title = notDetermined ? t('permission.enableTitle') : t('permission.blockedTitle')
+    const blocked = info.status === 'denied'
+    const title = blocked ? t('permission.blockedTitle') : t('permission.confirmTitle')
+    const testLabel = blocked ? t('permission.testAgain') : t('permission.sendTest')
 
-    async function request() {
-        setBusy(true)
-        await api.notifications.test()
-        setAsked(true)
-        setBusy(false)
-        await onRefresh()
-    }
-
-    const requestButton = (
-        <Button variant="primary" onClick={request} disabled={busy}>
-            <BellRing size={14} /> {t('permission.request')}
-        </Button>
-    )
-    const blockedButtons = (
-        <>
-            <Button onClick={() => void onProbe()}>{t('permission.checkAgain')}</Button>
-            <Button variant="primary" onClick={openSystemSettings}>
-                {t('permission.openSystemSettings')}
-            </Button>
-        </>
-    )
     const footer = (
         <>
             <Button onClick={onClose}>{t('common.notNow')}</Button>
-            {canRequest ? requestButton : blockedButtons}
+            {blocked && <Button onClick={openSystemSettings}>{t('permission.openSystemSettings')}</Button>}
+            <Button variant="primary" onClick={() => void check.send()} disabled={check.step !== 'idle'}>
+                <BellRing size={14} /> {testLabel}
+            </Button>
         </>
     )
 
@@ -132,32 +120,19 @@ function PermissionDialog({
         <Dialog title={title} onClose={onClose} footer={footer}>
             <div className="flex gap-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
-                    {notDetermined ? <BellRing size={18} /> : <BellOff size={18} />}
+                    {blocked ? <BellOff size={18} /> : <BellRing size={18} />}
                 </div>
                 <div className="flex flex-col gap-3 text-[13px] leading-relaxed">
-                    {notDetermined && <PendingMessage asked={asked} appName={appName} />}
-                    {!notDetermined && <BlockedInstructions info={info} appName={appName} />}
+                    {blocked ? (
+                        <BlockedInstructions info={info} appName={appName} />
+                    ) : (
+                        <p>{t('permission.confirmIntro')}</p>
+                    )}
+                    {check.step === 'asking' && <DeliveryQuestion onAnswer={(seen) => void check.answer(seen)} />}
                     {info.dev && <DevBuildNote signed={info.signed} />}
                 </div>
             </div>
         </Dialog>
-    )
-}
-
-function PendingMessage({ asked, appName }: { asked: boolean; appName: string }) {
-    const { t } = useI18n()
-    if (asked) {
-        return (
-            <p>
-                <RichText k="permission.asked" values={{ app: appName }} />
-            </p>
-        )
-    }
-    const osName = isMac ? t('permission.osMac') : t('permission.osOther')
-    return (
-        <p>
-            <RichText k="permission.intro" values={{ os: osName }} />
-        </p>
     )
 }
 
@@ -203,30 +178,37 @@ const PERMISSION_TONES: Record<NotifyPermission, 'ok' | 'muted' | 'danger'> = {
     granted: 'ok',
     unsupported: 'muted',
     denied: 'danger',
-    'not-determined': 'danger'
+    unconfirmed: 'danger'
 }
 
-/** Status row on the Settings screen. */
+/** Status row on the Settings screen, with the test that confirms delivery. */
 export function PermissionStatus() {
     const { t } = useI18n()
     const info = usePermission().data
     const refresh = useRefreshPermission()
+    const check = useDeliveryCheck()
     if (!info) return null
     const statusLabel = t(`permission.status.${info.status}`)
     return (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-[13px]">
-            <StatusDot tone={PERMISSION_TONES[info.status]} />
-            <span>{t('permission.systemStatus', { status: statusLabel })}</span>
-            <div className="ml-auto flex gap-2">
-                {info.status !== 'granted' && (
-                    <Button variant="ghost" onClick={openSystemSettings}>
-                        {t('permission.openSettings')}
+        <div className="mb-4 flex flex-col gap-2 rounded-lg border border-line px-3 py-2 text-[13px]">
+            <div className="flex items-center gap-2">
+                <StatusDot tone={PERMISSION_TONES[info.status]} />
+                <span>{t('permission.systemStatus', { status: statusLabel })}</span>
+                <div className="ml-auto flex gap-2">
+                    {info.status !== 'granted' && (
+                        <Button variant="ghost" onClick={openSystemSettings}>
+                            {t('permission.openSettings')}
+                        </Button>
+                    )}
+                    <Button variant="ghost" onClick={() => void refresh()}>
+                        {t('permission.check')}
                     </Button>
-                )}
-                <Button variant="ghost" onClick={() => void refresh()}>
-                    {t('permission.check')}
-                </Button>
+                    <Button onClick={() => void check.send()} disabled={check.step !== 'idle'}>
+                        {t('permission.sendTest')}
+                    </Button>
+                </div>
             </div>
+            {check.step === 'asking' && <DeliveryQuestion onAnswer={(seen) => void check.answer(seen)} />}
         </div>
     )
 }

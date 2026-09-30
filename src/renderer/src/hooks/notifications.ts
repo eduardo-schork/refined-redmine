@@ -44,6 +44,7 @@ export function useAppEventsSync(onNavigate: (route: Route) => void) {
             onAppEvent('notifications.changed', (items) => queryClient.setQueryData(qk.notifications, items)),
             onAppEvent('monitor.status', (status) => queryClient.setQueryData(qk.monitorStatus, status)),
             onAppEvent('permission.changed', (info) => queryClient.setQueryData(qk.permission, info)),
+            onAppEvent('update.status', (status) => queryClient.setQueryData(qk.updateStatus, status)),
             onAppEvent('navigate', (path) => {
                 const route = parseRoute(path)
                 if (route) onNavigate(route)

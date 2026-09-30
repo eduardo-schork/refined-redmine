@@ -27,6 +27,9 @@ export interface Settings {
     calendar: CalendarPreferences
     openAtLogin: boolean
     sound: boolean
+    updates: { autoCheck: boolean }
+    /** Last version whose "What's new" was shown. */
+    lastSeenVersion?: string
 }
 
 export type SettingsPatch = Partial<Omit<Settings, 'user' | 'baseUrl'>>
@@ -48,7 +51,8 @@ export const DEFAULT_SETTINGS: Settings = {
     dashboard: { staleDays: 5 },
     calendar: DEFAULT_CALENDAR_PREFERENCES,
     openAtLogin: false,
-    sound: true
+    sound: true,
+    updates: { autoCheck: true }
 }
 
 type LegacyAlertOn = 'any' | 'increase' | 'decrease'
@@ -116,6 +120,7 @@ export function withDefaults(loaded: Partial<Settings> & LegacySettings): Settin
         schedule: { ...defaults.schedule, ...loaded.schedule },
         sprints: { ...defaults.sprints, ...loaded.sprints },
         dashboard: { ...defaults.dashboard, ...loaded.dashboard },
+        updates: { ...defaults.updates, ...loaded.updates },
         calendar: { ...defaults.calendar, ...loaded.calendar, layers: calendarLayers }
     }
 }

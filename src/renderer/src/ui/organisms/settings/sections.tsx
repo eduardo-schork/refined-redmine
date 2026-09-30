@@ -7,15 +7,18 @@ import {
 import type { Language, SettingsPatch } from '@domain/settings/settings'
 import { humanizeMinutes } from '@shared/i18n/format/dates'
 import { useAppInfo } from '@/hooks/app-info'
+import { useMonitorName } from '@/hooks/monitor-name'
 import { useLogout, useSettings, useUpdateSettings } from '@/hooks/session'
 import { api } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
+import { formatSupportReport } from '@/lib/support-report'
 import { Button } from '../../atoms/Button'
 import { Input, Select } from '../../atoms/fields'
 import { Field, ToggleField } from '../../molecules/Field'
 import { HourSelect, ReminderPicker } from '../../molecules/pickers'
 import { ScheduleFields } from '../../molecules/ScheduleFields'
 import { Card } from '../../molecules/surfaces'
+import { useToast } from '../../molecules/Toast'
 import { PermissionStatus } from '../NotificationPermission'
 import { SprintSetupForm } from '../SprintSetupForm'
 
@@ -84,17 +87,10 @@ export function MonitoringSection() {
     const settings = useSettings()
     const save = useSave()
 
-    const sendTestNotification = () => {
-        void api.notifications.test()
-    }
     const savePollSeconds = (value: string) => save({ pollSeconds: Number(value) || DEFAULT_POLL_SECONDS })
 
     return (
-        <Card
-            title={t('settings.monitoring')}
-            description={t('settings.monitoringHint')}
-            actions={<Button onClick={sendTestNotification}>{t('settings.test')}</Button>}
-        >
+        <Card title={t('settings.monitoring')} description={t('settings.monitoringHint')}>
             <PermissionStatus />
             <div className="grid grid-cols-2 gap-6">
                 <Field label={t('settings.interval')} hint={t('settings.intervalHint')}>
@@ -263,16 +259,32 @@ export function HomeSection() {
 
 const PLATFORM_NAMES: Record<string, string> = { darwin: 'macOS', win32: 'Windows', linux: 'Linux' }
 
+function useCopySupportReport() {
+    const { t, dates, locale } = useI18n()
+    const toast = useToast()
+    const monitorName = useMonitorName()
+    return async () => {
+        const report = await api.app.supportReport()
+        const text = formatSupportReport(report, t, dates, monitorName, locale)
+        await navigator.clipboard.writeText(text)
+        toast(t('settings.supportCopied'))
+    }
+}
+
 export function AboutSection() {
     const { t } = useI18n()
     const info = useAppInfo().data
+    const copySupportReport = useCopySupportReport()
     if (!info) return null
     const platform = PLATFORM_NAMES[info.platform] ?? info.platform
+    const actions = (
+        <>
+            <Button onClick={() => void copySupportReport()}>{t('settings.copySupport')}</Button>
+            <Button onClick={() => void api.app.openDataFolder()}>{t('settings.openDataFolder')}</Button>
+        </>
+    )
     return (
-        <Card
-            title={t('settings.about')}
-            actions={<Button onClick={() => void api.app.openDataFolder()}>{t('settings.openDataFolder')}</Button>}
-        >
+        <Card title={t('settings.about')} actions={actions}>
             <dl className="grid grid-cols-[120px_1fr] gap-y-1.5 text-[13px]">
                 <dt className="text-muted">{t('settings.version')}</dt>
                 <dd className="font-medium">

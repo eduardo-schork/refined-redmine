@@ -1,7 +1,7 @@
 import type { CalendarChange, CalendarEvent } from '@domain/calendar/calendar-event'
 import type { QuerySnapshot } from '@domain/monitor/query-diff'
 import type { AppNotification } from '@domain/notification/notification'
-import type { DeliveryRecord } from '@domain/notification/permission'
+import type { DeliveryConfirmation, DeliveryRecord } from '@domain/notification/permission'
 import type { Settings } from '@domain/settings/settings'
 
 export interface SettingsRepository {
@@ -37,6 +37,8 @@ export interface MonitorStateRepository {
     reset(): void
     getDelivery(): DeliveryRecord | undefined
     setDelivery(record: DeliveryRecord): void
+    getConfirmation(): DeliveryConfirmation | undefined
+    setConfirmation(confirmation: DeliveryConfirmation): void
 }
 
 export interface CalendarRepository {

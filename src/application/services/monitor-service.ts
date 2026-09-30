@@ -22,6 +22,8 @@ import { MonitorCycle } from './monitor/monitor-cycle'
 import { checkSource } from './monitor/source-check'
 
 const FIRST_DELAY_MS = 1_000
+// Right after waking up the network is often not back yet.
+const AFTER_WAKE_DELAY_MS = 10_000
 
 export interface MonitorDeps {
     gateway: RedmineGateway
@@ -64,6 +66,13 @@ export class MonitorService {
     stop(): void {
         this.cancel?.()
         this.cancel = null
+    }
+
+    /** The computer woke up: the pending timer was frozen during sleep, so the next check is brought forward. */
+    checkAfterWake(): void {
+        if (this.running) return
+        this.stop()
+        this.schedule(AFTER_WAKE_DELAY_MS)
     }
 
     async runNow(): Promise<MonitorStatus> {

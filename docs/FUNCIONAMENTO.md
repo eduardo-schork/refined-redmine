@@ -32,7 +32,7 @@ Todos passam pela porta `Scheduler` (`infra/system/system.ts`: `setTimeout`/`set
 
 ### Computador em repouso
 
-- Os timers congelam durante o sono e disparam logo após acordar (o app ainda não usa o `powerMonitor`).
+- Os timers congelam durante o sono. Ao acordar, o `powerMonitor` (evento `resume`, em `main/index.ts`) antecipa a próxima verificação do monitor para 10 s depois (`MonitorService.checkAfterWake`; a rede costuma demorar a voltar) e roda os lembretes na hora (`ReminderDispatcher.tick`).
 - **Monitor**: nada se perde; o primeiro ciclo traz tudo desde a marca d'água, agrupado.
 - **Lembretes**: um lembrete atrasado em até 10 min ainda dispara; os mais antigos são pulados.
 
@@ -111,14 +111,36 @@ Pasta: macOS `~/Library/Application Support/Refined Redmine/` · Windows `%APPDA
 - Horário local "flutuante" (sem fuso). As ocorrências de uma série são calculadas na hora (`domain/calendar/recurrence.ts`), para a tela e para os lembretes.
 - `ReminderDispatcher` (a cada 20 s): calcula as ocorrências em volta de agora, dispara os lembretes vencidos (até 10 min de atraso), marca em `fired` e, se "Guardar lembretes no histórico" estiver ligado, grava a notificação em `state.json`.
 
-## 7. Tema e aparência
+## 7. Permissão de notificações
+
+- `DesktopNotificationPermission` junta as evidências e `resolvePermission` (domínio) decide: sistema recusou a entrega → bloqueada; macOS sem assinatura → bloqueada; registro do macOS (`com.apple.ncprefs`, bit 4 = alertas) quando existe; senão, a resposta do usuário ao teste (`notifications.confirm(seen)`, gravada em `state.json` → `notifyConfirmation`). Sem nada disso: `unconfirmed`, e a janela de confirmação abre ao iniciar.
+- O "show" do Electron não é prova: ele acontece mesmo quando o sistema descarta a notificação.
+- Confirmação e resultado de entrega levam `app: 'dev' | 'installed'` (`app.isPackaged`); registros da outra cópia são ignorados.
+
+## 8. Atualizações
+
+- **Fonte**: GitHub Releases de `eduardo-schork/refined-redmine` (privado), lidas com o token de cada usuário (`GithubReleaseSource`, `net.fetch`).
+  - `GET api.github.com/repos/…/releases/latest`; um 404 é conferido em `GET /repos/…` para separar "sem versão publicada" de "sem acesso".
+  - Download: `GET` no endereço de API do arquivo com `Accept: application/octet-stream` → redirecionamento para um endereço assinado de armazenamento. O redirecionamento é seguido à mão (`net.request`, `redirect: 'manual'`) para o token não ir junto (o armazenamento recusa duas credenciais). O arquivo é gravado como `<nome>.part` na pasta Downloads e renomeado ao terminar; tamanho diferente do esperado descarta o arquivo.
+  - Requisições ao GitHub aparecem no Log; do endereço assinado só o caminho é registrado (a query tem credenciais temporárias).
+- **Estado** (`UpdateService`, só em memória): `disabled` (sem token) → `checking` → `upToDate` | `available` → `downloading` → `ready`; `error` com o código. Mudanças vão para a janela pelo evento `update.status`.
+- **Token**: `config.json` → `githubTokenEnc`, criptografado com `safeStorage` (sem criptografia disponível, não é salvo). Fica no processo principal; a interface só envia um token digitado para `testToken`/`setToken`.
+- **Instalar** (`DesktopInstaller`): Windows roda o instalador NSIS com `/S --updated --force-run` e fecha o app; macOS abre o `.dmg` e fecha o app em 1,5 s.
+- **O que há de novo**: o `CHANGELOG.md` é embutido na interface no build (`?raw`); `settings.lastSeenVersion` guarda a última versão mostrada.
+- **Publicação**: `npm run release` (`scripts/release.mjs`, ver [RELEASE.md](RELEASE.md)), com o token de quem publica em `GITHUB_TOKEN`.
+
+## 9. Suporte
+
+- `app.supportReport()` (`BuildSupportReportUseCase`) monta os dados; a interface formata em texto no idioma atual (`renderer/src/lib/support-report.ts`) e copia para a área de transferência. Nunca inclui a chave de API.
+
+## 10. Tema e aparência
 
 - Preferências em `config.json` → `appearance` (tema, paleta clara, paleta escura, cor de destaque, tamanho, reduzir animações).
 - **Tema**: o processo principal aplica `nativeTheme.themeSource` (`system` | `light` | `dark`) ao iniciar e quando o tema muda (`UpdateSettingsUseCase` → `ElectronNativeTheme`). Isso muda o `prefers-color-scheme` da página, os menus nativos, a barra de título e as barras de rolagem; o CSS continua usando só `@media (prefers-color-scheme)`. A cor de fundo da janela antes de carregar (`windowBackground`) segue o mesmo tema, para não piscar.
 - **Paletas, destaque, tamanho e animações**: `useApplyAppearance` (`renderer/src/lib/appearance.ts`) grava no `<html>` os atributos `data-light-palette`, `data-dark-palette` e `data-reduce-motion`, as variáveis `--accent-base`, `--accent-text-light` e `--accent-text-dark`, e o `zoom` da página. Os tokens de cor (`--bg`, `--panel`, `--accent`, `--accent-soft`, `--on-accent`…) são derivados em `styles.css` (com `color-mix`).
 - Os componentes usam só tokens (`bg-accent`, `text-on-accent`, `bg-panel`…); cores fixas ficam só onde fazem sentido (cores dos compromissos, fases das sprints, linha da hora atual).
 
-## 8. Segurança
+## 11. Segurança
 
 ### Credenciais
 
@@ -135,6 +157,12 @@ Pasta: macOS `~/Library/Application Support/Refined Redmine/` · Windows `%APPDA
 - Janela com `sandbox: true` e `contextIsolation: true`; `window.bridge` só expõe os métodos do contrato.
 - CSP: `default-src 'self'`, sem scripts nem conexões externas.
 - Links externos abrem no navegador só se forem `http(s)`.
+- Token do GitHub: criptografado como a chave do Redmine, nunca no log nem no relatório de suporte; o instalador baixado só é aberto se o tamanho bater com o informado pelo GitHub.
+- Chave do Redmine e token do GitHub só com letras, números e `_` (`isWellFormedSecret`): um valor com espaço ou quebra de linha colado por engano é recusado antes de ir para a rede, porque o erro de cabeçalho inválido traria o próprio valor na mensagem. Mensagens de erro de rede passam por `redactSecret`.
+- Atualizações só aceitam Releases e instaladores publicados pela conta dona do repositório (`TRUSTED_PUBLISHER`): colaboradores de repositório pessoal têm escrita e poderiam publicar um instalador que os apps executariam.
+- **Fuses do Electron** (`electronFuses` no `electron-builder.yml`, gravados no executável): sem "rodar como Node" (`ELECTRON_RUN_AS_NODE`), sem `NODE_OPTIONS` e sem `--inspect`, com validação de integridade do `app.asar` e carregando o app só dele. Assim outro programa não roda código com a identidade do app, que tem acesso ao Keychain/DPAPI onde ficam a chave e o token.
+- O app **instalado** não abre se iniciado com depuração remota (`--remote-debugging-port`, `--remote-debugging-pipe`, `--inspect`), que os fuses não cobrem (`main/index.ts`). O app de dev continua aceitando, para os testes pelo DevTools no perfil de demonstração.
+- Os builds rodam com `--publish never` e o `npm run release` não repassa o `GITHUB_TOKEN` para eles: só o próprio script publica.
 - O filtro por URL descarta o parâmetro `key`.
 - Código e histórico do git sem chaves, senhas ou tokens (verificado em 2026-09-28). O `apiKeyPlain: 'demo'` do `scripts/demo-redmine.mjs` é fictício.
 

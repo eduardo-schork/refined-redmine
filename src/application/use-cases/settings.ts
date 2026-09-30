@@ -18,7 +18,8 @@ export class UpdateSettingsUseCase {
         private readonly monitor: MonitorService,
         private readonly loginItem: LoginItem,
         private readonly localization: Localization,
-        private readonly theme: ThemeController
+        private readonly theme: ThemeController,
+        private readonly updates: { start(): void }
     ) {}
 
     execute(patch: SettingsPatch): SettingsView {
@@ -34,6 +35,8 @@ export class UpdateSettingsUseCase {
         if (nextTheme && nextTheme !== previous.appearance.theme) this.theme.setThemeMode(nextTheme)
 
         if (affectsMonitor(previous, cleanPatch)) this.monitor.start()
+        const autoCheckChanged = cleanPatch.updates && cleanPatch.updates.autoCheck !== previous.updates.autoCheck
+        if (autoCheckChanged) this.updates.start()
         return toView(this.settings, this.secrets)
     }
 }

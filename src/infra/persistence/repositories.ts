@@ -8,7 +8,7 @@ import { applyChange } from '@domain/calendar/event-editing'
 import type { CalendarChange } from '@domain/calendar/calendar-event'
 import type { QuerySnapshot } from '@domain/monitor/query-diff'
 import { MAX_NOTIFICATIONS, type AppNotification, type NotificationTarget } from '@domain/notification/notification'
-import type { DeliveryRecord } from '@domain/notification/permission'
+import type { DeliveryConfirmation, DeliveryRecord } from '@domain/notification/permission'
 import { withDefaults, type Settings } from '@domain/settings/settings'
 import type { CalendarFile, ConfigFile, LegacyNotification, StateFile } from './files'
 import type { JsonFile } from './json-file'
@@ -17,13 +17,18 @@ export class JsonSettingsRepository implements SettingsRepository {
     constructor(private readonly file: JsonFile<ConfigFile>) {}
 
     get(): Settings {
-        const { apiKeyEnc: _encrypted, apiKeyPlain: _plain, ...settings } = this.file.read()
+        const { apiKeyEnc: _encrypted, apiKeyPlain: _plain, githubTokenEnc: _token, ...settings } = this.file.read()
         return withDefaults(settings)
     }
 
     save(settings: Settings): void {
-        // Preserves the API key, which belongs to the SecretStore.
-        this.file.update((current) => ({ ...settings, apiKeyEnc: current.apiKeyEnc, apiKeyPlain: current.apiKeyPlain }))
+        // Preserves the secrets, which belong to the secret stores.
+        this.file.update((current) => ({
+            ...settings,
+            apiKeyEnc: current.apiKeyEnc,
+            apiKeyPlain: current.apiKeyPlain,
+            githubTokenEnc: current.githubTokenEnc
+        }))
     }
 }
 
@@ -127,12 +132,20 @@ export class JsonMonitorStateRepository implements MonitorStateRepository {
     getDelivery(): DeliveryRecord | undefined {
         const stored = this.file.read().notify
         if (!stored) return undefined
-        return { ok: stored.ok, at: stored.at, detail: stored.error }
+        return { ok: stored.ok, at: stored.at, detail: stored.error, app: stored.app }
     }
 
     setDelivery(record: DeliveryRecord) {
-        const notify = { ok: record.ok, at: record.at, error: record.detail }
+        const notify = { ok: record.ok, at: record.at, error: record.detail, app: record.app }
         this.file.update((state) => ({ ...state, notify }))
+    }
+
+    getConfirmation(): DeliveryConfirmation | undefined {
+        return this.file.read().notifyConfirmation
+    }
+
+    setConfirmation(confirmation: DeliveryConfirmation) {
+        this.file.update((state) => ({ ...state, notifyConfirmation: confirmation }))
     }
 }
 

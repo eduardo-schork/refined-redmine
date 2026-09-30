@@ -256,6 +256,24 @@ describe('MonitorService', () => {
         expect(setup.state.snapshots.has('q1')).toBe(false)
     })
 
+    it('after waking up, the next check is brought forward', () => {
+        const delays: number[] = []
+        const setup = monitorSetup()
+        const monitor = new MonitorService({
+            ...setup,
+            scheduler: {
+                after: (ms) => {
+                    delays.push(ms)
+                    return () => {}
+                },
+                every: () => () => {}
+            }
+        })
+        monitor.start()
+        monitor.checkAfterWake()
+        expect(delays).toEqual([1000, 10000])
+    })
+
     it('pauses without credentials', async () => {
         const setup = monitorSetup()
         setup.secrets.key = null
@@ -273,6 +291,10 @@ describe('LoginUseCase', () => {
         expect(loginSetup().login.execute('redmine.com', 'key')).rejects.toMatchObject({ code: 'auth.invalidUrl' }))
     it('translates 401 into an invalid API key', async () =>
         expect(loginSetup().login.execute('https://r.test', 'wrong')).rejects.toMatchObject({
+            code: 'auth.invalidKey'
+        }))
+    it('refuses a key with pasted spaces or line breaks before sending it anywhere', async () =>
+        expect(loginSetup().login.execute('https://r.test', 'key with space')).rejects.toMatchObject({
             code: 'auth.invalidKey'
         }))
     it('stores the session', async () => {

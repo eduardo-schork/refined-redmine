@@ -1,6 +1,7 @@
 import type { CalendarEvent } from '@domain/calendar/calendar-event'
 import type { QuerySnapshot } from '@domain/monitor/query-diff'
 import type { AppNotification, NotificationKind } from '@domain/notification/notification'
+import type { AppCopy, DeliveryConfirmation } from '@domain/notification/permission'
 import type { Settings } from '@domain/settings/settings'
 
 // Kept compatible with the files written by previous versions of the app.
@@ -9,6 +10,8 @@ import type { Settings } from '@domain/settings/settings'
 export type ConfigFile = Partial<Settings> & {
     apiKeyEnc?: string
     apiKeyPlain?: string // only when the OS does not offer encryption
+    /** The user's GitHub token for updates, encrypted like the API key. */
+    githubTokenEnc?: string
 }
 
 /** Notification stored before structured content existed (pre-rendered text). */
@@ -26,7 +29,8 @@ export interface LegacyNotification {
 /** state.json: monitor state + notification history. */
 export interface StateFile {
     lastCheckAt?: string
-    notify?: { ok: boolean; at: string; error?: string }
+    notify?: { ok: boolean; at: string; error?: string; app?: AppCopy }
+    notifyConfirmation?: DeliveryConfirmation
     events: (AppNotification | LegacyNotification)[]
     querySnapshots: Record<string, QuerySnapshot>
 }

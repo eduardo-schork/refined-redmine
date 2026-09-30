@@ -6,7 +6,8 @@ import type {
     ProjectInspection,
     SaveEventCommand,
     SettingsView,
-    SprintList
+    SprintList,
+    SupportReport
 } from '@application/dto'
 import type { Board } from '@domain/board/board'
 import type { CalendarEvent } from '@domain/calendar/calendar-event'
@@ -18,6 +19,7 @@ import type { Issue, IssueDetail, IssueStatus, Page, Project, SavedQuery } from 
 import type { IssueFilter } from '@domain/redmine/issue-filter'
 import type { SettingsPatch } from '@domain/settings/settings'
 import type { SerializedError } from '@domain/shared/errors'
+import type { UpdateStatus } from '@domain/update/release'
 import type { VersionStats } from '@domain/sprint/sprint'
 
 /** Each method becomes the IPC channel `<group>.<method>`; the UI never talks to Redmine directly. */
@@ -64,6 +66,8 @@ export interface RefinedApi {
         markRead(ids: string[] | 'all'): AppNotification[]
         clear(): AppNotification[]
         test(): NotifyProbeResult
+        /** The user's answer to "did the test notification appear?". */
+        confirm(seen: boolean): NotifyPermissionInfo
         permission(): NotifyPermissionInfo
         openSettings(): void
     }
@@ -75,10 +79,20 @@ export interface RefinedApi {
         list(): LogEntry[]
         clear(): void
     }
+    updates: {
+        status(): UpdateStatus
+        check(): UpdateStatus
+        /** null removes the token. */
+        setToken(token: string | null): UpdateStatus
+        testToken(token: string): { latestVersion?: string }
+        download(): UpdateStatus
+        install(): void
+    }
     app: {
         openExternal(url: string): void
         info(): AppInfo
         openDataFolder(): void
+        supportReport(): SupportReport
     }
 }
 
@@ -91,10 +105,11 @@ export const API_METHODS = {
     boards: ['issues', 'save', 'remove', 'move'],
     sprints: ['list', 'stats', 'inspectProject'],
     calendar: ['list', 'save', 'remove'],
-    notifications: ['list', 'markRead', 'clear', 'test', 'permission', 'openSettings'],
+    notifications: ['list', 'markRead', 'clear', 'test', 'confirm', 'permission', 'openSettings'],
     monitor: ['status', 'runNow'],
     log: ['list', 'clear'],
-    app: ['openExternal', 'info', 'openDataFolder']
+    updates: ['status', 'check', 'setToken', 'testToken', 'download', 'install'],
+    app: ['openExternal', 'info', 'openDataFolder', 'supportReport']
 } as const satisfies { [Group in keyof RefinedApi]: readonly (keyof RefinedApi[Group])[] }
 
 /** Events from the main process to the UI. */
@@ -102,6 +117,7 @@ export interface AppEvents {
     'notifications.changed': AppNotification[]
     'monitor.status': MonitorStatus
     'permission.changed': NotifyPermissionInfo
+    'update.status': UpdateStatus
     navigate: string
 }
 
@@ -109,6 +125,7 @@ export const EVENT_CHANNELS = [
     'notifications.changed',
     'monitor.status',
     'permission.changed',
+    'update.status',
     'navigate'
 ] as const satisfies readonly (keyof AppEvents)[]
 
@@ -139,5 +156,6 @@ export type {
     ProjectInspection,
     SaveEventCommand,
     SettingsView,
-    SprintList
+    SprintList,
+    SupportReport
 } from '@application/dto'

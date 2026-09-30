@@ -5,6 +5,7 @@ import type { SettingsTab } from '@/lib/router'
 import { NavItem } from '@/ui/molecules/NavItem'
 import { AppearanceSection } from '@/ui/organisms/settings/AppearanceSection'
 import { MonitorsSection } from '@/ui/organisms/settings/MonitorsSection'
+import { UpdatesSection } from '@/ui/organisms/settings/UpdatesSection'
 import {
     AboutSection,
     AccountSection,
@@ -31,6 +32,7 @@ const TAB_SECTIONS: Record<SettingsTab, () => ReactNode> = {
             <AccountSection />
             <LanguageSection />
             <AboutSection />
+            <UpdatesSection />
         </>
     ),
     appearance: () => <AppearanceSection />,

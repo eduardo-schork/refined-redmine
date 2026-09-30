@@ -1,4 +1,7 @@
 import type { Board } from '@domain/board/board'
+import type { LogEntry } from '@domain/log/log-entry'
+import type { MonitorStatus } from '@domain/monitor/monitor-status'
+import type { NotifyPermissionInfo } from '@domain/notification/permission'
 import type { Monitor } from '@domain/monitor/monitor'
 import type { CalendarEvent, EditScope } from '@domain/calendar/calendar-event'
 import type { Issue, Page } from '@domain/redmine/entities'
@@ -34,6 +37,22 @@ export interface AppInfo {
     platform: string
     arch: string
     dataPath: string
+}
+
+/** What "Copy support information" puts on the clipboard. Never includes the API key. */
+export interface SupportReport {
+    generatedAt: string
+    app: AppInfo
+    os: string
+    language: string
+    redmineHost: string
+    userLogin?: string
+    monitor: MonitorStatus
+    permission: NotifyPermissionInfo
+    monitors: { id: string; name: string; enabled: boolean; source: string }[]
+    boardCount: number
+    /** Latest warnings and errors from the activity log, newest first. */
+    recentProblems: LogEntry[]
 }
 
 export interface ProjectInspection extends DetectedFields {

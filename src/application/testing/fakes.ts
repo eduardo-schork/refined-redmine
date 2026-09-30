@@ -4,11 +4,12 @@ import type { LogEntry, LogLevel, LogRecord } from '@domain/log/log-entry'
 import type { QuerySnapshot } from '@domain/monitor/query-diff'
 import type { MonitorStatus } from '@domain/monitor/monitor-status'
 import type { AppNotification } from '@domain/notification/notification'
-import type { DeliveryRecord, NotifyPermissionInfo } from '@domain/notification/permission'
+import type { DeliveryConfirmation, DeliveryRecord, NotifyPermissionInfo } from '@domain/notification/permission'
 import type { Issue, IssueDetail, IssueStatus, Page, RedmineUser, Version } from '@domain/redmine/entities'
 import type { IssueFilter } from '@domain/redmine/issue-filter'
 import { DEFAULT_SETTINGS, type Settings } from '@domain/settings/settings'
 import { AppError } from '@domain/shared/errors'
+import type { UpdateStatus } from '@domain/update/release'
 import type { ActivityLog } from '../ports/activity-log'
 import type { IssueUpdate, RedmineCredentials, RedmineGateway } from '../ports/redmine-gateway'
 import type {
@@ -128,6 +129,7 @@ export class MemoryMonitorState implements MonitorStateRepository {
     watermark?: string
     snapshots = new Map<string, QuerySnapshot>()
     delivery?: DeliveryRecord
+    confirmation?: DeliveryConfirmation
     getWatermark() {
         return this.watermark
     }
@@ -157,6 +159,12 @@ export class MemoryMonitorState implements MonitorStateRepository {
     }
     setDelivery(record: DeliveryRecord) {
         this.delivery = record
+    }
+    getConfirmation() {
+        return this.confirmation
+    }
+    setConfirmation(confirmation: DeliveryConfirmation) {
+        this.confirmation = confirmation
     }
 }
 
@@ -200,6 +208,10 @@ export class FakeEvents implements AppEventsPublisher {
         this.statuses.push(status)
     }
     permissionChanged(_info: NotifyPermissionInfo) {}
+    updates: UpdateStatus[] = []
+    updateStatusChanged(status: UpdateStatus) {
+        this.updates.push(status)
+    }
 }
 
 export class FixedClock implements Clock {

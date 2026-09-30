@@ -1,7 +1,7 @@
 {
   "name": "refined-redmine",
   "productName": "Refined Redmine",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Kanban board, native notifications, sprints and calendar on top of Redmine",
   "author": "Eduardo Schork",
@@ -12,8 +12,8 @@
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "icons": "node scripts/make-icons.mjs",
-    "dist:mac": "npm run build && electron-builder --mac",
-    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac --publish never",
+    "dist:win": "npm run build && electron-builder --win --publish never",
     "postinstall": "node scripts/sign-electron-dev.mjs",
     "sign:dev": "node scripts/sign-electron-dev.mjs",
     "lint": "eslint .",
@@ -21,7 +21,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run typecheck && npm run lint && npm run test"
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "release": "node scripts/release.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

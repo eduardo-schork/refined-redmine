@@ -19,6 +19,7 @@ import { ToastProvider } from '@/ui/molecules/Toast'
 import { BoardEditor } from '@/ui/organisms/BoardEditor'
 import { IssueModalProvider } from '@/ui/organisms/IssueModal'
 import { NotificationPermissionGate } from '@/ui/organisms/NotificationPermission'
+import { WhatsNewDialog } from '@/ui/organisms/WhatsNewDialog'
 import { Sidebar } from '@/ui/organisms/Sidebar'
 import { AppShell } from '@/ui/templates/layouts'
 
@@ -57,6 +58,7 @@ function AuthenticatedApp() {
         <NavContext.Provider value={navigate}>
             <IssueModalProvider>
                 <NotificationPermissionGate />
+                <WhatsNewDialog />
                 <AppShell sidebar={<Sidebar route={route} onNavigate={navigate} onNewBoard={openEmptyBoardEditor} />}>
                     {route.page === 'home' && <HomePage />}
                     {route.page === 'calendar' && (

@@ -1,4 +1,4 @@
-import { app } from 'electron'
+import { app, powerMonitor } from 'electron'
 import type { AppNotification } from '@domain/notification/notification'
 import { createContainer, type Presentation } from './container'
 import { registerApi } from './ipc-router'
@@ -22,7 +22,12 @@ const presentation: Presentation = {
             tray?.setUnread(countUnread(items))
         },
         monitorStatusChanged: (status) => window.send('monitor.status', status),
-        permissionChanged: (info) => window.send('permission.changed', info)
+        permissionChanged: (info) => window.send('permission.changed', info),
+        updateStatusChanged: (status) => window.send('update.status', status)
+    },
+    quitApp: () => {
+        window.markQuitting()
+        app.quit()
     }
 }
 
@@ -47,6 +52,11 @@ function startApp(): void {
     tray.setUnread(countUnread(container.feed.list()))
     container.monitor.start()
     container.reminders.start()
+    container.updates.start()
+    powerMonitor.on('resume', () => {
+        container.monitor.checkAfterWake()
+        container.reminders.tick()
+    })
 
     app.on('activate', () => window.show())
 }
@@ -63,6 +73,22 @@ function registerLifecycle(): void {
 const customUserData = process.env.REFINED_REDMINE_USER_DATA
 if (customUserData) app.setPath('userData', customUserData)
 
-const isFirstInstance = app.requestSingleInstanceLock()
-if (isFirstInstance) registerLifecycle()
-else app.quit()
+// Fuses do not cover Chromium's remote debugging: it would let any local program drive the installed app
+// (and its Redmine session) through the DevTools protocol. Development builds keep it for testing.
+const DEBUG_SWITCHES = ['remote-debugging-port', 'remote-debugging-pipe', 'inspect', 'inspect-brk']
+
+function debuggingRequested(): boolean {
+    return DEBUG_SWITCHES.some((name) => app.commandLine.hasSwitch(name))
+}
+
+function launch(): void {
+    if (app.isPackaged && debuggingRequested()) {
+        app.exit(1)
+        return
+    }
+    const isFirstInstance = app.requestSingleInstanceLock()
+    if (isFirstInstance) registerLifecycle()
+    else app.quit()
+}
+
+launch()

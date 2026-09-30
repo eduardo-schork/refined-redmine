@@ -2,7 +2,7 @@ import { Notification } from 'electron'
 import type { MonitorStateRepository, SettingsRepository } from '@application/ports/repositories'
 import type { Clock, SystemNotifier } from '@application/ports/system'
 import { shouldSummarize, type AppNotification } from '@domain/notification/notification'
-import type { NotifyProbeResult } from '@domain/notification/permission'
+import type { AppCopy, NotifyProbeResult } from '@domain/notification/permission'
 import { systemNotificationText } from '@shared/i18n/format/notification'
 import type { MainLocalization } from './main-localization'
 
@@ -23,13 +23,17 @@ export class ElectronSystemNotifier implements SystemNotifier {
         private readonly settings: SettingsRepository,
         private readonly state: MonitorStateRepository,
         private readonly clock: Clock,
-        private readonly handlers: NotifierHandlers
+        private readonly handlers: NotifierHandlers,
+        private readonly appCopy: AppCopy
     ) {}
 
     private track(notification: Notification): void {
-        notification.on('show', () => this.state.setDelivery({ ok: true, at: this.clock.now().toISOString() }))
+        notification.on('show', () => {
+            this.state.setDelivery({ ok: true, at: this.clock.now().toISOString(), app: this.appCopy })
+        })
         notification.on('failed', (_event, error) => {
-            this.state.setDelivery({ ok: false, at: this.clock.now().toISOString(), detail: String(error || '') })
+            const at = this.clock.now().toISOString()
+            this.state.setDelivery({ ok: false, at, detail: String(error || ''), app: this.appCopy })
             this.handlers.onFailure()
         })
     }

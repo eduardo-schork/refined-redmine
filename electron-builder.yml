@@ -9,6 +9,16 @@ files:
   - package.json
 asarUnpack:
   - resources/**
+# Electron "fuses" are baked into the executable at build time. These close the ways another local program could
+# run code with the app's identity (and its Keychain/DPAPI access to the Redmine key and the GitHub token):
+# running the binary as plain Node, NODE_OPTIONS / --inspect injection, and a modified app.asar.
+electronFuses:
+  runAsNode: false
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+  enableCookieEncryption: true
 mac:
   category: public.app-category.productivity
   target:
@@ -18,11 +28,14 @@ mac:
   # Ad-hoc signature ("-"): without it macOS drops notifications. To distribute without the
   # Gatekeeper warning, switch to a Developer ID certificate + notarization (Apple Developer account).
   identity: '-'
+  # The app finds its installer in a release by these names (src/domain/update/release.ts).
+  artifactName: refined-redmine-${version}-mac-${arch}.${ext}
 win:
   target:
     - target: nsis
       arch: [x64]
   icon: build/icon.png
+  artifactName: refined-redmine-${version}-windows-setup.${ext}
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

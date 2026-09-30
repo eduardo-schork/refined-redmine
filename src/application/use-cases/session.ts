@@ -1,4 +1,5 @@
 import type { RedmineUser } from '@domain/redmine/entities'
+import { isWellFormedSecret } from '@domain/shared/secrets'
 import { isHttpUrl, normalizeBaseUrl } from '@domain/redmine/links'
 import { AppError } from '@domain/shared/errors'
 import type { SettingsView } from '../dto'
@@ -40,6 +41,7 @@ export class LoginUseCase {
         const baseUrl = normalizeBaseUrl(rawUrl)
         const apiKey = rawKey.trim()
         if (!isHttpUrl(baseUrl)) throw new AppError('auth.invalidUrl')
+        if (!isWellFormedSecret(apiKey)) throw new AppError('auth.invalidKey')
         const user = await this.fetchUser(baseUrl, apiKey)
         const { id, login, firstname, lastname, mail } = user
         const sessionUser = { id, login, firstname, lastname, mail }

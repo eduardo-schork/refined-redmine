@@ -2,6 +2,7 @@ import type { MonitorStatus } from '@domain/monitor/monitor-status'
 import type { AppNotification } from '@domain/notification/notification'
 import type { NotifyPermissionInfo, NotifyProbeResult } from '@domain/notification/permission'
 import type { ThemeMode } from '@domain/settings/appearance'
+import type { UpdateStatus } from '@domain/update/release'
 import type { Language } from '@domain/settings/settings'
 
 export interface Clock {
@@ -34,6 +35,7 @@ export interface AppEventsPublisher {
     notificationsChanged(items: AppNotification[]): void
     monitorStatusChanged(status: MonitorStatus): void
     permissionChanged(info: NotifyPermissionInfo): void
+    updateStatusChanged(status: UpdateStatus): void
 }
 
 export interface LoginItem {

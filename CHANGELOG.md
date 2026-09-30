@@ -2,9 +2,20 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
+## 0.2.0 — atualizações pelo GitHub
+
+- **Atualizações**: com o seu token do GitHub (Configurações → Geral → Atualizações), o app avisa quando sai versão nova, baixa o instalador e, no Windows, atualiza e reabre sozinho. No Mac, abre o `.dmg` para você arrastar para Aplicativos. Sem token, nada muda.
+- **O que há de novo**: depois de atualizar, o app mostra uma vez as novidades da versão.
+- **Notificações confirmadas por você**: o app envia uma notificação de teste e pergunta se ela apareceu. Antes, ele podia dizer "Permitidas" mesmo com as notificações desligadas nos ajustes do sistema. Quem atualizar vai ver essa confirmação uma vez.
+- **Verificação ao acordar**: depois que o computador sai do repouso, o Redmine é verificado em 10 segundos, sem esperar o intervalo.
+- **Copiar informações de suporte** (Configurações → Geral → Sobre), para colar na conversa quando algo der errado.
+- Instruções de instalação para macOS e Windows em `docs/INSTALACAO.md`.
+
+Quem está na 0.1.0 instala a 0.2.0 manualmente, por cima (a 0.1.0 ainda não sabe se atualizar). Daí em diante, as versões chegam pelo próprio app.
+
 ## 0.1.0 — primeira versão (piloto interno)
 
-Primeira versão para uso no time, só para macOS.
+Primeira versão para uso no time: macOS (`.dmg`) e Windows (`.exe`).
 
 - **Início**: sua fila, tarefas paradas e atrasadas, prazos, sprints ativas, agenda do dia e últimas notificações.
 - **Quadros kanban**: a partir das suas tarefas, de um projeto, de uma consulta salva, de um filtro copiado do Redmine (URL) ou de uma sprint (fixa ou automática). Arrastar um card muda o status no Redmine, respeitando o fluxo. Raias por responsável, busca e filtro por pessoa.
@@ -20,4 +31,3 @@ Limitações conhecidas desta versão:
 
 - O app não tem assinatura da Apple (Developer ID): na primeira abertura o macOS avisa que o desenvolvedor não foi verificado.
 - Não há atualização automática: cada versão nova é instalada por cima da anterior (os dados são mantidos).
-- Windows ainda não foi testado.

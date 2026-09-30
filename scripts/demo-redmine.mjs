@@ -348,11 +348,22 @@ function simulateChange(params) {
     const details = []
     const statusId = Number(params.get('status'))
     if (statusId) {
-        details.push({ property: 'attr', name: 'status_id', old_value: String(item.status.id), new_value: String(statusId) })
+        details.push({
+            property: 'attr',
+            name: 'status_id',
+            old_value: String(item.status.id),
+            new_value: String(statusId)
+        })
         item.status = statusById.get(statusId)
     }
     const nowIso = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
-    const journal = { id: 1000 + item.journals.length, user, notes: params.get('note') ?? '', created_on: nowIso, details }
+    const journal = {
+        id: 1000 + item.journals.length,
+        user,
+        notes: params.get('note') ?? '',
+        created_on: nowIso,
+        details
+    }
     item.journals.push(journal)
     item.updated_on = nowIso
     return { ok: true }

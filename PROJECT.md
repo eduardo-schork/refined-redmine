@@ -123,11 +123,12 @@ src/
     notification/             AppNotification (entidade, payload estruturado, sources), interpretJournal, permissão
     monitor/                  Monitor (aggregate: origem + eventos + horário), explainQueueExit, diffMembership, isWithinSchedule, MonitorStatus
     log/                      LogEntry (requisição HTTP | passo do monitor), summarizeLog
+    update/                   Release, UpdateStatus, compareVersions, installerFor, changelogSection
     settings/                 Settings (aggregate), padrões, withDefaults, affectsMonitor; appearance (tema, paletas, destaque, contraste)
   application/
     ports/                    RedmineGateway, repositórios (Settings, Notification, MonitorState, Calendar), SecretStore, ActivityLog,
                               SystemNotifier, NotificationPermissionProbe, AppEventsPublisher, Clock, IdGenerator, Scheduler, LoginItem, Localization
-    services/                 MonitorService (ciclo) + monitor/: MonitorCycle (cache de históricos, deduplicação), mine-check, source-check, journal-notifications
+    services/                 UpdateService (versões novas), MonitorService (ciclo) + monitor/: MonitorCycle (cache de históricos, deduplicação), mine-check, source-check, journal-notifications
     use-cases/                session, settings, issues (queries), boards, sprints, calendar (+ ReminderDispatcher), notifications
     dto.ts                    entradas/saídas dos casos de uso
     testing/fakes.ts          implementações em memória das portas (testes)
@@ -156,8 +157,8 @@ src/
                               monitors/ (MonitorEditor, MonitorEventsFields), SavedQuerySelect, FilterUrlField
     ui/templates/             AppShell, PageLayout, CenteredLayout
     pages/                    Home, Calendar, Sprints, Board, Notifications, Log, Settings, Onboarding
-scripts/                      make-icons.mjs, sign-electron-dev.mjs, demo-redmine.mjs (Redmine falso para capturas)
-docs/                         MANUAL.md (+ images/), REGRAS-DE-NEGOCIO.md
+scripts/                      make-icons.mjs, sign-electron-dev.mjs, demo-redmine.mjs (Redmine falso para capturas), release.mjs (publicar versão)
+docs/                         MANUAL.md (+ images/), REGRAS-DE-NEGOCIO.md, FUNCIONAMENTO.md, INSTALACAO.md, RELEASE.md
 ```
 
 ### 4.3 Padrões usados
@@ -182,8 +183,8 @@ docs/                         MANUAL.md (+ images/), REGRAS-DE-NEGOCIO.md
 
 **Contrato IPC (`window.bridge`)**: `session.{get,login,logout}`, `settings.update`, `issues.{list,get,allowedStatuses,changeStatus,comment}`,
 `reference.{statuses,projects,savedQueries}`, `boards.{issues,save(board, notifications?),remove,move}`, `sprints.{list,stats,inspectProject}`,
-`calendar.{list,save,remove}`, `notifications.{list,markRead,clear,test,permission,openSettings}`, `monitor.{status,runNow}`, `log.{list,clear}`, `app.openExternal`;
-eventos `notifications.changed`, `monitor.status`, `permission.changed`, `navigate`.
+`calendar.{list,save,remove}`, `notifications.{list,markRead,clear,test,permission,openSettings}`, `monitor.{status,runNow}`, `log.{list,clear}`, `updates.{status,check,setToken,testToken,download,install}`, `app.{openExternal,info,openDataFolder,supportReport}`, `notifications.confirm`;
+eventos `notifications.changed`, `monitor.status`, `permission.changed`, `update.status`, `navigate`.
 
 **Dados locais** (`~/Library/Application Support/Refined Redmine` · `%APPDATA%\Refined Redmine`) — detalhes de formato, escrita e o que fica só em memória em [`docs/FUNCIONAMENTO.md`](docs/FUNCIONAMENTO.md) §5–§6
 
@@ -268,7 +269,14 @@ eventos `notifications.changed`, `monitor.status`, `permission.changed`, `naviga
 ### Aparência
 
 - Configurações divididas em abas: **Geral**, **Aparência**, **Notificações**, **Agenda**, **Sprints e Início** (a rota aceita `/settings?tab=`).
-- **Aparência**: tema (do sistema / claro / escuro, via `nativeTheme`), paleta por tema (claro: Padrão, Papel; escuro: Grafite, Meia-noite, Preto), cor de destaque (8 predefinidas, seletor de cor ou código hex; texto preto/branco pelo contraste), tamanho da interface (90–125%), reduzir animações, prévia e restaurar padrão. Detalhes em `docs/FUNCIONAMENTO.md` §7.
+- **Aparência**: tema (do sistema / claro / escuro, via `nativeTheme`), paleta por tema (claro: Padrão, Papel; escuro: Grafite, Meia-noite, Preto), cor de destaque (8 predefinidas, seletor de cor ou código hex; texto preto/branco pelo contraste), tamanho da interface (90–125%), reduzir animações, prévia e restaurar padrão. Detalhes em `docs/FUNCIONAMENTO.md` §9.
+
+### Atualizações
+
+- **Configurações → Geral → Atualizações**: cada usuário cola o próprio token clássico do GitHub (escopo `repo`, conta com acesso ao repositório privado); **Testar**, salvar criptografado, remover; verificação automática (30 s após abrir + a cada 24 h, desligável) e **Verificar agora**.
+- Versão nova → aviso na barra lateral + notas da Release; **Baixar**; Windows: **Reiniciar e atualizar** (instalador silencioso e reabre); Mac: **Abrir instalador** (abre o `.dmg` e fecha o app).
+- **O que há de novo**: uma vez por versão, com o CHANGELOG embutido.
+- Publicação: `npm run release` com o token de quem publica (`docs/RELEASE.md`). Detalhes em `docs/FUNCIONAMENTO.md` §8.
 
 ### Log
 
@@ -300,7 +308,7 @@ eventos `notifications.changed`, `monitor.status`, `permission.changed`, `naviga
   2. registro em `ncprefs` (lido com `defaults export`, que passa pelo cfprefsd) → `auth & 4` = alertas permitidos;
   3. senão, vale o **último resultado real** persistido: `show` = permitida, `failed` = bloqueada, nada = não solicitada.
 - A interpretação de `auth` (1 = badge, 2 = som, 4 = alerta) foi inferida comparando apps da máquina; não é documentada pela Apple.
-- **App instalado (0.1.0)**: é outro app para o macOS (`com.eduardoschork.refinedredmine`); as notificações dele vieram **desligadas** em Ajustes do Sistema → Notificações e precisaram ser ligadas à mão. Mesmo assim o Electron emite `show` e a tela mostrava "Permitidas" (o estado vem do último resultado salvo, compartilhado com o app de dev). Pendência: não confiar no `show` para dizer "Permitidas" e orientar a ligar nos Ajustes na primeira execução do app instalado.
+- **App instalado (0.1.0)**: é outro app para o macOS (`com.eduardoschork.refinedredmine`); as notificações dele vieram **desligadas** em Ajustes do Sistema → Notificações e precisaram ser ligadas à mão. Mesmo assim o Electron emite `show` e a tela mostrava "Permitidas" (o estado vem do último resultado salvo, compartilhado com o app de dev). Resolvido em 2026-09-29: o estado só é "Permitidas" com o registro do macOS ou com a confirmação do usuário após um teste (`resolvePermission`); sem isso, "Não confirmadas" e a janela de confirmação abre ao iniciar.
 - Com a permissão bloqueada, "Verificar de novo" e voltar para a janela disparam uma notificação real de teste (só aparece se já estiver liberada).
 
 ## 8. Pendências e próximos passos
@@ -314,19 +322,21 @@ eventos `notifications.changed`, `monitor.status`, `permission.changed`, `naviga
 - [ ] Agenda: importar/exportar `.ics` e feed iCal; agenda compartilhada da empresa (exige backend ou arquivo em rede).
 - [ ] Agenda: fuso horário por evento (hoje tudo é horário local "flutuante").
 - [ ] Integração com o Mattermost (enviar notificações/DM, links de tarefas).
-- [ ] Atualização automática do app.
+- [x] Atualizações pelo GitHub Releases com o token de cada usuário (2026-09-29). Falta: instalação automática no Mac (exige Developer ID).
 - [ ] Edição de mais campos no modal (responsável, versão, datas, % concluído, horas).
 - [ ] Apontamento de horas (time entries).
 - [ ] Busca global de tarefas (#id / texto).
 - [ ] Monitores: intervalo de verificação próprio por monitor (como no redmine-adapter; hoje só o horário é próprio).
 - [ ] Monitores: modelos de texto da notificação por monitor (o redmine-adapter tem `{queryName}`, `{diff}`…).
 - [ ] Log: exportar/abrir a pasta do arquivo.
-- [ ] Monitor: verificar na hora em que o computador acorda (`powerMonitor` `resume`); hoje espera o timer congelado disparar.
+- [x] Monitor: verificar ao acordar o computador (`powerMonitor` `resume` → 10 s) e rodar os lembretes (2026-09-29).
 
 **Segurança**
 
 - [ ] Criptografar `state.json`, `calendar.json` e o log (hoje em texto; têm títulos, trechos de comentários e compromissos).
 - [ ] Validar a origem das chamadas IPC (`event.senderFrame`) nos handlers.
+- [x] Electron fuses no build (sem RunAsNode, NODE_OPTIONS e --inspect; integridade do asar; só carrega do asar) e app instalado recusa depuração remota (2026-09-29). Conferir no primeiro build que o app abre normalmente.
+- [ ] CSP de produção sem `ws:` (hoje liberado por causa do recarregamento do dev).
 - [x] Trocar os dados reais da empresa usados nos testes por fictícios.
 
 **Sugestões de configuração (a decidir, 2026-09-28)**
@@ -342,7 +352,7 @@ eventos `notifications.changed`, `monitor.status`, `permission.changed`, `naviga
 - [ ] Vários perfis de Redmine (trabalho, cliente) com troca rápida.
 - [ ] Exportar/importar configurações (quadros, monitores, aparência) em um arquivo, para levar a outro computador ou compartilhar com o time.
 - [ ] Privacidade: criptografar dados locais, apagar histórico/log automaticamente após N dias, esconder conteúdo das notificações na tela de bloqueio.
-- [ ] Diagnóstico: botão "copiar informações de suporte" (versão, SO, estado do monitor, últimos erros do log, sem a chave).
+- [x] Diagnóstico: "Copiar informações de suporte" em Configurações → Geral → Sobre (2026-09-29).
 
 **Melhorias conhecidas**
 
@@ -363,23 +373,26 @@ Obrigatório antes de distribuir:
 - [x] Chave que não pode ser descriptografada (ex.: dev → app instalado, outro Mac) leva de volta à tela de conexão (`SafeStorageSecretStore.hasApiKey`).
 - [x] Testar com dados reais as ações de escrita: arrastar card, trocar status pelo modal, comentar (testado pelo usuário em 2026-09-28).
 - [x] Testar os monitores contra o Redmine da empresa (testado pelo usuário em 2026-09-28).
-- [ ] (`.dmg` gerado em 2026-09-28: `dist/Refined Redmine-0.1.0.dmg` (Intel) e `-arm64.dmg` (Apple Silicon), ~130 MB cada; assinatura ad-hoc válida com `disable-library-validation`; app empacotado abriu e funcionou num perfil isolado. Falta instalar em /Applications com o perfil real.) Gerar o `.dmg`, instalar em /Applications e testar o app instalado: primeira abertura (Gatekeeper com assinatura ad-hoc), permissão de notificação (outro bundle id que o dev), abrir no login, bandeja, pasta de dados.
+- [x] (`.dmg` gerado em 2026-09-28: `dist/Refined Redmine-0.1.0.dmg` (Intel) e `-arm64.dmg` (Apple Silicon), ~130 MB cada; instalado pelo usuário e usado o dia inteiro em 2026-09-29 sem problemas; as notificações vieram desligadas nos Ajustes do macOS e foram ligadas à mão.) Gerar o `.dmg`, instalar em /Applications e testar o app instalado: primeira abertura (Gatekeeper com assinatura ad-hoc), permissão de notificação (outro bundle id que o dev), abrir no login, bandeja, pasta de dados.
 - [x] Versão visível no app (Configurações → Geral → Sobre, com sistema e pasta de dados) e notas da versão (`CHANGELOG.md`).
-- [ ] Instruções de instalação para o time (abrir com botão direito → Abrir, ou `xattr -dr com.apple.quarantine`).
+- [x] Instruções de instalação para o time: `docs/INSTALACAO.md` (macOS e Windows).
 
 Recomendado:
 
-- [ ] "Copiar informações de suporte" (versão, SO, estado do monitor, últimos erros do log, sem a chave).
-- [ ] Repositório remoto (backup do código) e tag `v0.1.0` — o usuário vai criar.
+- [x] "Copiar informações de suporte".
+- [x] Repositório remoto no GitHub, criado pelo usuário. Tag `v0.1.0`: a critério do usuário.
 - [x] Dados reais da empresa nos testes trocados por fictícios.
 
-Pode esperar: Windows (nunca executado; precisa de uma máquina Windows para testar), Developer ID + notarização (conta Apple Developer paga), atualização automática (no macOS exige app assinado com Developer ID).
+Pode esperar: Developer ID + notarização (conta Apple Developer paga), atualização automática (no macOS exige app assinado com Developer ID).
 
 **Distribuição**
 
-- [ ] Gerar e testar o instalador do **Windows** (`npm run dist:win`) — nunca executado.
-- [ ] Gerar e testar o `.dmg` instalado (`npm run dist:mac`).
-- [ ] Certificado Apple Developer ID + notarização para eliminar o aviso do Gatekeeper.
+- [x] Instalador do **Windows** (`dist/Refined Redmine Setup 0.1.0.exe`, gerado no Mac, sem assinatura: SmartScreen avisa) instalado e em uso pelo líder do time desde 2026-09-29, sem problemas relatados até agora.
+- [x] Gerar e testar o `.dmg` instalado (`npm run dist:mac`).
+- [ ] Certificado Apple Developer ID + notarização para eliminar o aviso do Gatekeeper (e permitir atualização automática no Mac).
+- [x] Teste do token real contra o repositório privado no GitHub (Configurações → Atualizações → Testar), feito pelo usuário em 2026-09-29 no perfil de demonstração.
+- [ ] Primeira publicação pelo `npm run release` (0.2.0) — feita pelo usuário; conferir o fluxo completo: aviso, download, instalação no Windows e no Mac.
+- [ ] Opcional: publicar pelo GitHub Actions (build na nuvem ao criar a tag).
 
 **Agenda — verificado**
 
@@ -389,7 +402,7 @@ Pode esperar: Windows (nunca executado; precisa de uma máquina Windows para tes
 
 **Não verificado com dados reais**
 
-- [x] Monitores de consulta/filtro/quadro contra o Redmine da empresa (testados pelo usuário; (validados só com o Redmine falso `scripts/demo-redmine.mjs`, incluindo mudança de coluna, saída por filtro e fusão "via").
+- [x] Monitores de consulta/filtro/quadro contra o Redmine da empresa (testados pelo usuário; antes validados com o Redmine falso `scripts/demo-redmine.mjs`, incluindo mudança de coluna, saída por filtro e fusão "via").
 - [ ] Filtro por URL com os parâmetros `f[]`/`op[]`/`v[]` do Redmine real (o Redmine falso só entende parâmetros simples).
 
 - [x] Arrastar card (mudança de status), comentar e trocar status pelo modal — testados pelo usuário.
@@ -437,5 +450,12 @@ npm run icons           # regera ícones
 | 2026-09-28 | `docs/FUNCIONAMENTO.md`: processos, timers (monitor que se reagenda, lembretes a cada 20 s, atualização das telas), ciclo do monitor, requisições (timeout, tentativas, paginação), memória × disco, arquivos e segurança (credenciais, proteções, limitações). Pendências de segurança registradas.                                                                                                                                                                                                                                                                                                           |
 | 2026-09-28 | **Aparência**: tema claro/escuro/do sistema (`nativeTheme`), paletas (Padrão, Papel, Grafite, Meia-noite, Preto), cor de destaque personalizável com texto de contraste automático, tamanho da interface, reduzir animações. Configurações divididas em abas. Botões e destaques passam a usar o token `on-accent`.                                                                                                                                                                                                                                                                                            |
 | 2026-09-28 | Preparação da 0.1.0: chave que não descriptografa volta para a tela de conexão (e a chave descriptografada fica em memória); **Sobre** em Configurações → Geral (versão, sistema, pasta de dados); `CHANGELOG.md`; dados reais da empresa nos testes trocados por fictícios.                                                                                                                                                                                                                                                                                                                                   |
-| 2026-09-28 | Primeiro `npm run dist:mac`: `electron-builder` 26 renomeou `nsis.allowToChangeInstallationDir` para `allowToChangeInstallationDirectory` (a validação falhava até no build do Mac). Gera `.dmg` Intel e Apple Silicon com assinatura ad-hoc, sem conta Apple. |
-| 2026-09-28 | Manuais atualizados: `docs/MANUAL.md` (instalação do `.dmg` com Gatekeeper/Keychain, notificações desligadas no app instalado, caminhos das abas de Configurações) e o manual online (Claude Doc) sincronizado com o projeto: filtro por URL, notificações do quadro, monitores, Log, abas de Configurações, Aparência, Sobre e novas perguntas frequentes. |
+| 2026-09-28 | Primeiro `npm run dist:mac`: `electron-builder` 26 renomeou `nsis.allowToChangeInstallationDir` para `allowToChangeInstallationDirectory` (a validação falhava até no build do Mac). Gera `.dmg` Intel e Apple Silicon com assinatura ad-hoc, sem conta Apple.                                                                                                                                                                                                                                                                                                                                                 |
+| 2026-09-28 | Manuais atualizados: `docs/MANUAL.md` (instalação do `.dmg` com Gatekeeper/Keychain, notificações desligadas no app instalado, caminhos das abas de Configurações) e o manual online (Claude Doc) sincronizado com o projeto: filtro por URL, notificações do quadro, monitores, Log, abas de Configurações, Aparência, Sobre e novas perguntas frequentes.                                                                                                                                                                                                                                                    |
+| 2026-09-29 | `npm run dist:win` no Mac gera o instalador NSIS do Windows (x64) sem ajustes; falta testar numa máquina Windows.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 2026-09-29 | MVP 0.1.0 em uso: o usuário usou o `.dmg` o dia inteiro sem problemas e o líder do time instalou o `.exe` no Windows e está usando, sem feedback negativo até agora. Bolinha de prioridade dos cards documentada no manual e nas regras.                                                                                                                                                                                                                                                                                                                                                                       |
+| 2026-09-29 | Grupo 1 de acabamentos: permissão de notificação só "Permitidas" com prova (registro do macOS ou confirmação do usuário após o teste; `resolvePermission`, `notifications.confirm`, confirmação por cópia do app dev/instalado); verificação ao acordar (`powerMonitor` → `checkAfterWake`, lembretes na hora); "Copiar informações de suporte" (`app.supportReport`); `docs/INSTALACAO.md`. 95 testes.                                                                                                                                                                                                        |
+| 2026-09-29 | **Atualizações pelo GitHub Releases** do repositório privado, com o token clássico de cada usuário (quem tem acesso ao repositório recebe; os outros não): `UpdateService`, `GithubReleaseSource` (redirecionamento do download seguido à mão para não vazar o token), `DesktopInstaller`, token criptografado em `config.json`, seção Atualizações, aviso na barra lateral, **O que há de novo**. Nomes dos instaladores sem espaços (`refined-redmine-<v>-mac-<arch>.dmg`, `-windows-setup.exe`). `npm run release` + `docs/RELEASE.md`. Versão 0.2.0 (não publicada; publicação pelo usuário). 105 testes.  |
+| 2026-09-29 | Usuário testou no perfil de demonstração: grupo 1 (confirmação de notificações, suporte), seção Atualizações e teste de um token real com acesso ao repositório — tudo funcionando. Falta a primeira publicação (0.2.0).                                                                                                                                                                                                                                                                                                                                                                                       |
+| 2026-09-29 | Auditoria de segredos antes do push: nenhuma chave/token/senha no código, no histórico ou nos arquivos que o git envia. Correções: chave/token com caractere inválido recusados antes da rede e segredos removidos de mensagens de erro (`isWellFormedSecret`, `redactSecret`); atualizações só de Releases do dono do repositório (`TRUSTED_PUBLISHER`); builds com `--publish never` e sem `GITHUB_TOKEN`. 109 testes.                                                                                                                                                                                       |
+| 2026-09-29 | Token fine-grained (`github_pat_…`) aceito e recomendado no app e nos docs (clássico como alternativa). Endurecimento: `electronFuses` no build e app instalado recusa `--remote-debugging-port`/`--inspect`. Falta conferir no primeiro build.                                                                                                                                                                                                                                                                                                                                                                |

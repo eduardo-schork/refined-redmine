@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
 import type { DeleteEventCommand, SaveEventCommand } from '@contracts/api'
 import { colorOf } from '@domain/calendar/colors'
@@ -54,7 +55,7 @@ export type DisplayItem = {
     location?: string
 } & ({ kind: 'event'; occurrence: Occurrence } | { kind: 'sprint'; sprint: Sprint } | { kind: 'task'; issue: Issue })
 
-type Translate = ReturnType<typeof useTranslation>['t']
+type Translate = TFunction
 type CalendarEvents = NonNullable<ReturnType<typeof useCalendarEvents>['data']>
 type Range = { from: Date; to: Date }
 

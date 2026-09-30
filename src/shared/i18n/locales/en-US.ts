@@ -60,6 +60,12 @@ export const enUS: Resources = {
         'filter.invalidUrl': 'Paste the address of a Redmine issue list (…/issues?…).',
         'monitor.nameRequired': 'Give the monitor a name.',
         'monitor.sourceRequired': 'Choose where the monitor issues come from.',
+        'update.unauthorized': 'GitHub refused the token (invalid or expired).',
+        'update.notFound': 'This token has no access to the app repository on GitHub.',
+        'update.noInstaller': 'Version {{version}} has no installer for this computer.',
+        'update.http': 'HTTP error {{status}} from GitHub.',
+        'update.untrusted':
+            'The published version is not from the app maintainer ({{publisher}}) and was ignored for safety.',
         'calendar.titleRequired': 'Give the event a title.',
         'calendar.invalidIssue': 'Invalid issue number.',
         unexpected: 'Unexpected error: {{detail}}'
@@ -137,7 +143,8 @@ export const enUS: Resources = {
             alertsOff: 'Alerts are turned off for this app in System Settings.',
             refused: 'The system refused the notification.',
             noAnswer: 'The system did not confirm delivery (no answer within 8 s).',
-            unsupported: 'Notifications are not supported on this system.'
+            unsupported: 'Notifications are not supported on this system.',
+            notSeen: 'The test notification did not show up on screen.'
         }
     },
     duration: {
@@ -550,10 +557,11 @@ export const enUS: Resources = {
         system: 'System',
         dataFolder: 'Data folder',
         openDataFolder: 'Open data folder',
+        copySupport: 'Copy support information',
+        supportCopied: 'Information copied. Paste it in the chat with whoever is helping.',
         monitoring: 'Monitoring',
         monitoringHint:
             'Runs in the background while the app is open or in the tray. Your own changes do not notify you.',
-        test: 'Send test notification',
         scopeAssigned: 'Assigned to me',
         scopeWatched: 'Watched by me',
         scopeAuthored: 'Created by me',
@@ -725,33 +733,96 @@ export const enUS: Resources = {
             sprintUnresolved: 'no sprint in the chosen phase'
         }
     },
+    updates: {
+        title: 'Updates',
+        hint: 'The app looks for new versions in the GitHub Releases, with your own token. Without a token it works normally, it just does not tell you about new versions.',
+        current: 'Installed version: {{version}}',
+        token: 'GitHub token',
+        tokenHint:
+            'Preferably a fine-grained token (github_pat_…) for this repository only, with Contents: read-only. If the repository is not listed when creating it, use a classic token with the repo scope. Stored encrypted on this computer.',
+        tokenSaved: 'Token saved',
+        tokenPlaceholder: 'github_pat_… or ghp_…',
+        createToken: 'Create a token on GitHub',
+        test: 'Test',
+        testOk: 'Access ok. Latest published version: {{version}}.',
+        testNoRelease: 'Access ok. No version published yet.',
+        save: 'Save token',
+        remove: 'Remove token',
+        confirmRemove: 'Remove the token? The app stops looking for new versions.',
+        autoCheck: 'Look for new versions automatically',
+        autoCheckHint: 'When the app opens (after 30 s) and once a day.',
+        checkNow: 'Check now',
+        phase: {
+            disabled: 'Updates off: no GitHub token.',
+            idle: 'Not checked yet.',
+            checking: 'Checking…',
+            upToDate: 'You are on the latest version.',
+            available: 'Version {{version}} available.',
+            downloading: 'Downloading version {{version}}… {{percent}}%',
+            ready: 'Version {{version}} downloaded.',
+            error: 'Could not check: {{message}}'
+        },
+        checkedAt: 'Checked {{time}}',
+        download: 'Download version {{version}}',
+        installMac: 'Open installer',
+        installMacHint:
+            'The .dmg opens and the app closes: drag Refined Redmine to Applications, replace it and open it again.',
+        installWindows: 'Restart and update',
+        installWindowsHint: 'The app closes, installs the new version and opens again by itself.',
+        releaseNotes: 'What is new in {{version}}',
+        viewOnGithub: 'View on GitHub',
+        sidebar: 'Version {{version}} available'
+    },
+    whatsNew: {
+        title: 'What is new in version {{version}}',
+        empty: 'This version has no notes.',
+        close: 'Got it'
+    },
+    support: {
+        title: 'Refined Redmine — support information ({{time}})',
+        version: 'Version: {{version}} (Electron {{electron}})',
+        system: 'System: {{platform}} · {{arch}} · {{os}}',
+        language: 'Language: {{language}}',
+        redmine: 'Redmine: {{host}} · user {{login}}',
+        monitor: 'Monitor: {{details}}',
+        lastCheck: 'last check {{time}}',
+        paused: 'paused ({{reason}})',
+        lastError: 'last error {{code}} in {{where}}',
+        notifications: 'Notifications: {{status}}',
+        monitors: 'Monitors: {{list}}',
+        boards: 'Boards: {{count}}',
+        problems: 'Recent warnings and errors:',
+        noProblems: '- none'
+    },
     permission: {
         systemStatus: 'System notifications: {{status}}',
         status: {
             granted: 'Allowed',
             denied: 'Blocked by the system',
-            'not-determined': 'Permission not requested yet',
+            unconfirmed: 'Not confirmed — send a test',
             unsupported: 'Not supported'
         },
         openSettings: 'Open settings',
         check: 'Check',
-        enableTitle: 'Turn on notifications',
         blockedTitle: 'Notifications blocked',
-        request: 'Request permission',
-        checkAgain: 'Check again',
+        confirmTitle: 'Confirm notifications',
+        confirmIntro:
+            'The app tells you about assignments, comments and status changes through system notifications. Let us send a test notification to confirm it shows up on screen.',
+        sendTest: 'Send test notification',
+        testAgain: 'Test again',
+        seenQuestion: 'Did the test notification show up on screen?',
+        seenYes: 'It did',
+        seenNo: 'It did not',
         openSystemSettings: 'Open notification settings',
-        intro: 'To tell you about assignments, comments and status changes, the app needs permission to show system notifications. Click <b>Request permission</b> and confirm in the {{os}} prompt.',
-        asked: 'Look for the <b>“{{app}}” would like to send notifications</b> prompt in the top-right corner of the screen and click <b>Allow</b>. If it does not appear, turn it on manually in settings.',
         blocked: 'The system is blocking the app notifications, so you will not get Redmine alerts.',
         detail: 'Detail: {{detail}}',
         macStep1: 'In <b>System Settings → Notifications</b>, open <b>{{app}}</b>.',
         macStep2: 'Turn on <b>Allow notifications</b> and choose the <b>Alerts</b> or <b>Banners</b> style.',
-        macStep3: 'Come back here — this message closes by itself once permission is detected.',
-        windows: 'In Settings → System → Notifications, turn on Refined Redmine notifications and check Focus assist.',
+        macStep3: 'Come back here, click Test again and confirm whether the notification showed up.',
+        windows:
+            'In Settings → System → Notifications, turn on Refined Redmine notifications and check Do not disturb/Focus assist. Then click Test again.',
         dev: 'Development mode: the app shows up as <b>Electron</b> in Settings.',
         unsignedDev: 'Electron is not signed — run npm run sign:dev and restart the app.',
-        enabled: 'Notifications turned on.',
-        osMac: 'macOS',
-        osOther: 'system'
+        enabled: 'Notifications turned on.'
     }
 }

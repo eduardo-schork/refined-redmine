@@ -1,5 +1,6 @@
 import { normalizeBaseUrl } from '@domain/redmine/links'
 import { AppError, type ErrorCode } from '@domain/shared/errors'
+import { redactSecret } from '@domain/shared/secrets'
 import type { RedmineCredentials } from '@application/ports/redmine-gateway'
 
 export type Fetch = (url: string, init: RequestInit) => Promise<Response>
@@ -174,7 +175,7 @@ export class RedmineHttpClient {
                 record({ bytes: 0, errorCode: 'redmine.invalidResponse' })
                 throw new AppError('redmine.invalidResponse')
             }
-            const detail = errorMessage(error)
+            const detail = redactSecret(errorMessage(error), request.apiKey)
             const networkError = new AppError(networkErrorCode(detail), { host: request.url.host, detail })
             record({ bytes: 0, errorCode: networkError.code })
             return { succeeded: false, error: networkError, canRetry: true }

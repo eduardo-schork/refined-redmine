@@ -1,10 +1,9 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { AlertTriangle, ArrowDownUp, Gauge, HardDrive, RefreshCw, Trash2 } from 'lucide-react'
 import { summarizeLog, type LogEntry, type LogLevel } from '@domain/log/log-entry'
-import { MINE_MONITOR_ID } from '@domain/monitor/monitor'
 import { describeLogEntry, formatBytes, formatMilliseconds } from '@shared/i18n/format/log'
 import { useActivityLog, useClearActivityLog } from '@/hooks/activity-log'
-import { useSettings } from '@/hooks/session'
+import { useMonitorName } from '@/hooks/monitor-name'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/cn'
 import { Button } from '@/ui/atoms/Button'
@@ -29,20 +28,6 @@ const MATCHES_FILTER: Record<LogFilter, (entry: LogEntry) => boolean> = {
     http: (entry) => entry.type === 'http',
     monitor: (entry) => entry.type === 'monitor',
     errors: (entry) => entry.level !== 'info'
-}
-
-function useMonitorName() {
-    const { t } = useI18n()
-    const settings = useSettings()
-    const monitors = settings.monitors
-    return useCallback(
-        (monitorId: string) => {
-            if (monitorId === MINE_MONITOR_ID) return t('monitors.mine')
-            const monitor = monitors.find((candidate) => candidate.id === monitorId)
-            return monitor?.name || monitorId
-        },
-        [monitors, t]
-    )
 }
 
 export default function LogPage() {
