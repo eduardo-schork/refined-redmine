@@ -140,7 +140,7 @@ Pasta: macOS `~/Library/Application Support/Refined Redmine/` · Windows `%APPDA
 - **Token**: `config.json` → `githubTokenEnc`, criptografado com `safeStorage` (sem criptografia disponível, não é salvo). Fica no processo principal; a interface só envia um token digitado para `testToken`/`setToken`.
 - **Instalar** (`DesktopInstaller`): Windows roda o instalador NSIS com `/S --updated --force-run` e fecha o app; macOS abre o `.dmg` e fecha o app em 1,5 s.
 - **O que há de novo**: o `CHANGELOG.md` é embutido na interface no build (`?raw`); `settings.lastSeenVersion` guarda a última versão mostrada.
-- **Publicação**: `npm run release` (`scripts/release.mjs`, ver [RELEASE.md](RELEASE.md)), com o token de quem publica em `GITHUB_TOKEN`.
+- **Publicação**: automática pelo GitHub Actions (`.github/workflows/release.yml`) a cada push no `master` com `feat:`/`fix:`; o job `publish` usa o secret `RELEASE_TOKEN` do environment `release` (só no `master`), e os jobs de build não recebem token. Plano B: `npm run release` (`scripts/release.mjs`) com `GITHUB_TOKEN`. Ver [RELEASE.md](RELEASE.md).
 
 ## 9. Suporte
 
