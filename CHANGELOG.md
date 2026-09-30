@@ -2,19 +2,19 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
-## Próxima versão
+## 0.4.0 — resumo do quadro e cards reformulados
 
-<!-- Ao publicar, troque o título por "## <versão> — <resumo>" (a mesma versão do package.json). -->
-
-- **Leitura mais fácil**: textos um pouco maiores em todo o app, botões que não quebram o texto e botões de ícone maiores e mais visíveis.
+- **Resumo do quadro**: ao lado de cada quadro, a aba **Resumo** mostra os números do quadro, a distribuição por status, uma tabela por pessoa (clique para ver os cards dela), e as tarefas por tipo e por prioridade.
+- **Sprint no resumo**: nos quadros de sprint, o resumo mostra as datas com os dias que faltam, se a sprint está no ritmo (tarefas fechadas contra o tempo que já passou), quantas foram fechadas na última semana, quantas faltam fechar por dia útil e quantas entraram depois do início.
 - **Cards do quadro reformulados**: prioridade em destaque (etiqueta e borda colorida), versão e previsão em etiquetas próprias, com "amanhã" ou "ontem" e cores quando o prazo está perto ou vencido, e o responsável em linha separada, com "parada há N dias" quando a tarefa não anda.
 - **Contadores no quadro**: atrasadas, prioridade alta, paradas e sem responsável; clique para ver só essas. Cada coluna mostra as suas atrasadas e de prioridade alta.
+- **Cores de status**: cada status ganha uma cor pela sua fase (nova, em andamento, em aprovação, em teste, em pausa, concluída), nas colunas, nos cards e nas listas.
+- **Cores das tarefas** (Configurações → Aparência): troque a cor de um status, diga qual prioridade é urgente, alta, normal ou baixa, e quantos dias antes a previsão fica em destaque.
 - **Início**: novo indicador de prioridade alta, números coloridos quando pedem atenção e clicáveis, e prioridade nas listas.
 - **Detalhe da tarefa**: status, prioridade, prazo e versão logo abaixo do título.
-- **Resumo do quadro**: ao lado de cada quadro, a aba **Resumo** mostra os números do quadro, a distribuição por status, uma tabela por pessoa (clique para ver os cards dela), e as tarefas por tipo e por prioridade.
-- **Cores de status**: cada status ganha uma cor pela sua fase (nova, em andamento, em aprovação, em teste, em pausa, concluída), nas colunas, nos cards e nas listas.
-- **Sprint no resumo**: nos quadros de sprint, o resumo mostra as datas com os dias que faltam, se a sprint está no ritmo (tarefas fechadas contra o tempo que já passou), quantas foram fechadas na última semana, quantas faltam fechar por dia útil e quantas entraram depois do início.
-- **Cores das tarefas** (Configurações → Aparência): troque a cor de um status, diga qual prioridade é urgente, alta, normal ou baixa, e quantos dias antes a previsão fica em destaque.
+- **Leitura mais fácil**: textos um pouco maiores em todo o app, botões que não quebram o texto e botões de ícone maiores e mais visíveis.
+
+Quem está na 0.3.0 recebe esta versão pelo próprio app (Configurações → Geral → Atualizações).
 
 ## 0.3.0 — busca rápida e edição de campos
 
