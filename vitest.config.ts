@@ -12,7 +12,7 @@ export default defineConfig({
         }
     },
     test: {
-        include: ['src/**/*.test.ts'],
+        include: ['src/**/*.test.ts', 'scripts/**/*.test.mjs'],
         environment: 'node',
         // Date rules use local time; the time zone is pinned so tests are deterministic.
         env: { TZ: 'America/Sao_Paulo' }

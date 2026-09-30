@@ -1,0 +1,125 @@
+# Automatic release on every push to master (docs/RELEASE.md).
+# A push with a feat/fix commit since the last tag becomes a new version: the version is computed from the commits,
+# CHANGELOG "Próxima versão" becomes that version, the installers are built on macOS and Windows, and the release is
+# published with the owner's token, so installed apps accept it (TRUSTED_PUBLISHER). Docs/chore pushes release nothing.
+#
+# Security: only the "publish" job sees RELEASE_TOKEN, a secret of the "release" environment, which is limited to
+# master. Checkout, install and build jobs run without it. Values from the plan reach commands through env vars.
+name: Release
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.plan.outputs.release }}
+      version: ${{ steps.plan.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - id: plan
+        run: node scripts/ci/release-plan.mjs plan
+
+  check:
+    needs: plan
+    if: needs.plan.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+
+  build:
+    needs: [plan, check]
+    if: needs.plan.outputs.release == 'true'
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - os: macos-latest
+            target: mac
+          - os: windows-latest
+            target: win
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+      # Ad-hoc signature only (electron-builder.yml): do not look for certificates in the runner keychain.
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # The version and the CHANGELOG section go into the build: the app shows its version and "What's new".
+      - run: node scripts/ci/release-plan.mjs apply "$VERSION"
+      - run: npm run dist:${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.target }}
+          path: dist/refined-redmine-*
+          if-no-files-found: error
+          retention-days: 3
+
+  publish:
+    needs: [plan, build]
+    if: needs.plan.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Pushes the release commit and tag as the owner (the default token's pushes would not be the owner's).
+          token: ${{ secrets.RELEASE_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: installers-*
+          path: dist
+          merge-multiple: true
+      - run: node scripts/ci/release-plan.mjs apply "$VERSION"
+      - name: Commit and tag the version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json CHANGELOG.md
+          git commit -m "chore: release $VERSION"
+          git tag "v$VERSION"
+          # Atomic: if master moved during the build, nothing is pushed and nothing is released.
+          git push --atomic origin HEAD:master "refs/tags/v$VERSION"
+      - name: Publish the release
+        run: node scripts/release.mjs --skip-build --allow-dirty
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}

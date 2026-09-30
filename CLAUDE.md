@@ -5,7 +5,8 @@
 - Mudou timers, requisições, arquivos, cache ou segurança? Atualize `docs/FUNCIONAMENTO.md`.
 - **Regra de negócio nova ou alterada vai para `docs/REGRAS-DE-NEGOCIO.md`** (com o nome da função onde está). Funcionalidade visível nova ou alterada vai para `docs/MANUAL.md` (capturas com dados falsos: `scripts/demo-redmine.mjs`, ver PROJECT.md §9).
 - Use Node 20.19.5 (`nvm use`) e rode `npm run check` (tipos + lint + testes) antes de concluir.
-- Builds (`dist:*`), `npm install`, `npm run release`, commits e push quem roda é o usuário. Publicação de versão: `docs/RELEASE.md` (versão no `package.json` + seção no `CHANGELOG.md`).
+- **Branches**: o trabalho vai para a `develop`; o `master` só recebe merge da `develop` ou correção urgente (`docs/RELEASE.md` → Branches). Não faça commit no `master` sem o usuário pedir.
+- Builds (`dist:*`), `npm install`, `npm run release`, commits e push quem roda é o usuário. Publicação de versão: **automática** pelo GitHub Actions a cada push no `master` com commit `feat:`/`fix:` (`docs/RELEASE.md`). Não mude a versão no `package.json`; escreva as notas em `## Próxima versão` no topo do `CHANGELOG.md` e use os prefixos `feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`, `ci:` nos commits.
 - **Todo o código em inglês**: identificadores, comentários, nomes de teste, logs e mensagens de erro. Outros idiomas só nos valores dos arquivos de `src/shared/i18n/locales/`. Dados reais do Redmine (nomes de status/campos em português) podem aparecer em testes e em heurísticas de reconhecimento.
 
 ## Arquitetura (resumo — detalhes em PROJECT.md §4)
