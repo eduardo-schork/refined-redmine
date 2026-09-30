@@ -94,9 +94,9 @@ export function SprintIssuesDialog({
                 </div>
             </div>
 
-            {issues.isLoading && <p className="text-[13px] text-muted">{t('sprints.loadingIssues')}</p>}
-            {issues.isError && <p className="text-[13px] text-danger">{error(issues.error)}</p>}
-            {isEmpty && <p className="text-[13px] text-muted">{t('sprints.noIssues')}</p>}
+            {issues.isLoading && <p className="text-sm text-muted">{t('sprints.loadingIssues')}</p>}
+            {issues.isError && <p className="text-sm text-danger">{error(issues.error)}</p>}
+            {isEmpty && <p className="text-sm text-muted">{t('sprints.noIssues')}</p>}
 
             <div className="flex flex-col gap-4">
                 {groups.map((group) => (
@@ -120,7 +120,7 @@ function StatusGroup({ status, issues }: { status: IssueStatus; issues: Issue[] 
                     <li key={issue.id}>
                         <button
                             onClick={() => openIssue(issue.id)}
-                            className="flex w-full cursor-default items-center gap-3 border-b border-line px-3 py-1.5 text-left text-[13px] last:border-0 hover:bg-panel-2"
+                            className="flex w-full cursor-default items-center gap-3 border-b border-line px-3 py-1.5 text-left text-sm last:border-0 hover:bg-panel-2"
                         >
                             <span className="w-16 shrink-0 text-xs tabular-nums text-muted">#{issue.id}</span>
                             <span className="w-28 shrink-0 truncate text-xs text-muted">{issue.tracker.name}</span>

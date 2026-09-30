@@ -48,7 +48,7 @@ export function AccountSection() {
                 </Button>
             }
         >
-            <dl className="grid grid-cols-[120px_1fr] gap-y-1.5 text-[13px]">
+            <dl className="grid grid-cols-[120px_1fr] gap-y-1.5 text-sm">
                 <dt className="text-muted">{t('settings.redmine')}</dt>
                 <dd className="truncate">{settings.baseUrl}</dd>
                 <dt className="text-muted">{t('settings.user')}</dt>
@@ -285,7 +285,7 @@ export function AboutSection() {
     )
     return (
         <Card title={t('settings.about')} actions={actions}>
-            <dl className="grid grid-cols-[120px_1fr] gap-y-1.5 text-[13px]">
+            <dl className="grid grid-cols-[120px_1fr] gap-y-1.5 text-sm">
                 <dt className="text-muted">{t('settings.version')}</dt>
                 <dd className="font-medium">
                     {t('app.name')} {info.version}

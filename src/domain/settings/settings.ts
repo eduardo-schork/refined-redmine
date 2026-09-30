@@ -4,6 +4,7 @@ import { createMineMonitor, defaultEvents, withMineMonitor, type MineScopes, typ
 import type { Schedule } from '../monitor/schedule'
 import { DEFAULT_APPEARANCE, withAppearanceDefaults, type Appearance } from './appearance'
 import type { RedmineUser } from '../redmine/entities'
+import { DEFAULT_ISSUE_STYLE, withIssueStyleDefaults, type IssueStyleRules } from '../redmine/issue-style'
 import { DEFAULT_SPRINT_CONVENTIONS, type SprintConventions } from '../sprint/sprint'
 
 export type Language = 'system' | 'pt-BR' | 'en-US'
@@ -24,6 +25,8 @@ export interface Settings {
     boards: Board[]
     sprints: SprintConventions
     dashboard: { staleDays: number }
+    /** Status colors, priority levels and "due soon" window. */
+    issueStyle: IssueStyleRules
     calendar: CalendarPreferences
     openAtLogin: boolean
     sound: boolean
@@ -49,6 +52,7 @@ export const DEFAULT_SETTINGS: Settings = {
     boards: [],
     sprints: DEFAULT_SPRINT_CONVENTIONS,
     dashboard: { staleDays: 5 },
+    issueStyle: DEFAULT_ISSUE_STYLE,
     calendar: DEFAULT_CALENDAR_PREFERENCES,
     openAtLogin: false,
     sound: true,
@@ -120,6 +124,7 @@ export function withDefaults(loaded: Partial<Settings> & LegacySettings): Settin
         schedule: { ...defaults.schedule, ...loaded.schedule },
         sprints: { ...defaults.sprints, ...loaded.sprints },
         dashboard: { ...defaults.dashboard, ...loaded.dashboard },
+        issueStyle: withIssueStyleDefaults(loaded.issueStyle),
         updates: { ...defaults.updates, ...loaded.updates },
         calendar: { ...defaults.calendar, ...loaded.calendar, layers: calendarLayers }
     }

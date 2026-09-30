@@ -32,7 +32,7 @@ function SprintHeader({ sprint }: { sprint: Sprint }) {
     return (
         <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-                <div className="text-[20px] font-semibold leading-tight">{sprint.version.name}</div>
+                <div className="text-2xl font-semibold leading-tight">{sprint.version.name}</div>
                 <div className="truncate text-xs text-muted">{subtitle}</div>
             </div>
             <PhaseBadge phase={sprint.phase} />
@@ -89,11 +89,13 @@ function SprintProgress({ stats, isError }: { stats?: VersionStats; isError: boo
                 <div className="mt-2 flex gap-3 text-xs">
                     <span>
                         <b className="font-semibold">{stats.open}</b>{' '}
-                        <span className="text-muted">{t('sprints.open')}</span>
+                        <span className="text-muted">{t('sprints.open', { count: stats.open })}</span>
                     </span>
                     <span className={cn(stats.mineOpen > 0 && 'text-accent')}>
                         <b className="font-semibold">{stats.mineOpen}</b>{' '}
-                        <span className={cn(!stats.mineOpen && 'text-muted')}>{t('sprints.mine')}</span>
+                        <span className={cn(!stats.mineOpen && 'text-muted')}>
+                            {t('sprints.mine', { count: stats.mineOpen })}
+                        </span>
                     </span>
                 </div>
             )}

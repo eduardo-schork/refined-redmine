@@ -20,7 +20,7 @@ export function PhaseBadge({ phase }: { phase: SprintPhase }) {
     return (
         <span
             className={cn(
-                'shrink-0 whitespace-nowrap rounded-md px-1.5 py-0.5 text-[11px] font-medium',
+                'shrink-0 whitespace-nowrap rounded-md px-1.5 py-0.5 text-2xs font-medium',
                 PHASE_TONE[phase]
             )}
         >

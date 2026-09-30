@@ -98,6 +98,8 @@ A interface pede dados sempre pelo IPC; o processo principal faz a requisição.
 | Memória do processo principal         | Cópia de cada arquivo JSON (`JsonFile`)                                                                               | Carregada na 1ª leitura; toda escrita atualiza a cópia e o disco                                                                                                                                                                                                                                                                                       |
 | Disco                                 | Arquivos da §6                                                                                                        | Permanente                                                                                                                                                                                                                                                                                                                                             |
 
+O resumo do quadro, os contadores de atenção, as cores de status e o painel da sprint **não fazem requisições novas**: são calculados na interface a partir das tarefas que o quadro já carregou, da lista de status (cache de 1 dia) e da sprint resolvida pelo processo principal (que também estima o início da sprint, `devStart`).
+
 As consultas salvas **não** ficam em cache no processo principal, para uma consulta recém-criada no Redmine aparecer sem reiniciar.
 
 ## 6. Arquivos
@@ -106,7 +108,7 @@ Pasta: macOS `~/Library/Application Support/Refined Redmine/` · Windows `%APPDA
 
 | Arquivo             | Conteúdo                                                                                                                                                                                | Formato / escrita                                                                                                                                       |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `config.json`       | URL, usuário, idioma, quadros, monitores, sprints, agenda, preferências, `apiKeyEnc`                                                                                                    | JSON; escrita atômica (`.tmp` + rename) a cada mudança                                                                                                  |
+| `config.json`       | URL, usuário, idioma, quadros, monitores, sprints, agenda, preferências (inclui `issueStyle`: cores de status, níveis de prioridade, dias de "vence em breve"), `apiKeyEnc`             | JSON; escrita atômica (`.tmp` + rename) a cada mudança                                                                                                  |
 | `state.json`        | `lastCheckAt` (marca d'água), `querySnapshots` (fotos: contagem, IDs e títulos por monitor + `__my_queue__`), `events` (notificações, máx. 300), `notify` (último resultado de entrega) | JSON; escrita atômica quando algo muda no ciclo                                                                                                         |
 | `calendar.json`     | `events` (compromissos; uma série = um registro com a regra e as exceções), `fired` (lembretes disparados, limpos após 3 dias)                                                          | JSON; escrita atômica                                                                                                                                   |
 | `logs/activity.log` | Requisições (método, caminho + parâmetros, status, tempo, bytes, tentativa, código de erro) e passos do monitor                                                                         | JSON Lines, um objeto por linha acrescentado ao fim; a tela lê as últimas 2000 linhas; acima de 5 MB descarta os 40% mais antigos; "Apagar log" esvazia |
@@ -181,4 +183,9 @@ Pasta: macOS `~/Library/Application Support/Refined Redmine/` · Windows `%APPDA
 - `state.json`, `calendar.json` e o log **não são criptografados**: têm títulos de tarefas, trechos de comentários, nomes e compromissos. Qualquer processo com acesso à conta do usuário consegue ler.
 - Em dev (assinatura ad-hoc), o item do Keychain fica associado ao "Electron" genérico; no app instalado, à assinatura do app.
 - Com um Redmine em `http://`, a chave trafega sem TLS (o da empresa é `https`).
-- Os handlers IPC não verificam a origem da chamada (só a janela do app carrega o preload).
+- Os handlers IPC não verificam a origem da chamada (só a janela do app carrega o preload) nem o formato dos argumentos em tempo de execução.
+- A CSP é a mesma em dev e produção e libera `ws:` para qualquer endereço (usado só pelo recarregamento do dev).
+- O `activity.log` guarda os parâmetros das requisições, inclusive o texto digitado na busca rápida.
+- A atualização confere publicador e tamanho do instalador, mas não o hash.
+
+O plano para cada item, com prioridade, está no roadmap: `PROJECT.md` §8, "Segurança".

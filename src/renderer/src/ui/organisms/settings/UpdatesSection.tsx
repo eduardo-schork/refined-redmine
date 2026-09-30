@@ -63,7 +63,7 @@ function UpdateStatusRow({ status }: { status: UpdateStatus }) {
     const hasError = status.phase === 'error'
 
     return (
-        <div className="flex items-center gap-3 rounded-lg border border-line px-3 py-2 text-[13px]">
+        <div className="flex items-center gap-3 rounded-lg border border-line px-3 py-2 text-sm">
             <div className="min-w-0 flex-1">
                 <div className="text-xs text-muted">{t('updates.current', { version: status.currentVersion })}</div>
                 <div className={cn(hasError && 'text-danger')}>{phaseText}</div>
@@ -169,7 +169,7 @@ function TokenFields({ hasToken }: { hasToken: boolean }) {
 
     if (hasToken) {
         return (
-            <div className="flex items-center gap-3 text-[13px]">
+            <div className="flex items-center gap-3 text-sm">
                 <span className="text-ok">● {t('updates.tokenSaved')}</span>
                 <Button variant="danger" onClick={remove}>
                     {t('updates.remove')}

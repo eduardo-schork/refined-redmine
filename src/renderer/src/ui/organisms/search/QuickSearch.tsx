@@ -27,7 +27,7 @@ export function QuickSearch({ onClose }: { onClose: () => void }) {
                         placeholder={t('search.placeholder')}
                         onChange={(changeEvent) => search.setInput(changeEvent.target.value)}
                         onKeyDown={search.handleKeyDown}
-                        className="h-12 flex-1 bg-transparent text-[14px] outline-none placeholder:text-muted"
+                        className="h-12 flex-1 bg-transparent text-base outline-none placeholder:text-muted"
                     />
                     {search.loading && <span className="text-xs text-muted">{t('search.searching')}</span>}
                 </div>
@@ -39,7 +39,7 @@ export function QuickSearch({ onClose }: { onClose: () => void }) {
                         message={search.message}
                     />
                 </div>
-                <div className="border-t border-line px-4 py-2 text-[11px] text-muted">{t('search.keys')}</div>
+                <div className="border-t border-line px-4 py-2 text-2xs text-muted">{t('search.keys')}</div>
             </div>
         </div>
     )

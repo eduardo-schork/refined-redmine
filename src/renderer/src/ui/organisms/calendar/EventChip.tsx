@@ -9,7 +9,7 @@ export function EventChip({ item, onOpen }: { item: DisplayItem; onOpen: (item: 
             <button
                 onClick={() => onOpen(item)}
                 className={cn(
-                    'cursor-default truncate rounded px-1.5 py-px text-left text-[11px] font-medium hover:brightness-110',
+                    'cursor-default truncate rounded px-1.5 py-px text-left text-2xs font-medium hover:brightness-110',
                     item.darkText ? 'text-black' : 'text-white'
                 )}
                 style={{ background: item.hex }}
@@ -22,7 +22,7 @@ export function EventChip({ item, onOpen }: { item: DisplayItem; onOpen: (item: 
     return (
         <button
             onClick={() => onOpen(item)}
-            className="flex cursor-default items-center gap-1 truncate rounded px-1 text-left text-[11px] hover:bg-panel-2"
+            className="flex cursor-default items-center gap-1 truncate rounded px-1 text-left text-2xs hover:bg-panel-2"
             title={item.title}
         >
             <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: item.hex }} />

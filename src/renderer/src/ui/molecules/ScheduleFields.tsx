@@ -53,7 +53,7 @@ export function ScheduleFields({
                     value={pickerDays}
                     onChange={changeWeekdays}
                 />
-                <div className="flex items-center gap-2 text-[13px]">
+                <div className="flex items-center gap-2 text-sm">
                     {t('settings.from')}
                     <HourSelect
                         value={schedule.startHour}

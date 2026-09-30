@@ -25,8 +25,8 @@ export default function OnboardingPage() {
                 onSubmit={handleSubmit}
                 className="w-full max-w-sm rounded-2xl border border-line bg-panel p-7 shadow-sm"
             >
-                <h1 className="text-lg font-semibold">{t('app.name')}</h1>
-                <p className="mt-1 text-[13px] text-muted">{t('onboarding.subtitle')}</p>
+                <h1 className="text-xl font-semibold">{t('app.name')}</h1>
+                <p className="mt-1 text-sm text-muted">{t('onboarding.subtitle')}</p>
                 <div className="mt-6 flex flex-col gap-4">
                     <Field label={t('onboarding.url')}>
                         <Input

@@ -26,6 +26,8 @@ import { Markdown } from '../molecules/Markdown'
 import { Alert, Property } from '../molecules/surfaces'
 import { useToast } from '../molecules/Toast'
 import { IssueFieldEditors } from './IssueFieldEditors'
+import { DueChip, PriorityChip, VersionChip } from '../molecules/issue-chips'
+import { StatusTag } from '../molecules/StatusTag'
 
 type Translate = ReturnType<typeof useI18n>['t']
 
@@ -152,9 +154,17 @@ function IssueHeader({
                         </button>
                     )}
                 </div>
-                <h2 className="mt-0.5 select-text text-[17px] font-semibold leading-snug">
+                <h2 className="mt-0.5 select-text text-xl font-semibold leading-snug">
                     {issue?.subject ?? placeholderTitle}
                 </h2>
+                {issue && (
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        <StatusTag status={issue.status} />
+                        <PriorityChip priority={issue.priority} />
+                        <DueChip issue={issue} now={new Date()} />
+                        <VersionChip issue={issue} />
+                    </div>
+                )}
             </div>
             <Button variant="primary" onClick={onOpenInRedmine}>
                 <ExternalLink size={14} /> {t('common.openInRedmine')}
@@ -167,7 +177,7 @@ function IssueHeader({
 function Description({ issue, links, onIssue, onExternal }: { issue: IssueDetail } & MarkdownLinkProps) {
     const { t } = useI18n()
     if (!issue.description?.trim()) {
-        return <p className="text-[13px] italic text-muted">{t('issue.noDescription')}</p>
+        return <p className="text-sm italic text-muted">{t('issue.noDescription')}</p>
     }
     return <Markdown text={issue.description} links={links} onIssue={onIssue} onExternal={onExternal} />
 }
@@ -181,7 +191,7 @@ function Attachments({ attachments, links }: { attachments: Attachment[]; links:
                 {attachments.map((attachment) => (
                     <li key={attachment.id}>
                         <button
-                            className="flex items-center gap-1.5 text-[13px] text-accent hover:underline"
+                            className="flex items-center gap-1.5 text-sm text-accent hover:underline"
                             onClick={() => openExternal(links.attachment(attachment.id))}
                         >
                             <Paperclip size={13} /> {attachment.filename}
@@ -206,7 +216,7 @@ function Subtasks({ subtasks }: { subtasks: IssueDetail['children'] }) {
                 {subtasks.map((subtask) => (
                     <li key={subtask.id}>
                         <TextLink
-                            className="text-[13px]"
+                            className="text-sm"
                             onClick={() => openIssue(subtask.id)}
                         >{`${subtask.tracker.name} #${subtask.id}: ${subtask.subject}`}</TextLink>
                     </li>
@@ -226,7 +236,7 @@ function Relations({ issueId, relations }: { issueId: number; relations: Relatio
                 {relations.map((relation) => {
                     const { type, otherId } = relationFrom(issueId, relation)
                     return (
-                        <li key={relation.id} className="flex items-center gap-1.5 text-[13px]">
+                        <li key={relation.id} className="flex items-center gap-1.5 text-sm">
                             <Link2 size={13} className="text-muted" />
                             <span className="text-muted">{t(`issue.relation.${type}`, { defaultValue: type })}</span>
                             <TextLink onClick={() => openIssue(otherId)}>#{otherId}</TextLink>
@@ -311,7 +321,7 @@ function IssueSidebar({
     const now = new Date()
 
     return (
-        <aside className="w-72 shrink-0 overflow-y-auto border-l border-line bg-panel-2/40 px-4 py-4 text-[13px]">
+        <aside className="w-72 shrink-0 overflow-y-auto border-l border-line bg-panel-2/40 px-4 py-4 text-sm">
             <Property label={t('issue.status')}>
                 <Select
                     value={issue.status.id}
@@ -423,15 +433,13 @@ function JournalItem({
     const { t, dates } = useI18n()
     return (
         <li className="flex gap-3">
-            <Avatar name={journal.user.name} className="mt-0.5 h-6 w-6 text-[10px]" />
+            <Avatar name={journal.user.name} className="mt-0.5 h-6 w-6 text-2xs" />
             <div className="min-w-0 flex-1">
                 <div className="text-xs">
                     <span className="font-medium">{journal.user.name}</span>{' '}
                     <span className="text-muted">· {dates.dateTime(journal.created_on)}</span>
                     {journal.private_notes && (
-                        <span className="ml-1 rounded bg-panel-2 px-1 text-[10px] text-muted">
-                            {t('common.private')}
-                        </span>
+                        <span className="ml-1 rounded bg-panel-2 px-1 text-2xs text-muted">{t('common.private')}</span>
                     )}
                 </div>
                 {journal.details.length > 0 && (

@@ -4,7 +4,7 @@ import { cn } from '@/lib/cn'
 // Default width is 100%, unless the caller passes its own width (w-*).
 const hasWidth = (className?: string) => /(^|\s)w-/.test(className ?? '')
 const baseClasses =
-    'rounded-md border border-line bg-panel text-[13px] outline-none focus:border-accent disabled:opacity-50'
+    'rounded-md border border-line bg-panel text-sm outline-none focus:border-accent disabled:opacity-50'
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input(
     { className, ...props },
@@ -16,7 +16,7 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
             {...props}
             className={cn(
                 baseClasses,
-                'h-8 px-2.5 placeholder:text-muted',
+                'h-9 px-2.5 placeholder:text-muted',
                 !hasWidth(className) && 'w-full',
                 className
             )}
@@ -26,7 +26,7 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
 
 export function Select({ className, children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
     return (
-        <select {...props} className={cn(baseClasses, 'h-8 px-2', !hasWidth(className) && 'w-full', className)}>
+        <select {...props} className={cn(baseClasses, 'h-9 px-2', !hasWidth(className) && 'w-full', className)}>
             {children}
         </select>
     )

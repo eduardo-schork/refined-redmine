@@ -17,7 +17,7 @@ export function NavItem({
             onClick={onClick}
             aria-current={active ? 'page' : undefined}
             className={cn(
-                'flex h-8 cursor-default items-center gap-2 rounded-md px-2 text-left text-[13px]',
+                'flex h-8 cursor-default items-center gap-2 rounded-md px-2 text-left text-sm',
                 active ? 'bg-panel-2 font-medium text-fg' : 'text-muted hover:bg-panel-2 hover:text-fg'
             )}
         >

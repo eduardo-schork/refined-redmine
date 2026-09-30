@@ -24,8 +24,8 @@ export default function SprintsPage({ onCreateBoard }: { onCreateBoard: (initial
         return (
             <CenteredLayout>
                 <div className="w-full max-w-lg rounded-xl border border-line bg-panel p-6">
-                    <h2 className="mb-1 text-[15px] font-semibold">{t('sprints.setup.title')}</h2>
-                    <p className="mb-5 text-[13px] text-muted">{t('sprints.setup.subtitle')}</p>
+                    <h2 className="mb-1 text-lg font-semibold">{t('sprints.setup.title')}</h2>
+                    <p className="mb-5 text-sm text-muted">{t('sprints.setup.subtitle')}</p>
                     <SprintSetupForm />
                 </div>
             </CenteredLayout>
@@ -54,7 +54,7 @@ export default function SprintsPage({ onCreateBoard }: { onCreateBoard: (initial
             actions={<RefreshButton spinning={sprints.isFetching} onClick={() => void sprints.refetch()} />}
         >
             {sprints.isError && <Alert>{error(sprints.error)}</Alert>}
-            {sprints.isLoading && <div className="text-[13px] text-muted">{t('sprints.loadingVersions')}</div>}
+            {sprints.isLoading && <div className="text-sm text-muted">{t('sprints.loadingVersions')}</div>}
 
             <section>
                 <Overline className="mb-2">{t('sprints.active')}</Overline>
@@ -76,7 +76,7 @@ export default function SprintsPage({ onCreateBoard }: { onCreateBoard: (initial
                                 className="cursor-default rounded-lg border border-line bg-panel px-3 py-2 text-left hover:border-muted/50"
                                 title={group.version.description}
                             >
-                                <div className="text-[13px] font-medium">{group.version.name}</div>
+                                <div className="text-sm font-medium">{group.version.name}</div>
                                 {group.version.description && (
                                     <div className="max-w-64 truncate text-xs text-muted">
                                         {group.version.description}
@@ -90,14 +90,14 @@ export default function SprintsPage({ onCreateBoard }: { onCreateBoard: (initial
 
             <section>
                 <button
-                    className="mb-2 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted hover:text-fg"
+                    className="mb-2 flex items-center gap-1 text-2xs font-semibold uppercase tracking-wide text-muted hover:text-fg"
                     onClick={() => setShowHistory(!showHistory)}
                 >
                     {showHistory ? <ChevronDown size={13} /> : <ChevronRight size={13} />} {t('sprints.recent')}
                 </button>
                 {showHistory && (
                     <div className="overflow-hidden rounded-xl border border-line bg-panel">
-                        <table className="w-full text-[13px]">
+                        <table className="w-full text-sm">
                             <thead className="bg-panel-2 text-left text-xs text-muted">
                                 <tr>
                                     <th className="px-4 py-2 font-medium">{t('sprints.version')}</th>

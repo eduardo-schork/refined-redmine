@@ -271,7 +271,8 @@ export const ptBR = {
         helloAfternoon: 'Boa tarde, {{name}}',
         helloEvening: 'Boa noite, {{name}}',
         tileQueue: 'Na minha fila',
-        tileStale: 'Paradas ({{days}}+ dias ou em pausa)',
+        tileHighPriority: 'Prioridade alta',
+        tileStale: 'Paradas',
         tileOverdue: 'Atrasadas',
         tileUnread: 'Notificações não lidas',
         sprints: 'Sprints',
@@ -304,8 +305,10 @@ export const ptBR = {
         closedOf: '{{closed}} de {{total}} fechadas',
         countingError: 'Erro ao contar tarefas',
         counting: 'Contando tarefas…',
-        open: 'abertas',
-        mine: 'minhas',
+        open_one: 'aberta',
+        open_other: 'abertas',
+        mine_one: 'minha',
+        mine_other: 'minhas',
         createBoard: 'Criar quadro desta versão',
         boardName: 'Sprint {{name}}',
         allAssignees: 'Todos os responsáveis',
@@ -332,7 +335,7 @@ export const ptBR = {
         emptyText: 'Crie um quadro a partir das suas tarefas, de um projeto ou de uma consulta salva.',
         create: 'Criar quadro',
         automatic: 'automática',
-        searchPlaceholder: 'Buscar por título, #id, projeto',
+        searchPlaceholder: 'Título, #número ou projeto',
         allAssignees: 'Todos os responsáveis',
         noAssignee: 'Sem responsável',
         edit: 'Editar quadro',
@@ -344,6 +347,78 @@ export const ptBR = {
         configureSprints: 'Configure o projeto das sprints (menu Sprints) para usar este quadro.',
         moved: '#{{id}} → {{status}}',
         moveFailed: 'Não foi possível mover #{{id}}: {{error}}',
+        view: {
+            board: 'Quadro',
+            summary: 'Resumo'
+        },
+        sprint: {
+            title: 'Sprint {{name}}',
+            devStart: 'Início (estimado)',
+            timeGone: 'Tempo de desenvolvimento',
+            timeGoneValue: '{{percent}}% do período',
+            closed: 'Tarefas fechadas',
+            closedValue: '{{percent}}% fechadas',
+            pace: {
+                ahead: 'Adiantada',
+                onTrack: 'No ritmo',
+                behind: 'Atrás do ritmo'
+            },
+            paceHint:
+                'Compara as tarefas fechadas com o tempo de desenvolvimento que já passou (tolerância de {{tolerance}} pontos). O início é estimado: o dia seguinte ao prazo dos devs da sprint anterior.',
+            closedLastWeek: 'Fechadas nos últimos 7 dias',
+            perDay: 'Para fechar por dia útil',
+            workingDaysLeft_one: '{{count}} dia útil até o prazo dos devs',
+            workingDaysLeft_other: '{{count}} dias úteis até o prazo dos devs',
+            added: 'Entraram depois do início',
+            addedHint: 'Criadas depois do início estimado',
+            remaining: 'Estimativa das abertas'
+        },
+        summary: {
+            empty: 'Nenhuma tarefa neste quadro.',
+            total: 'Tarefas',
+            open: 'Abertas',
+            closed: 'Fechadas ({{percent}}%)',
+            closedShort: 'Fechadas',
+            estimated: 'Estimativa total',
+            estimatedShort: 'Estimado',
+            overdue: 'Atrasadas',
+            overdueShort: 'Atrasadas',
+            highPriority: 'Prioridade alta',
+            highShort: 'Alta',
+            stale: 'Paradas',
+            staleShort: 'Paradas',
+            unassigned: 'Sem responsável',
+            byStatus: 'Distribuição por status',
+            byStatusHint: 'Na ordem das colunas do quadro. Todas as tarefas do quadro, sem os filtros.',
+            people: 'Por pessoa',
+            peopleHint: 'Clique em uma pessoa para ver só os cards dela no quadro.',
+            person: 'Pessoa',
+            progress: 'Fechadas / total',
+            byTracker: 'Por tipo',
+            byPriority: 'Por prioridade'
+        },
+        card: {
+            stale_one: 'parada há {{count}} dia',
+            stale_other: 'parada há {{count}} dias'
+        },
+        column: {
+            overdue_one: '{{count}} atrasada',
+            overdue_other: '{{count}} atrasadas',
+            overdueHint: 'Tarefas com a previsão vencida',
+            highPriority_one: '{{count}} alta',
+            highPriority_other: '{{count}} altas',
+            highPriorityHint: 'Tarefas com prioridade alta, urgente ou imediata'
+        },
+        signals: {
+            overdue_one: 'atrasada',
+            overdue_other: 'atrasadas',
+            highPriority_one: 'prioridade alta',
+            highPriority_other: 'prioridade alta',
+            stale_one: 'parada',
+            stale_other: 'paradas',
+            unassigned_one: 'sem responsável',
+            unassigned_other: 'sem responsável'
+        },
         editor: {
             newTitle: 'Novo quadro',
             editTitle: 'Editar quadro',
@@ -561,6 +636,33 @@ export const ptBR = {
         errorIn: 'Monitor “{{query}}”: {{message}}'
     },
     settings: {
+        issueStyle: {
+            title: 'Cores das tarefas',
+            hint: 'O app escolhe a cor de cada status e o nível de cada prioridade pelo nome. Troque só os que não combinarem.',
+            reset: 'Voltar ao automático',
+            statuses: 'Cor dos status',
+            priorities: 'Nível das prioridades',
+            prioritiesHint: 'Urgente e Alta ganham destaque nos cards e entram no contador de prioridade alta.',
+            automatic: 'Automático: {{value}}',
+            dueSoon: 'Destacar previsão a partir de (dias antes)',
+            dueSoonHint:
+                'A previsão fica amarela nos cards quando faltam até esse número de dias. 0 = só no dia e vencidas.',
+            tones: {
+                new: 'Nova',
+                progress: 'Em andamento',
+                review: 'Em aprovação / revisão',
+                testing: 'Em teste',
+                blocked: 'Em pausa / bloqueada',
+                done: 'Concluída',
+                rejected: 'Rejeitada / cancelada'
+            },
+            levels: {
+                urgent: 'Urgente · vermelho',
+                high: 'Alta · amarelo',
+                normal: 'Normal · sem destaque',
+                low: 'Baixa · cinza'
+            }
+        },
         tab: {
             general: 'Geral',
             appearance: 'Aparência',

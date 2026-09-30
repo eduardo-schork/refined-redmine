@@ -446,7 +446,7 @@ function CalendarHeader({
 
     return (
         <header className="drag flex h-12 shrink-0 items-center gap-2 border-b border-line px-4">
-            <h1 className="mr-2 text-[15px] font-semibold">{t('nav.calendar')}</h1>
+            <h1 className="mr-2 text-lg font-semibold">{t('nav.calendar')}</h1>
             <div className="no-drag flex items-center gap-1">
                 <Button onClick={onToday} title={t('calendar.todayShortcut')}>
                     {t('calendar.today')}
@@ -454,7 +454,7 @@ function CalendarHeader({
                 <IconButton label={t('calendar.prev')} icon={<ChevronLeft size={16} />} onClick={() => onStep(-1)} />
                 <IconButton label={t('calendar.next')} icon={<ChevronRight size={16} />} onClick={() => onStep(1)} />
             </div>
-            <span className="text-[15px] first-letter:uppercase">{title}</span>
+            <span className="text-lg first-letter:uppercase">{title}</span>
             <div className="no-drag ml-auto flex items-center gap-2">
                 <SearchInput
                     className="w-52"
@@ -518,7 +518,7 @@ function CalendarSidebar({
                     label={t('calendar.layerTasks')}
                 />
             </div>
-            <div className="mt-auto text-[11px] leading-relaxed text-muted">
+            <div className="mt-auto text-2xs leading-relaxed text-muted">
                 <RichText k="calendar.shortcuts" />
             </div>
         </aside>
@@ -544,7 +544,7 @@ function SearchResults({ results, onPick }: { results: SearchResult[]; onPick: (
                         <button
                             key={event.id}
                             onClick={() => onPick(result)}
-                            className="flex w-full cursor-default items-center gap-3 rounded-md px-2 py-2 text-left text-[13px] hover:bg-panel-2"
+                            className="flex w-full cursor-default items-center gap-3 rounded-md px-2 py-2 text-left text-sm hover:bg-panel-2"
                         >
                             <ColorDot color={colorOf(event.color).hex} />
                             <span className="w-40 shrink-0 text-xs text-muted">{dayLabel}</span>
@@ -570,7 +570,7 @@ function Layer({
     label: string
 }) {
     return (
-        <label className="flex items-center gap-2 rounded px-1 py-1 text-[13px] hover:bg-panel-2">
+        <label className="flex items-center gap-2 rounded px-1 py-1 text-sm hover:bg-panel-2">
             <input
                 type="checkbox"
                 checked={checked}

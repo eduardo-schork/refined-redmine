@@ -14,14 +14,19 @@ import {
 import { Ban } from 'lucide-react'
 import type { Board, BoardColumn } from '@domain/board/board'
 import { canDropOn, columnOf, targetStatus } from '@domain/board/board-rules'
-import type { Issue } from '@domain/redmine/entities'
+import type { Issue, IssueStatus } from '@domain/redmine/entities'
+import { dueState, isHighPriority } from '@domain/redmine/issue-signals'
 import { useMoveIssue } from '@/hooks/boards'
 import { fetchAllowedStatuses } from '@/hooks/issues'
+import { useStatuses } from '@/hooks/reference'
+import { useSettings } from '@/hooks/session'
+import { useIssueStyle } from '@/lib/issue-style'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/cn'
 import { Avatar } from '../atoms/Avatar'
 import { Badge } from '../atoms/Badge'
-import { IssueCard } from '../molecules/IssueCard'
+import { IssueCard, type IssueCardOptions } from '../molecules/IssueCard'
+import { StatusToneDot } from '../molecules/StatusTag'
 import { useToast } from '../molecules/Toast'
 
 const DROP_ID_SEPARATOR = '::'
@@ -64,6 +69,13 @@ export function KanbanBoard({
     const noAssignee = t('board.noAssignee')
     const laneOf = useCallback((issue: Issue) => issue.assigned_to?.name ?? noAssignee, [noAssignee])
     const groupByAssignee = board.swimlanes === 'assignee'
+    const staleDays = useSettings().dashboard.staleDays
+    const statuses = useStatuses().data
+    const firstStatusOf = (column: BoardColumn) => statuses?.find((status) => status.id === column.statusIds[0])
+    const cardOptions = useMemo(() => {
+        const projects = new Set(issues.map((issue) => issue.project.id))
+        return { staleDays, showProject: projects.size > 1 }
+    }, [issues, staleDays])
 
     const lanes = useMemo(
         () => (groupByAssignee ? assigneeLanes(issues, laneOf, noAssignee) : ['']),
@@ -117,13 +129,14 @@ export function KanbanBoard({
                             <ColumnHeader
                                 key={column.id}
                                 name={column.name}
-                                count={issuesIn(column).length}
+                                status={firstStatusOf(column)}
+                                issues={issuesIn(column)}
                                 blocked={!canDrop(column)}
                             />
                         ))}
                     </div>
 
-                    {loading && <div className="px-5 py-6 text-[13px] text-muted">{t('board.loading')}</div>}
+                    {loading && <div className="px-5 py-6 text-sm text-muted">{t('board.loading')}</div>}
 
                     {lanes.map((lane) => (
                         <div key={lane} className="flex flex-col">
@@ -145,7 +158,10 @@ export function KanbanBoard({
                                                     key={issue.id}
                                                     issue={issue}
                                                     onOpen={onOpen}
-                                                    showStatus={column.statusIds.length > 1}
+                                                    options={{
+                                                        ...cardOptions,
+                                                        showStatus: column.statusIds.length > 1
+                                                    }}
                                                 />
                                             ))}
                                         </Column>
@@ -157,13 +173,29 @@ export function KanbanBoard({
                 </div>
             </div>
             <DragOverlay dropAnimation={null}>
-                {dragging && <IssueCard issue={dragging} overlay showStatus />}
+                {dragging && <IssueCard issue={dragging} overlay options={{ ...cardOptions, showStatus: true }} />}
             </DragOverlay>
         </DndContext>
     )
 }
 
-function ColumnHeader({ name, count, blocked }: { name: string; count: number; blocked: boolean }) {
+/** Column name, number of cards and, when there are any, how many are overdue or high priority. */
+function ColumnHeader({
+    name,
+    status,
+    issues,
+    blocked
+}: {
+    name: string
+    status?: IssueStatus
+    issues: Issue[]
+    blocked: boolean
+}) {
+    const { t } = useI18n()
+    const rules = useIssueStyle()
+    const now = new Date()
+    const overdue = issues.filter((issue) => dueState(issue, now) === 'overdue').length
+    const highPriority = issues.filter((issue) => !issue.status.is_closed && isHighPriority(issue, rules)).length
     return (
         <div
             className={cn(
@@ -171,8 +203,19 @@ function ColumnHeader({ name, count, blocked }: { name: string; count: number; b
                 blocked && 'opacity-40'
             )}
         >
-            <span className="text-[12px] font-semibold uppercase tracking-wide">{name}</span>
-            <Badge>{count}</Badge>
+            {status && <StatusToneDot status={status} />}
+            <span className="text-xs font-semibold uppercase tracking-wide">{name}</span>
+            <Badge className="font-semibold">{issues.length}</Badge>
+            {overdue > 0 && (
+                <span className="text-2xs font-semibold text-danger" title={t('board.column.overdueHint')}>
+                    {t('board.column.overdue', { count: overdue })}
+                </span>
+            )}
+            {highPriority > 0 && (
+                <span className="text-2xs font-semibold text-warn" title={t('board.column.highPriorityHint')}>
+                    {t('board.column.highPriority', { count: highPriority })}
+                </span>
+            )}
             {blocked && <Ban size={12} className="text-muted" />}
         </div>
     )
@@ -181,7 +224,7 @@ function ColumnHeader({ name, count, blocked }: { name: string; count: number; b
 function LaneHeader({ lane, noAssignee }: { lane: string; noAssignee: string }) {
     const assigneeName = lane === noAssignee ? undefined : lane
     return (
-        <div className="sticky left-0 flex items-center gap-2 px-5 pb-1 pt-3 text-[12px] font-medium text-muted">
+        <div className="sticky left-0 flex items-center gap-2 px-5 pb-1 pt-3 text-xs font-medium text-muted">
             <Avatar name={assigneeName} />
             {lane}
         </div>
@@ -218,11 +261,11 @@ function Column({
 function DraggableCard({
     issue,
     onOpen,
-    showStatus
+    options
 }: {
     issue: Issue
     onOpen: (id: number) => void
-    showStatus: boolean
+    options: IssueCardOptions
 }) {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: String(issue.id) })
     return (
@@ -233,7 +276,7 @@ function DraggableCard({
             className={cn(isDragging && 'opacity-30')}
             onClick={() => onOpen(issue.id)}
         >
-            <IssueCard issue={issue} showStatus={showStatus} />
+            <IssueCard issue={issue} options={options} />
         </div>
     )
 }

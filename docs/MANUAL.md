@@ -53,7 +53,8 @@ Fechar a janela não encerra o app: ele continua na bandeja (barra de menus no m
 O painel resume o seu dia:
 
 - **Barra de busca**, logo abaixo da saudação: a mesma [busca rápida](#busca-rápida), direto na tela. Clique nela (ou use `Tab`) e digite; os resultados abrem logo abaixo.
-- **Indicadores**: tarefas na sua fila, paradas, atrasadas e notificações não lidas.
+- **Indicadores**: tarefas na sua fila, de prioridade alta, paradas, atrasadas e notificações não lidas. Os números ficam amarelos ou vermelhos quando pedem atenção; clique em um para ir ao painel correspondente.
+- As listas mostram a **prioridade** (quando não é Normal) e a versão de cada tarefa.
 - **Sprints**: cartões das sprints ativas com fase, prazo dos devs, data de publicação e progresso. **Ver sprints** abre a tela completa.
 - **Agenda de hoje**: os compromissos do dia. **Abrir agenda** leva à Agenda.
 - **Minha fila**: suas tarefas abertas, com contagem por status.
@@ -89,9 +90,35 @@ Os quadros ficam na barra lateral, em **Quadros**. Cada coluna agrupa um ou mais
 - **Todos os responsáveis** filtra os cards por pessoa.
 - Os ícones no canto superior direito atualizam, editam e excluem o quadro.
 
-Cada card mostra número, tipo, título, responsável, projeto, versão, data de entrega (em vermelho quando vencida) e o percentual concluído.
+**Contadores de atenção**, acima das colunas: quantas tarefas do quadro estão **atrasadas**, com **prioridade alta**, **paradas** ou **sem responsável** (só aparecem os que têm alguma). Clique em um para ver só essas tarefas; clique de novo para voltar a ver todas. Eles respeitam a busca e o filtro de responsável.
 
-A **bolinha antes do número** é a prioridade: vermelha = Imediata/Urgente/Crítica, amarela = Alta, cinza clara = Baixa; sem bolinha = Normal. Passe o mouse sobre ela para ver o nome da prioridade.
+Ao lado do nome de cada coluna, além do total, aparecem em vermelho as **atrasadas** e em amarelo as de **prioridade alta** daquela coluna.
+
+Cada card tem uma informação por linha:
+
+1. **Número e tipo**, e à direita a **prioridade**, quando não é Normal: **Urgente/Imediata** em vermelho, **Alta** em amarelo, **Baixa** em cinza. A borda esquerda do card também fica vermelha ou amarela.
+2. **Título**.
+3. **Etiquetas**: versão, previsão (vermelha se venceu ou vence hoje, amarela se vence em até 3 dias (ajustável), com "ontem", "amanhã", "em 2 dias"), o status quando a coluna junta mais de um e o projeto quando o quadro tem mais de um.
+4. **Responsável** (ou "Sem responsável") e quando a tarefa mudou pela última vez. Se ela está parada, aparece "parada há N dias" em amarelo.
+
+A barra verde embaixo é o percentual concluído.
+
+**Cores dos status**: o Redmine não tem cores de status, então o app escolhe uma pelo nome (dá para trocar em [Cores das tarefas](#cores-das-tarefas)): cinza para novas, azul para em andamento, roxo para em aprovação ou revisão, verde-água para em teste ou homologação, amarelo para em pausa ou aguardando, verde para resolvidas e fechadas, cinza apagado para rejeitadas ou canceladas. A cor aparece na bolinha do cabeçalho de cada coluna, nas etiquetas de status dos cards, das listas do Início e do detalhe da tarefa, e no resumo do quadro.
+
+### Resumo do quadro
+
+![Resumo do quadro](images/board-summary.png)
+
+No topo do quadro, **Quadro | Resumo** troca entre os cards e os números do quadro. O resumo usa **todas** as tarefas do quadro, sem a busca e os filtros.
+
+- **Sprint** (só nos quadros de sprint), no topo:
+  - **Datas**: início (estimado: o dia seguinte ao prazo dos devs da sprint anterior), prazo dos devs e publicação, com quantos dias faltam.
+  - **Ritmo**: duas barras, o tempo de desenvolvimento que já passou e o percentual de tarefas fechadas. A etiqueta diz se a sprint está **No ritmo**, **Adiantada** ou **Atrás do ritmo** (diferença de mais de 15 pontos). Só aparece enquanto a sprint está em desenvolvimento.
+  - **Fechadas nos últimos 7 dias**, **para fechar por dia útil** até o prazo dos devs, **entraram depois do início** (tarefas criadas durante a sprint, em amarelo quando há alguma) e **estimativa das abertas** em horas.
+- **Indicadores**: total, abertas, fechadas (com o percentual), estimativa total em horas, atrasadas, prioridade alta, paradas e sem responsável.
+- **Distribuição por status**: uma barra dividida na ordem das colunas, com a quantidade e o percentual de cada status.
+- **Por pessoa**: abertas, fechadas, progresso (fechadas ÷ total), atrasadas, de prioridade alta, paradas e horas estimadas de cada responsável. **Clique em uma pessoa** para voltar ao quadro mostrando só os cards dela.
+- **Por tipo** e **Por prioridade**: quantas tarefas de cada tipo e de cada prioridade (da mais urgente para a mais baixa).
 
 ### Raias por responsável
 
@@ -134,6 +161,7 @@ Clicar em uma tarefa, em qualquer tela, abre o detalhe sem sair do app. As taref
 
 - **Descrição**, com formatação (listas, tabelas, negrito, links).
 - **Anexos**, **Relações** e **Histórico** (comentários e mudanças de campos).
+- **Resumo no topo**, abaixo do título: status, prioridade, previsão (colorida quando está perto ou vencida) e versão.
 - **Status**: troque direto pelo seletor; só aparecem os status permitidos para a tarefa.
 - **Adicionar comentário**: aceita Markdown e é publicado no Redmine.
 - **Campos editáveis na lateral**: prioridade, responsável, versão, início, previsão e % concluído. Cada mudança é salva no Redmine na hora e confirmada com um aviso.
@@ -303,6 +331,19 @@ As configurações ficam divididas em abas, na coluna à esquerda.
 - **Prévia** mostra os componentes com as escolhas atuais; **Restaurar padrão** volta ao visual original.
 
 ![Aparência, tema claro com destaque azul](images/appearance-light.png)
+
+#### Cores das tarefas
+
+![Cores das tarefas](images/issue-style.png)
+
+Ainda na aba **Aparência**, a seção **Cores das tarefas** ajusta o que o app deduz pelo nome:
+
+- **Cor dos status**: cada status do Redmine aparece com a cor atual. Em "Automático" o app escolhe pelo nome; escolha outra família (Nova, Em andamento, Em aprovação/revisão, Em teste, Em pausa/bloqueada, Concluída, Rejeitada/cancelada) para os status que ficaram com a cor errada.
+- **Nível das prioridades**: diga qual prioridade é Urgente (vermelho), Alta (amarelo), Normal (sem destaque) ou Baixa (cinza). Urgente e Alta entram nos contadores de prioridade alta do Início e dos quadros.
+- **Destacar previsão a partir de**: quantos dias antes a previsão fica amarela nos cards (padrão 3; 0 = só no dia e vencidas).
+- **Voltar ao automático** apaga as escolhas de status e prioridades.
+
+A prévia ao lado de cada item muda na hora, e a escolha vale em todo o app.
 
 **Notificações**
 

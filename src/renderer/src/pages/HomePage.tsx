@@ -54,8 +54,8 @@ export default function HomePage() {
             actions={<RefreshButton spinning={sprints.isFetching} onClick={() => void refresh()} />}
         >
             <div>
-                <h2 className="text-[20px] font-semibold">{t(hello, { name: settings.user?.firstname ?? '' })}</h2>
-                <p className="text-[13px] text-muted first-letter:uppercase">
+                <h2 className="text-2xl font-semibold">{t(hello, { name: settings.user?.firstname ?? '' })}</h2>
+                <p className="text-sm text-muted first-letter:uppercase">
                     {dates.format(new Date(), { weekday: 'long', day: 'numeric', month: 'long' })}
                 </p>
             </div>
@@ -80,13 +80,13 @@ export default function HomePage() {
                 {showSprintSetup ? (
                     <button
                         onClick={goToSprints}
-                        className="w-full cursor-default rounded-xl border border-dashed border-line p-5 text-[13px] text-muted hover:text-fg"
+                        className="w-full cursor-default rounded-xl border border-dashed border-line p-5 text-sm text-muted hover:text-fg"
                     >
                         {t('home.configureSprints')}
                     </button>
                 ) : (
                     <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3">
-                        {sprints.isLoading && <div className="text-[13px] text-muted">{t('common.loading')}</div>}
+                        {sprints.isLoading && <div className="text-sm text-muted">{t('common.loading')}</div>}
                         {startedSprints.map((sprint) => (
                             <SprintCard key={sprint.version.id} sprint={sprint} onOpen={goToSprints} compact />
                         ))}

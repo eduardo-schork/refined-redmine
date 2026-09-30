@@ -44,7 +44,7 @@ export function ScopeDialog({
                 </>
             }
         >
-            <div className="flex flex-col gap-2 text-[13px]">
+            <div className="flex flex-col gap-2 text-sm">
                 {SCOPE_OPTIONS.map((option) => (
                     <label key={option} className="flex items-center gap-2">
                         <input type="radio" checked={scope === option} onChange={() => setScope(option)} />{' '}
@@ -91,16 +91,21 @@ export function EventDetails({
                                 icon={<Copy size={15} />}
                                 onClick={onDuplicate}
                             />
-                            <IconButton label={t('common.delete')} icon={<Trash2 size={15} />} onClick={onDelete} />
+                            <IconButton
+                                label={t('common.delete')}
+                                tone="danger"
+                                icon={<Trash2 size={15} />}
+                                onClick={onDelete}
+                            />
                         </>
                     )}
                     <IconButton label={t('common.close')} icon={<X size={16} />} onClick={onClose} />
                 </div>
-                <div className="flex flex-col gap-3 px-5 pb-5 text-[13px]">
+                <div className="flex flex-col gap-3 px-5 pb-5 text-sm">
                     <div className="flex gap-3">
                         <span className="mt-1.5 h-3.5 w-3.5 shrink-0 rounded" style={{ background: item.hex }} />
                         <div>
-                            <div className="select-text text-[18px] leading-snug">{item.title}</div>
+                            <div className="select-text text-xl leading-snug">{item.title}</div>
                             <div className="text-muted">
                                 {dayLabel} · {timeLabel}
                             </div>

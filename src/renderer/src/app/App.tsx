@@ -3,9 +3,10 @@ import type { SettingsView } from '@contracts/api'
 import type { Board } from '@domain/board/board'
 import { resolveLocale } from '@shared/i18n/index'
 import { useAppEventsSync } from '@/hooks/notifications'
-import { useSession } from '@/hooks/session'
+import { useSession, useSettings } from '@/hooks/session'
 import { useApplyAppearance } from '@/lib/appearance'
 import { I18nProvider } from '@/lib/i18n'
+import { IssueStyleContext } from '@/lib/issue-style'
 import { NavContext, type Route } from '@/lib/router'
 import BoardPage from '@/pages/BoardPage'
 import CalendarPage from '@/pages/CalendarPage'
@@ -49,6 +50,7 @@ function AuthenticatedApp() {
     const [searching, setSearching] = useState(false)
     const openSearch = useCallback(() => setSearching(true), [])
     const closeSearch = useCallback(() => setSearching(false), [])
+    const issueStyle = useSettings().issueStyle
     useAppEventsSync(navigate)
     useSearchShortcut(openSearch)
 
@@ -61,44 +63,48 @@ function AuthenticatedApp() {
 
     return (
         <NavContext.Provider value={navigate}>
-            <IssueModalProvider>
-                <NotificationPermissionGate />
-                <WhatsNewDialog />
-                <AppShell
-                    sidebar={
-                        <Sidebar
-                            route={route}
-                            onNavigate={navigate}
-                            onNewBoard={openEmptyBoardEditor}
-                            onSearch={openSearch}
-                        />
-                    }
-                >
-                    {route.page === 'home' && <HomePage />}
-                    {route.page === 'calendar' && (
-                        <CalendarPage
-                            key={`${route.date}|${route.eventId}`}
-                            focusDate={route.date}
-                            focusEventId={route.eventId}
-                            onGoSprints={() => navigate({ page: 'sprints' })}
-                        />
+            <IssueStyleContext.Provider value={issueStyle}>
+                <IssueModalProvider>
+                    <NotificationPermissionGate />
+                    <WhatsNewDialog />
+                    <AppShell
+                        sidebar={
+                            <Sidebar
+                                route={route}
+                                onNavigate={navigate}
+                                onNewBoard={openEmptyBoardEditor}
+                                onSearch={openSearch}
+                            />
+                        }
+                    >
+                        {route.page === 'home' && <HomePage />}
+                        {route.page === 'calendar' && (
+                            <CalendarPage
+                                key={`${route.date}|${route.eventId}`}
+                                focusDate={route.date}
+                                focusEventId={route.eventId}
+                                onGoSprints={() => navigate({ page: 'sprints' })}
+                            />
+                        )}
+                        {route.page === 'sprints' && <SprintsPage onCreateBoard={setNewBoard} />}
+                        {route.page === 'board' && (
+                            <BoardPage
+                                key={route.boardId}
+                                boardId={route.boardId}
+                                onCreate={openEmptyBoardEditor}
+                                onDeleted={() => navigate({ page: 'board' })}
+                            />
+                        )}
+                        {route.page === 'notifications' && <NotificationsPage />}
+                        {route.page === 'log' && <LogPage />}
+                        {route.page === 'settings' && <SettingsPage key={route.tab} tab={route.tab} />}
+                    </AppShell>
+                    {newBoard && (
+                        <BoardEditor initial={newBoard} onClose={closeBoardEditor} onSaved={handleBoardSaved} />
                     )}
-                    {route.page === 'sprints' && <SprintsPage onCreateBoard={setNewBoard} />}
-                    {route.page === 'board' && (
-                        <BoardPage
-                            key={route.boardId}
-                            boardId={route.boardId}
-                            onCreate={openEmptyBoardEditor}
-                            onDeleted={() => navigate({ page: 'board' })}
-                        />
-                    )}
-                    {route.page === 'notifications' && <NotificationsPage />}
-                    {route.page === 'log' && <LogPage />}
-                    {route.page === 'settings' && <SettingsPage key={route.tab} tab={route.tab} />}
-                </AppShell>
-                {newBoard && <BoardEditor initial={newBoard} onClose={closeBoardEditor} onSaved={handleBoardSaved} />}
-                {searching && <QuickSearch onClose={closeSearch} />}
-            </IssueModalProvider>
+                    {searching && <QuickSearch onClose={closeSearch} />}
+                </IssueModalProvider>
+            </IssueStyleContext.Provider>
         </NavContext.Provider>
     )
 }

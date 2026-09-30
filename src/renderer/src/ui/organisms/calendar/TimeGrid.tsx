@@ -175,7 +175,7 @@ export function TimeGrid({
                     ))}
                 </div>
                 <div className="grid" style={{ gridTemplateColumns: gridColumns }}>
-                    <div className="py-1 pr-2 text-right text-[10px] text-muted">{t('calendar.allDayShort')}</div>
+                    <div className="py-1 pr-2 text-right text-2xs text-muted">{t('calendar.allDayShort')}</div>
                     {days.map((day) => (
                         <AllDayCell
                             key={day.toISOString()}
@@ -213,12 +213,12 @@ function DayHeader({ day, isToday, onDay }: { day: Date; isToday: boolean; onDay
     const { dates } = useI18n()
     return (
         <button onClick={() => onDay(day)} className="flex cursor-default flex-col items-center py-1.5">
-            <span className={cn('text-[11px] font-medium uppercase', isToday ? 'text-accent' : 'text-muted')}>
+            <span className={cn('text-2xs font-medium uppercase', isToday ? 'text-accent' : 'text-muted')}>
                 {dates.weekdayShort(day.getDay())}
             </span>
             <span
                 className={cn(
-                    'flex h-9 w-9 items-center justify-center rounded-full text-[20px]',
+                    'flex h-9 w-9 items-center justify-center rounded-full text-2xl',
                     isToday ? 'bg-accent font-semibold text-on-accent' : 'hover:bg-panel-2'
                 )}
             >
@@ -255,7 +255,7 @@ function AllDayCell({
                 <EventChip key={item.id} item={item} onOpen={onOpen} />
             ))}
             {hiddenCount > 0 && (
-                <button onClick={() => onDay(day)} className="px-1 text-left text-[11px] text-muted hover:text-fg">
+                <button onClick={() => onDay(day)} className="px-1 text-left text-2xs text-muted hover:text-fg">
                     {t('calendar.more', { count: hiddenCount })}
                 </button>
             )}
@@ -272,7 +272,7 @@ function HourLabels() {
                 return (
                     <span
                         key={index}
-                        className="absolute right-2 -translate-y-1/2 text-[10px] text-muted"
+                        className="absolute right-2 -translate-y-1/2 text-2xs text-muted"
                         style={{ top: hour * HOUR_HEIGHT }}
                     >
                         {dates.time(new Date(2000, 0, 1, hour))}
@@ -325,7 +325,7 @@ function SelectionOverlay({ day, selection }: { day: Date; selection: Selection 
     const { startMinutes, endMinutes } = selectionBounds(selection)
     return (
         <div
-            className="pointer-events-none absolute inset-x-1 z-10 rounded-md bg-accent/80 px-1.5 py-0.5 text-[11px] text-on-accent"
+            className="pointer-events-none absolute inset-x-1 z-10 rounded-md bg-accent/80 px-1.5 py-0.5 text-2xs text-on-accent"
             style={{
                 top: minutesToPixels(startMinutes),
                 height: minutesToPixels(endMinutes - startMinutes)
@@ -345,7 +345,7 @@ function TimedEvent({ placed, onOpen }: { placed: Placed; onOpen: (item: Display
         <button
             onClick={() => onOpen(item)}
             className={cn(
-                'absolute cursor-default overflow-hidden rounded-md border border-[var(--panel)] px-1.5 py-0.5 text-left text-[11px] leading-tight shadow-sm hover:brightness-110',
+                'absolute cursor-default overflow-hidden rounded-md border border-[var(--panel)] px-1.5 py-0.5 text-left text-2xs leading-tight shadow-sm hover:brightness-110',
                 item.darkText ? 'text-black' : 'text-white'
             )}
             style={{

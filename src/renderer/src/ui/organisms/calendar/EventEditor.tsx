@@ -287,7 +287,7 @@ export function EventEditor({
                     value={draft.title}
                     onChange={(event) => patch({ title: event.target.value })}
                     placeholder={t('calendar.editor.titlePlaceholder')}
-                    className="w-full border-b-2 border-line bg-transparent pb-1.5 text-[20px] outline-none focus:border-accent"
+                    className="w-full border-b-2 border-line bg-transparent pb-1.5 text-2xl outline-none focus:border-accent"
                 />
                 {problem && <Alert className="px-3 py-2">{problem}</Alert>}
 
@@ -446,7 +446,7 @@ function CustomRecurrence({
     }
 
     return (
-        <div className="mt-2 flex flex-col gap-3 rounded-lg border border-line bg-panel-2/50 p-3 text-[13px]">
+        <div className="mt-2 flex flex-col gap-3 rounded-lg border border-line bg-panel-2/50 p-3 text-sm">
             <div className="flex items-center gap-2">
                 {t('calendar.editor.repeatEvery')}
                 <Input

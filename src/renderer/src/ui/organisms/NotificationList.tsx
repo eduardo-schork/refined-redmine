@@ -56,7 +56,9 @@ function NotificationCard({
             onClick={() => onOpen(notification)}
             className={cn(
                 'flex w-full cursor-default items-start gap-3 rounded-lg border px-3 py-2.5 text-left',
-                read ? 'border-transparent hover:bg-panel' : 'border-line bg-panel hover:border-muted/40'
+                read
+                    ? 'border-transparent hover:bg-panel'
+                    : 'border-line border-l-accent border-l-[3px] bg-panel hover:border-muted/40'
             )}
         >
             <span className={cn('mt-0.5 shrink-0', read ? 'text-muted' : 'text-accent')}>
@@ -64,16 +66,16 @@ function NotificationCard({
             </span>
             <span className="min-w-0 flex-1">
                 <span className="flex items-baseline gap-2">
-                    <span className={cn('truncate text-[13px]', !read && 'font-semibold')}>{text.title}</span>
-                    <span className="ml-auto shrink-0 text-[11px] text-muted">
+                    <span className={cn('truncate text-sm', !read && 'font-semibold')}>{text.title}</span>
+                    <span className="ml-auto shrink-0 text-2xs text-muted">
                         {dates.relativeTime(notification.createdAt, now)}
                     </span>
                 </span>
-                <span className="block truncate text-[13px]">{subject}</span>
+                <span className="block truncate text-sm">{subject}</span>
                 {extraLines.length > 0 && (
                     <span className="block whitespace-pre-line text-xs text-muted">{extraLines.join('\n')}</span>
                 )}
-                {via && <span className="block text-[11px] text-accent">{via}</span>}
+                {via && <span className="block text-2xs text-accent">{via}</span>}
             </span>
         </button>
     )
@@ -114,7 +116,7 @@ function NotificationRow({
     return (
         <button
             onClick={() => onOpen(notification)}
-            className="flex w-full cursor-default items-center gap-3 border-t border-line px-4 py-2 text-left text-[13px] hover:bg-panel-2"
+            className="flex w-full cursor-default items-center gap-3 border-t border-line px-4 py-2 text-left text-sm hover:bg-panel-2"
         >
             <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', read ? 'bg-transparent' : 'bg-accent')} />
             <span className={cn('w-56 shrink-0 truncate', !read && 'font-medium')}>{text.title}</span>

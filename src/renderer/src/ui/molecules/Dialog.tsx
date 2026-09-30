@@ -45,13 +45,8 @@ export function Dialog({
             >
                 {!bare && (
                     <div className="flex items-center justify-between border-b border-line px-5 py-3">
-                        <h2 className="text-[15px] font-semibold">{title}</h2>
-                        <IconButton
-                            label={t('common.close')}
-                            icon={<X size={16} />}
-                            className="h-7 w-7"
-                            onClick={onClose}
-                        />
+                        <h2 className="text-lg font-semibold">{title}</h2>
+                        <IconButton label={t('common.close')} icon={<X size={16} />} size="sm" onClick={onClose} />
                     </div>
                 )}
                 {bare ? children : <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>}

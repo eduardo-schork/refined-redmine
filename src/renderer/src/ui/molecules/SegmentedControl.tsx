@@ -19,7 +19,7 @@ export function SegmentedControl<T extends string>({
                     title={option.title}
                     onClick={() => onChange(option.value)}
                     className={cn(
-                        'h-7 cursor-default rounded px-2.5 text-[12px]',
+                        'h-7 cursor-default rounded px-2.5 text-xs',
                         value === option.value ? 'bg-panel-2 font-medium' : 'text-muted hover:text-fg'
                     )}
                 >

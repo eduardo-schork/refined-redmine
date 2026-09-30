@@ -116,7 +116,7 @@ function CustomReminderEditor({
                 <option value={DAY}>{t('calendar.editor.days')}</option>
                 <option value={WEEK}>{t('calendar.editor.weeks')}</option>
             </Select>
-            <IconButton label={t('common.add')} icon={<Check size={14} />} className="h-7 w-7" onClick={onConfirm} />
+            <IconButton label={t('common.add')} icon={<Check size={14} />} size="sm" onClick={onConfirm} />
         </span>
     )
 }

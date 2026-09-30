@@ -46,7 +46,7 @@ export function WhatsNewDialog() {
                             onExternal={(url) => void api.app.openExternal(url)}
                         />
                     ) : (
-                        <p className="text-[13px] text-muted">{t('whatsNew.empty')}</p>
+                        <p className="text-sm text-muted">{t('whatsNew.empty')}</p>
                     )}
                 </div>
             </div>

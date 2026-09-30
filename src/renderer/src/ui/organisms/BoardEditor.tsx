@@ -233,7 +233,7 @@ function BoardNotificationsFields({
     const { t } = useI18n()
     return (
         <div className="border-t border-line pt-4">
-            <h3 className="text-[13px] font-semibold">{t('board.editor.notifications')}</h3>
+            <h3 className="text-sm font-semibold">{t('board.editor.notifications')}</h3>
             <ToggleField
                 checked={value.enabled}
                 onChange={(enabled) => onChange({ ...value, enabled })}
@@ -353,7 +353,7 @@ function ColumnsEditor({
         <div>
             <div className="mb-2 flex items-center justify-between">
                 <div>
-                    <h3 className="text-[13px] font-semibold">{t('board.editor.columns')}</h3>
+                    <h3 className="text-sm font-semibold">{t('board.editor.columns')}</h3>
                     <p className="text-xs text-muted">{t('board.editor.columnsHint')}</p>
                 </div>
                 <div className="flex gap-2">
@@ -459,7 +459,12 @@ function ColumnRow({
                     </AddSelect>
                 )}
             </div>
-            <IconButton label={t('board.editor.removeColumn')} icon={<Trash2 size={14} />} onClick={onRemove} />
+            <IconButton
+                label={t('board.editor.removeColumn')}
+                tone="danger"
+                icon={<Trash2 size={14} />}
+                onClick={onRemove}
+            />
         </div>
     )
 }

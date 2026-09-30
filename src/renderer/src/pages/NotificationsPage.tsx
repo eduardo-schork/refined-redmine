@@ -66,6 +66,7 @@ export default function NotificationsPage() {
                     />
                     <IconButton
                         label={t('notificationsPage.clear')}
+                        tone="danger"
                         icon={<Trash2 size={15} />}
                         onClick={confirmClear}
                     />
@@ -74,7 +75,7 @@ export default function NotificationsPage() {
             width="md"
         >
             {list.length === 0 && (
-                <div className="py-16 text-center text-[13px] text-muted">
+                <div className="py-16 text-center text-sm text-muted">
                     {onlyUnread ? t('notificationsPage.nothingPending') : t('notificationsPage.empty')}
                 </div>
             )}

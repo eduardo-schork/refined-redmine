@@ -172,7 +172,7 @@ function ThemeCard({
                 {mode !== 'dark' && <MiniWindow sample={light} accent={appearance.accent} />}
                 {mode !== 'light' && <MiniWindow sample={dark} accent={appearance.accent} />}
             </div>
-            <span className="flex items-center gap-1.5 px-1 text-[13px]">
+            <span className="flex items-center gap-1.5 px-1 text-sm">
                 {THEME_ICONS[mode]}
                 {t(`appearance.mode.${mode}`)}
                 {selected && <Check size={13} className="ml-auto text-accent" />}
@@ -304,7 +304,7 @@ function LivePreview() {
                 <Button>{t('common.cancel')}</Button>
                 <Badge tone="accent">3</Badge>
                 <Switch checked={checked} onChange={setChecked} label={t('appearance.preview')} />
-                <span className="text-[13px] text-accent">{t('appearance.previewLink')}</span>
+                <span className="text-sm text-accent">{t('appearance.previewLink')}</span>
                 <span className="rounded-md bg-accent-soft px-2 py-1 text-xs text-accent">
                     {t('appearance.previewSelected')}
                 </span>

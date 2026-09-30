@@ -26,7 +26,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                     <div
                         key={item.id}
                         className={cn(
-                            'rounded-lg border bg-panel px-3 py-2 text-[13px] shadow-lg',
+                            'rounded-lg border bg-panel px-3 py-2 text-sm shadow-lg',
                             item.tone === 'error' ? 'border-danger/40 text-danger' : 'border-line'
                         )}
                     >

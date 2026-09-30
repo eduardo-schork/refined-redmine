@@ -51,6 +51,14 @@ describe('classifySprints', () => {
         expect(phase('3.80')).toBe('planned')
     })
 
+    it('estimates the start as the day after the previous dev deadline', () => {
+        const start = (name: string) => all.find((sprint) => sprint.version.name === name)?.devStart
+        expect(start('3.79')).toBe('2026-09-23')
+        expect(start('3.78')).toBe('2026-09-09')
+        expect(start('3.76')).toBeUndefined()
+        expect(start('3.77.1')).toBeUndefined()
+    })
+
     it('links the hotfix to its source sprint', () => {
         expect(all.find((sprint) => sprint.version.name === '3.77.1')?.baseName).toBe('3.77')
     })

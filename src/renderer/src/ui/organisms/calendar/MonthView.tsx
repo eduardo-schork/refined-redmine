@@ -36,7 +36,7 @@ export function MonthView({
         <div className="flex h-full flex-col">
             <div className="grid grid-cols-7 border-b border-line">
                 {days.slice(0, 7).map((day) => (
-                    <div key={day.getDay()} className="py-1.5 text-center text-[11px] font-medium uppercase text-muted">
+                    <div key={day.getDay()} className="py-1.5 text-center text-2xs font-medium uppercase text-muted">
                         {dates.weekdayShort(day.getDay())}
                     </div>
                 ))}
@@ -68,7 +68,7 @@ export function MonthView({
                             <button
                                 onClick={() => onDay(day)}
                                 className={cn(
-                                    'mx-auto mb-0.5 flex h-6 min-w-6 cursor-default items-center justify-center rounded-full px-1 text-[12px]',
+                                    'mx-auto mb-0.5 flex h-6 min-w-6 cursor-default items-center justify-center rounded-full px-1 text-xs',
                                     dayNumberClass(isToday, inMonth)
                                 )}
                             >
@@ -80,7 +80,7 @@ export function MonthView({
                             {hiddenCount > 0 && (
                                 <button
                                     onClick={() => onDay(day)}
-                                    className="cursor-default rounded px-1.5 text-left text-[11px] font-medium text-muted hover:bg-panel-2"
+                                    className="cursor-default rounded px-1.5 text-left text-2xs font-medium text-muted hover:bg-panel-2"
                                 >
                                     {t('calendar.more', { count: hiddenCount })}
                                 </button>

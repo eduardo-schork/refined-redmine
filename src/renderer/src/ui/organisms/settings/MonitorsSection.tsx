@@ -139,12 +139,14 @@ function MonitorRow({
         <div className="flex items-center gap-3 rounded-lg border border-line px-3 py-2.5">
             <Switch checked={monitor.enabled} onChange={onToggle} label={name} />
             <button className="min-w-0 flex-1 cursor-default text-left" onClick={onEdit}>
-                <div className={cn('truncate text-[13px] font-medium', !monitor.enabled && 'text-muted')}>{name}</div>
+                <div className={cn('truncate text-sm font-medium', !monitor.enabled && 'text-muted')}>{name}</div>
                 <div className="truncate text-xs text-muted">{describe(monitor)}</div>
                 <div className="truncate text-xs text-muted">{eventsSummary || t('monitors.off')}</div>
             </button>
             <IconButton label={t('common.edit')} icon={<Pencil size={14} />} onClick={onEdit} />
-            {!isMine && <IconButton label={t('common.delete')} icon={<Trash2 size={14} />} onClick={onRemove} />}
+            {!isMine && (
+                <IconButton label={t('common.delete')} tone="danger" icon={<Trash2 size={14} />} onClick={onRemove} />
+            )}
         </div>
     )
 }

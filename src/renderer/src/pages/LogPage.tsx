@@ -113,13 +113,13 @@ export default function LogPage() {
 
 function LogTable({ rows }: { rows: { entry: LogEntry; text: string }[] }) {
     const { t, dates } = useI18n()
-    if (!rows.length) return <div className="py-16 text-center text-[13px] text-muted">{t('log.empty')}</div>
+    if (!rows.length) return <div className="py-16 text-center text-sm text-muted">{t('log.empty')}</div>
     return (
         <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-line">
             {rows.map(({ entry, text }) => (
                 <div
                     key={entry.id}
-                    className="flex items-start gap-3 border-b border-line px-3 py-1.5 font-mono text-[11.5px] last:border-b-0"
+                    className="flex items-start gap-3 border-b border-line px-3 py-1.5 font-mono text-xs last:border-b-0"
                 >
                     <span className={cn('mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full', LEVEL_COLORS[entry.level])} />
                     <span className="w-36 shrink-0 text-muted">

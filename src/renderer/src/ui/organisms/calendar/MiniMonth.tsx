@@ -44,9 +44,9 @@ export function MiniMonth({
     const today = new Date()
 
     return (
-        <div className="text-[11px]">
+        <div className="text-2xs">
             <div className="mb-1 flex items-center justify-between">
-                <span className="pl-1 text-[12px] font-medium first-letter:uppercase">
+                <span className="pl-1 text-xs font-medium first-letter:uppercase">
                     {dates.format(month, { month: 'long', year: 'numeric' })}
                 </span>
                 <div className="flex">

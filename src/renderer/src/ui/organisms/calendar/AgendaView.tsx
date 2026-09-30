@@ -30,7 +30,7 @@ export function AgendaView({
         <div className="h-full overflow-y-auto">
             <div className="mx-auto max-w-3xl px-4 py-4">
                 {groups.length === 0 && (
-                    <p className="py-16 text-center text-[13px] text-muted">
+                    <p className="py-16 text-center text-sm text-muted">
                         {t('calendar.nothingInRange', { count: days })}
                     </p>
                 )}
@@ -42,13 +42,13 @@ export function AgendaView({
                         >
                             <span
                                 className={cn(
-                                    'flex h-8 w-8 items-center justify-center rounded-full text-[17px]',
+                                    'flex h-8 w-8 items-center justify-center rounded-full text-xl',
                                     sameDay(day, today) && 'bg-accent font-semibold text-on-accent'
                                 )}
                             >
                                 {day.getDate()}
                             </span>
-                            <span className="mt-1.5 text-[11px] uppercase text-muted">
+                            <span className="mt-1.5 text-2xs uppercase text-muted">
                                 {dates.format(day, { month: 'short', weekday: 'short' })}
                             </span>
                         </button>
@@ -57,7 +57,7 @@ export function AgendaView({
                                 <li key={item.id}>
                                     <button
                                         onClick={() => onOpen(item)}
-                                        className="flex w-full cursor-default items-center gap-3 rounded-md px-2 py-1.5 text-left text-[13px] hover:bg-panel-2"
+                                        className="flex w-full cursor-default items-center gap-3 rounded-md px-2 py-1.5 text-left text-sm hover:bg-panel-2"
                                     >
                                         <ColorDot color={item.hex} />
                                         <span className="w-32 shrink-0 text-xs text-muted">

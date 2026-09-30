@@ -1,3 +1,4 @@
+import { withIssueStyleDefaults } from '@domain/redmine/issue-style'
 import { affectsMonitor, MIN_POLL_SECONDS, type SettingsPatch } from '@domain/settings/settings'
 import type { SettingsView } from '../dto'
 import type { SecretStore, SettingsRepository } from '../ports/repositories'
@@ -8,6 +9,12 @@ import { toView } from './session'
 function clampPollSeconds(patch: SettingsPatch): SettingsPatch {
     if (patch.pollSeconds === undefined) return patch
     return { ...patch, pollSeconds: Math.max(MIN_POLL_SECONDS, patch.pollSeconds) }
+}
+
+/** Status colors and priority levels come from the interface; unknown values are dropped before saving. */
+function cleanIssueStyle(patch: SettingsPatch): SettingsPatch {
+    if (patch.issueStyle === undefined) return patch
+    return { ...patch, issueStyle: withIssueStyleDefaults(patch.issueStyle) }
 }
 
 /** Updates preferences and applies the side effects (monitor, open at login, language). */
@@ -24,7 +31,7 @@ export class UpdateSettingsUseCase {
 
     execute(patch: SettingsPatch): SettingsView {
         const previous = this.settings.get()
-        const cleanPatch = clampPollSeconds(patch)
+        const cleanPatch = cleanIssueStyle(clampPollSeconds(patch))
         this.settings.save({ ...previous, ...cleanPatch })
 
         const { openAtLogin, language } = cleanPatch

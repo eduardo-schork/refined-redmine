@@ -29,7 +29,7 @@ export function PageLayout({
     return (
         <div className="flex h-full flex-col">
             <header className="drag flex h-12 shrink-0 items-center gap-3 border-b border-line px-4">
-                <h1 className="text-[15px] font-semibold">{title}</h1>
+                <h1 className="text-lg font-semibold">{title}</h1>
                 {subtitle}
                 {actions && <div className="no-drag ml-auto flex items-center gap-2">{actions}</div>}
             </header>

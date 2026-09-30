@@ -28,7 +28,7 @@ export function ToggleField({
                 <Switch checked={checked} onChange={onChange} label={label} />
             </span>
             <span className="flex cursor-default flex-col">
-                <span className="text-[13px]">{label}</span>
+                <span className="text-sm">{label}</span>
                 {description && <span className="text-xs text-muted">{description}</span>}
             </span>
         </div>

@@ -36,7 +36,7 @@ export function SearchResultList({
                 if (!sectionItems.length) return null
                 return (
                     <div key={section} className="py-1">
-                        <div className="px-4 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted">
+                        <div className="px-4 py-1 text-2xs font-semibold uppercase tracking-wide text-muted">
                             {t(`search.${section}`)}
                         </div>
                         {sectionItems.map((item) => {
@@ -69,7 +69,7 @@ function SearchResultRow({ item, active, onHover }: { item: SearchResult; active
             onMouseDown={(mouseEvent) => mouseEvent.preventDefault()}
             onClick={item.run}
             className={cn(
-                'flex w-full cursor-default items-center gap-3 px-4 py-2 text-left text-[13px]',
+                'flex w-full cursor-default items-center gap-3 px-4 py-2 text-left text-sm',
                 active && 'bg-accent-soft'
             )}
         >

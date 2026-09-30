@@ -48,7 +48,7 @@ export function Sidebar({
             <div className="drag h-12 shrink-0" />
             <button
                 onClick={onSearch}
-                className="mx-2 mb-2 flex h-8 cursor-default items-center gap-2 rounded-md border border-line px-2 text-[13px] text-muted hover:text-fg"
+                className="mx-2 mb-2 flex h-8 cursor-default items-center gap-2 rounded-md border border-line px-2 text-sm text-muted hover:text-fg"
             >
                 <Search size={14} />
                 <span className="flex-1 text-left">{t('search.button')}</span>
@@ -137,9 +137,9 @@ export function Sidebar({
             <UpdateNotice onOpen={() => onNavigate({ page: 'settings', tab: 'general' })} />
             {settings.user && (
                 <footer className="flex items-center gap-2 border-t border-line px-3 py-2.5">
-                    <Avatar name={displayName(settings.user)} className="h-6 w-6 text-[10px]" />
+                    <Avatar name={displayName(settings.user)} className="h-6 w-6 text-2xs" />
                     <div className="min-w-0 flex-1">
-                        <div className="truncate text-[13px]">{displayName(settings.user)}</div>
+                        <div className="truncate text-sm">{displayName(settings.user)}</div>
                         <MonitorIndicator status={status} />
                     </div>
                 </footer>
@@ -168,7 +168,7 @@ function MonitorIndicator({ status }: { status?: MonitorStatus }) {
     const { tone, text } = describeMonitor(status, { t, dates })
     const errorTooltip = status.lastError ? error(status.lastError) : undefined
     return (
-        <div className="flex items-center gap-1.5 text-[11px] text-muted" title={errorTooltip}>
+        <div className="flex items-center gap-1.5 text-2xs text-muted" title={errorTooltip}>
             <StatusDot tone={tone} />
             <span className="truncate">{text}</span>
         </div>
@@ -185,7 +185,7 @@ function UpdateNotice({ onOpen }: { onOpen: () => void }) {
     return (
         <button
             onClick={onOpen}
-            className="mx-3 mb-2 flex cursor-default items-center gap-2 rounded-lg bg-accent-soft px-3 py-2 text-left text-[13px] text-accent hover:brightness-105"
+            className="mx-3 mb-2 flex cursor-default items-center gap-2 rounded-lg bg-accent-soft px-3 py-2 text-left text-sm text-accent hover:brightness-105"
         >
             <Download size={14} />
             {t('updates.sidebar', { version })}

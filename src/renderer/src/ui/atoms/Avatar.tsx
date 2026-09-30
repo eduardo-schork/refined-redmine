@@ -22,7 +22,7 @@ export function Avatar({ name, className }: { name?: string; className?: string 
         <span
             title={name}
             className={cn(
-                'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white',
+                'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-2xs font-semibold text-white',
                 className
             )}
             style={{ background: `hsl(${hue} 45% 45%)` }}

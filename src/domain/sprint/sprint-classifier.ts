@@ -1,5 +1,5 @@
 import { safeRegex } from '../shared/text'
-import type { LocalDate } from '../shared/date'
+import { addDays, parseLocal, toLocalDate, type LocalDate } from '../shared/date'
 import type { Version } from '../redmine/entities'
 import {
     ACTIVE_PHASES,
@@ -94,6 +94,15 @@ function byLatestReleaseThenVersion(first: Sprint, second: Sprint): number {
     return compareVersions(second.version.name, first.version.name)
 }
 
+/** Each sprint starts the day after the dev deadline of the sprint before it (by version number). */
+function assignDevStarts(sprints: Sprint[]): void {
+    const inOrder = [...sprints].sort((first, second) => compareVersions(first.version.name, second.version.name))
+    inOrder.forEach((sprint, index) => {
+        const previousDeadline = inOrder[index - 1]?.devDeadline
+        if (previousDeadline) sprint.devStart = toLocalDate(addDays(parseLocal(previousDeadline), 1))
+    })
+}
+
 /** The open sprint with the nearest dev deadline that has not passed yet. */
 function currentDevSprint(openSprints: Sprint[], today: LocalDate): Sprint | undefined {
     const upcoming = openSprints.filter((sprint) => sprint.devDeadline && sprint.devDeadline >= today)
@@ -134,6 +143,7 @@ export function classifySprints(versions: Version[], conventions: SprintConventi
     })
 
     const sprints = items.filter((sprint) => sprint.kind === 'sprint')
+    assignDevStarts(sprints)
     const openSprints = sprints.filter((sprint) => sprint.version.status !== 'closed')
     const devSprint = currentDevSprint(openSprints, today)
     for (const sprint of openSprints) sprint.phase = openSprintPhase(sprint, devSprint, today)

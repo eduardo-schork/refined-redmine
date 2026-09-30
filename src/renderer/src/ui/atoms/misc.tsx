@@ -16,7 +16,7 @@ export function ProgressBar({ value, className }: { value: number; className?: s
 }
 
 export function Overline({ children, className }: { children: ReactNode; className?: string }) {
-    return <h2 className={cn('text-[11px] font-semibold uppercase tracking-wide text-muted', className)}>{children}</h2>
+    return <h2 className={cn('text-2xs font-semibold uppercase tracking-wide text-muted', className)}>{children}</h2>
 }
 
 export function TextLink({

@@ -16,6 +16,11 @@ export interface Sprint {
     phase: SprintPhase
     devDeadline?: string
     release?: string
+    /**
+     * Estimated start of development: the day after the previous sprint's dev deadline (sprints follow each other).
+     * Redmine has no start date for a version.
+     */
+    devStart?: string
     /** For hotfixes: name of the source sprint (3.77.1 → 3.77). */
     baseName?: string
 }

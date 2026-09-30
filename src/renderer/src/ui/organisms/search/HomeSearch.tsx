@@ -31,7 +31,7 @@ export function HomeSearch() {
                     onBlur={handleBlur}
                     onChange={(changeEvent) => search.setInput(changeEvent.target.value)}
                     onKeyDown={search.handleKeyDown}
-                    className="h-full min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-muted"
+                    className="h-full min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted"
                 />
                 {search.loading && <span className="shrink-0 text-xs text-muted">{t('search.searching')}</span>}
                 {!focused && <Kbd className="shrink-0">{SEARCH_SHORTCUT}</Kbd>}

@@ -24,7 +24,7 @@ export interface QueueAnalysis {
 
 const DUE_SOON_DAYS = 7
 
-function isStale(issue: Issue, staleDays: number, now: Date): boolean {
+export function isStale(issue: Issue, staleDays: number, now: Date): boolean {
     const inactive = daysSince(issue.updated_on, now) >= staleDays
     return inactive || isBlockedStatus(issue.status.name)
 }

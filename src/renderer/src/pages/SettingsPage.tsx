@@ -4,6 +4,7 @@ import { useI18n } from '@/lib/i18n'
 import type { SettingsTab } from '@/lib/router'
 import { NavItem } from '@/ui/molecules/NavItem'
 import { AppearanceSection } from '@/ui/organisms/settings/AppearanceSection'
+import { IssueStyleSection } from '@/ui/organisms/settings/IssueStyleSection'
 import { MonitorsSection } from '@/ui/organisms/settings/MonitorsSection'
 import { UpdatesSection } from '@/ui/organisms/settings/UpdatesSection'
 import {
@@ -35,7 +36,12 @@ const TAB_SECTIONS: Record<SettingsTab, () => ReactNode> = {
             <UpdatesSection />
         </>
     ),
-    appearance: () => <AppearanceSection />,
+    appearance: () => (
+        <>
+            <AppearanceSection />
+            <IssueStyleSection />
+        </>
+    ),
     notifications: () => (
         <>
             <MonitoringSection />

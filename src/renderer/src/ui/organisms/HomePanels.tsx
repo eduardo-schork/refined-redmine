@@ -1,12 +1,14 @@
 import { useMemo } from 'react'
-import { AlarmClock, ArrowRight, Hourglass, Inbox } from 'lucide-react'
+import { AlarmClock, ArrowRight, ChevronsUp, Hourglass, Inbox } from 'lucide-react'
 import type { AppNotification } from '@domain/notification/notification'
+import { isHighPriority } from '@domain/redmine/issue-signals'
 import { analyzeQueue, isBlockedStatus } from '@domain/redmine/queue'
 import type { Issue } from '@domain/redmine/entities'
 import { addDays, daysSince, daysUntil, startOfDay, toLocalDate } from '@domain/shared/date'
 import { type DisplayItem, useDisplayItems } from '@/hooks/calendar'
 import { useMyQueue } from '@/hooks/issues'
 import { useSettings } from '@/hooks/session'
+import { useIssueStyle } from '@/lib/issue-style'
 import { useI18n } from '@/lib/i18n'
 import { useNavigate } from '@/lib/router'
 import { cn } from '@/lib/cn'
@@ -15,6 +17,7 @@ import { IssueRow } from '../molecules/IssueRow'
 import { Alert, EmptyRow, Panel, StatTile } from '../molecules/surfaces'
 import { useOpenIssue } from './IssueModal'
 import { NotificationRows } from './NotificationList'
+import { StatusTag } from '../molecules/StatusTag'
 
 const QUEUE_PREVIEW_LIMIT = 12
 const SIDE_PANEL_LIMIT = 8
@@ -72,7 +75,7 @@ function AgendaRow({ item, today, now }: { item: DisplayItem; today: Date; now: 
         <button
             onClick={openInCalendar}
             className={cn(
-                'flex w-full cursor-default items-center gap-3 border-t border-line px-4 py-2 text-left text-[13px] hover:bg-panel-2',
+                'flex w-full cursor-default items-center gap-3 border-t border-line px-4 py-2 text-left text-sm hover:bg-panel-2',
                 past && 'opacity-50'
             )}
         >
@@ -86,6 +89,8 @@ function AgendaRow({ item, today, now }: { item: DisplayItem; today: Date; now: 
     )
 }
 
+const PANEL_IDS = { queue: 'home-queue', stale: 'home-stale', deadlines: 'home-deadlines' }
+
 function useQueue() {
     const staleDays = useSettings().dashboard.staleDays
     const mine = useMyQueue()
@@ -94,24 +99,43 @@ function useQueue() {
     return { mine, queue, analysis, staleDays, loaded: Boolean(mine.data) }
 }
 
+const scrollToPanel = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+
 export function QueueTiles({ unread, onGoNotifications }: { unread: number; onGoNotifications: () => void }) {
     const { t } = useI18n()
-    const { analysis, staleDays, loaded } = useQueue()
+    const { queue, analysis, staleDays, loaded } = useQueue()
+    const rules = useIssueStyle()
+    const highPriority = queue.filter((issue) => isHighPriority(issue, rules)).length
     const valueOrLoading = (value: number) => (loaded ? value : '…')
+    const toneWhen = (value: number, tone: 'warn' | 'danger') => (value > 0 ? tone : undefined)
     return (
-        <div className="grid grid-cols-4 gap-3">
-            <StatTile label={t('home.tileQueue')} value={valueOrLoading(analysis.total)} icon={<Inbox size={15} />} />
+        <div className="grid grid-cols-5 gap-3">
+            <StatTile
+                label={t('home.tileQueue')}
+                value={valueOrLoading(analysis.total)}
+                icon={<Inbox size={15} />}
+                onClick={() => scrollToPanel(PANEL_IDS.queue)}
+            />
+            <StatTile
+                label={t('home.tileHighPriority')}
+                value={valueOrLoading(highPriority)}
+                icon={<ChevronsUp size={15} />}
+                tone={toneWhen(highPriority, 'warn')}
+                onClick={() => scrollToPanel(PANEL_IDS.queue)}
+            />
             <StatTile
                 label={t('home.tileStale', { days: staleDays })}
                 value={valueOrLoading(analysis.stale.length)}
                 icon={<Hourglass size={15} />}
-                tone={analysis.stale.length ? 'warn' : undefined}
+                tone={toneWhen(analysis.stale.length, 'warn')}
+                onClick={() => scrollToPanel(PANEL_IDS.stale)}
             />
             <StatTile
                 label={t('home.tileOverdue')}
                 value={valueOrLoading(analysis.overdue.length)}
                 icon={<AlarmClock size={15} />}
-                tone={analysis.overdue.length ? 'danger' : undefined}
+                tone={toneWhen(analysis.overdue.length, 'danger')}
+                onClick={() => scrollToPanel(PANEL_IDS.deadlines)}
             />
             <StatTile
                 label={t('home.tileUnread')}
@@ -134,7 +158,7 @@ export function QueuePanels() {
     const statusSummary = analysis.byStatus.length > 0 && (
         <div className="flex flex-wrap gap-1.5 px-4 pb-2">
             {analysis.byStatus.map(({ status, count }) => (
-                <span key={status} className="rounded-md bg-panel-2 px-1.5 py-0.5 text-[11px] text-muted">
+                <span key={status} className="rounded-md bg-panel-2 px-1.5 py-0.5 text-2xs text-muted">
                     {status} <b className="font-semibold text-fg">{count}</b>
                 </span>
             ))}
@@ -145,13 +169,13 @@ export function QueuePanels() {
         <>
             {mine.isError && <Alert>{error(mine.error)}</Alert>}
             <div className="grid grid-cols-2 gap-4">
-                <Panel title={t('home.queue')} count={analysis.total} header={statusSummary}>
+                <Panel id={PANEL_IDS.queue} title={t('home.queue')} count={analysis.total} header={statusSummary}>
                     {queue.slice(0, QUEUE_PREVIEW_LIMIT).map((issue) => (
                         <IssueRow
                             key={issue.id}
                             issue={issue}
                             onOpen={openIssue}
-                            right={<span className="truncate text-muted">{issue.status.name}</span>}
+                            right={<StatusTag status={issue.status} />}
                         />
                     ))}
                     {hiddenQueueCount > 0 && (
@@ -164,6 +188,7 @@ export function QueuePanels() {
 
                 <div className="flex flex-col gap-4">
                     <Panel
+                        id={PANEL_IDS.stale}
                         title={t('home.stale')}
                         count={analysis.stale.length}
                         hint={t('home.staleHint', { days: staleDays })}
@@ -179,7 +204,12 @@ export function QueuePanels() {
                         {loaded && !analysis.stale.length && <EmptyRow>{t('home.nothingStale')}</EmptyRow>}
                     </Panel>
 
-                    <Panel title={t('home.deadlines')} count={analysis.dueSoon.length} hint={t('home.deadlinesHint')}>
+                    <Panel
+                        id={PANEL_IDS.deadlines}
+                        title={t('home.deadlines')}
+                        count={analysis.dueSoon.length}
+                        hint={t('home.deadlinesHint')}
+                    >
                         {analysis.dueSoon.slice(0, SIDE_PANEL_LIMIT).map((issue) => (
                             <IssueRow
                                 key={issue.id}

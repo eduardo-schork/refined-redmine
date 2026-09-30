@@ -269,7 +269,8 @@ export const enUS: Resources = {
         helloAfternoon: 'Good afternoon, {{name}}',
         helloEvening: 'Good evening, {{name}}',
         tileQueue: 'In my queue',
-        tileStale: 'Stalled ({{days}}+ days or paused)',
+        tileHighPriority: 'High priority',
+        tileStale: 'Stalled',
         tileOverdue: 'Overdue',
         tileUnread: 'Unread notifications',
         sprints: 'Sprints',
@@ -302,8 +303,10 @@ export const enUS: Resources = {
         closedOf: '{{closed}} of {{total}} closed',
         countingError: 'Could not count issues',
         counting: 'Counting issues…',
-        open: 'open',
-        mine: 'mine',
+        open_one: 'open',
+        open_other: 'open',
+        mine_one: 'mine',
+        mine_other: 'mine',
         createBoard: 'Create a board for this version',
         boardName: 'Sprint {{name}}',
         allAssignees: 'All assignees',
@@ -342,6 +345,78 @@ export const enUS: Resources = {
         configureSprints: 'Set up the sprints project (Sprints menu) to use this board.',
         moved: '#{{id}} → {{status}}',
         moveFailed: 'Could not move #{{id}}: {{error}}',
+        view: {
+            board: 'Board',
+            summary: 'Summary'
+        },
+        sprint: {
+            title: 'Sprint {{name}}',
+            devStart: 'Start (estimated)',
+            timeGone: 'Development time',
+            timeGoneValue: '{{percent}}% of the period',
+            closed: 'Closed issues',
+            closedValue: '{{percent}}% closed',
+            pace: {
+                ahead: 'Ahead',
+                onTrack: 'On track',
+                behind: 'Behind'
+            },
+            paceHint:
+                'Compares the closed issues with the development time already gone ({{tolerance}} points of tolerance). The start is estimated: the day after the previous sprint dev deadline.',
+            closedLastWeek: 'Closed in the last 7 days',
+            perDay: 'To close per working day',
+            workingDaysLeft_one: '{{count}} working day to the dev deadline',
+            workingDaysLeft_other: '{{count}} working days to the dev deadline',
+            added: 'Added after the start',
+            addedHint: 'Created after the estimated start',
+            remaining: 'Estimate of the open ones'
+        },
+        summary: {
+            empty: 'No issues on this board.',
+            total: 'Issues',
+            open: 'Open',
+            closed: 'Closed ({{percent}}%)',
+            closedShort: 'Closed',
+            estimated: 'Total estimate',
+            estimatedShort: 'Estimated',
+            overdue: 'Overdue',
+            overdueShort: 'Overdue',
+            highPriority: 'High priority',
+            highShort: 'High',
+            stale: 'Stalled',
+            staleShort: 'Stalled',
+            unassigned: 'Unassigned',
+            byStatus: 'Status distribution',
+            byStatusHint: 'In the order of the board columns. Every issue of the board, without the filters.',
+            people: 'By person',
+            peopleHint: 'Click a person to see only their cards on the board.',
+            person: 'Person',
+            progress: 'Closed / total',
+            byTracker: 'By type',
+            byPriority: 'By priority'
+        },
+        card: {
+            stale_one: 'stalled {{count}} day',
+            stale_other: 'stalled {{count}} days'
+        },
+        column: {
+            overdue_one: '{{count}} overdue',
+            overdue_other: '{{count}} overdue',
+            overdueHint: 'Issues past their due date',
+            highPriority_one: '{{count}} high',
+            highPriority_other: '{{count}} high',
+            highPriorityHint: 'Issues with high, urgent or immediate priority'
+        },
+        signals: {
+            overdue_one: 'overdue',
+            overdue_other: 'overdue',
+            highPriority_one: 'high priority',
+            highPriority_other: 'high priority',
+            stale_one: 'stalled',
+            stale_other: 'stalled',
+            unassigned_one: 'unassigned',
+            unassigned_other: 'unassigned'
+        },
         editor: {
             newTitle: 'New board',
             editTitle: 'Edit board',
@@ -558,6 +633,33 @@ export const enUS: Resources = {
         errorIn: 'Monitor “{{query}}”: {{message}}'
     },
     settings: {
+        issueStyle: {
+            title: 'Issue colors',
+            hint: 'The app picks the color of each status and the level of each priority from its name. Change only the ones that do not fit.',
+            reset: 'Back to automatic',
+            statuses: 'Status colors',
+            priorities: 'Priority levels',
+            prioritiesHint: 'Urgent and High stand out on the cards and count as high priority.',
+            automatic: 'Automatic: {{value}}',
+            dueSoon: 'Highlight the due date from (days before)',
+            dueSoonHint:
+                'The due date turns yellow on the cards when this many days or fewer are left. 0 = only on the day and overdue.',
+            tones: {
+                new: 'New',
+                progress: 'In progress',
+                review: 'In review / approval',
+                testing: 'In testing',
+                blocked: 'Paused / blocked',
+                done: 'Done',
+                rejected: 'Rejected / cancelled'
+            },
+            levels: {
+                urgent: 'Urgent · red',
+                high: 'High · yellow',
+                normal: 'Normal · no highlight',
+                low: 'Low · gray'
+            }
+        },
         tab: {
             general: 'General',
             appearance: 'Appearance',

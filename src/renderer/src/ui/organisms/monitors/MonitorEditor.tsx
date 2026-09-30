@@ -81,7 +81,7 @@ export function MonitorEditor({
         >
             <div className="flex flex-col gap-5">
                 {isMine ? (
-                    <h3 className="text-[13px] font-semibold">{t('monitors.mine')}</h3>
+                    <h3 className="text-sm font-semibold">{t('monitors.mine')}</h3>
                 ) : (
                     <div className="grid grid-cols-2 gap-4">
                         <Field label={t('monitors.name')}>

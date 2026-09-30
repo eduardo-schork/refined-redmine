@@ -53,7 +53,7 @@ function openSystemSettings() {
 function DeliveryQuestion({ onAnswer }: { onAnswer: (seen: boolean) => void }) {
     const { t } = useI18n()
     return (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg bg-accent-soft px-3 py-2 text-[13px]">
+        <div className="flex flex-wrap items-center gap-2 rounded-lg bg-accent-soft px-3 py-2 text-sm">
             <span className="flex-1">{t('permission.seenQuestion')}</span>
             <Button variant="primary" onClick={() => onAnswer(true)}>
                 {t('permission.seenYes')}
@@ -122,7 +122,7 @@ function PermissionDialog({ info, onClose }: { info: NotifyPermissionInfo; onClo
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
                     {blocked ? <BellOff size={18} /> : <BellRing size={18} />}
                 </div>
-                <div className="flex flex-col gap-3 text-[13px] leading-relaxed">
+                <div className="flex flex-col gap-3 text-sm leading-relaxed">
                     {blocked ? (
                         <BlockedInstructions info={info} appName={appName} />
                     ) : (
@@ -190,7 +190,7 @@ export function PermissionStatus() {
     if (!info) return null
     const statusLabel = t(`permission.status.${info.status}`)
     return (
-        <div className="mb-4 flex flex-col gap-2 rounded-lg border border-line px-3 py-2 text-[13px]">
+        <div className="mb-4 flex flex-col gap-2 rounded-lg border border-line px-3 py-2 text-sm">
             <div className="flex items-center gap-2">
                 <StatusDot tone={PERMISSION_TONES[info.status]} />
                 <span>{t('permission.systemStatus', { status: statusLabel })}</span>
