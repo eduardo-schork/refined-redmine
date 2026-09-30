@@ -31,6 +31,32 @@ Registro de todas as regras que o app aplica. Cada regra aponta para onde está 
 | **Atrasada**: data prevista no passado e tarefa não fechada.                                                                                  | `isOverdue`               |
 | **Prazos**: vencidas ou vencendo nos próximos 7 dias.                                                                                         | `analyzeQueue`            |
 
+## Busca rápida
+
+| Regra                                                                                                                                               | Onde                        |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| `#1234` ou `1234` abre a tarefa pelo número; texto com menos de 2 caracteres não busca.                                                             | `parseIssueSearch`          |
+| Texto busca no **título** (contém), em todos os projetos visíveis e em **qualquer status**, das atualizadas mais recentemente para as mais antigas. | `titleSearchQuery`          |
+| No máximo 20 resultados por busca.                                                                                                                  | `MAX_SEARCH_RESULTS`        |
+| Tarefa inexistente ou sem permissão = sem resultado (não é erro).                                                                                   | `IssueQueries.search`       |
+| Quadros e telas são filtrados no app, sem diferenciar maiúsculas nem acentos.                                                                       | `foldForSearch`             |
+| A busca do Início e a do `⌘K` seguem as mesmas regras (mesmo `useQuickSearch`).                                                                     | `HomeSearch`, `QuickSearch` |
+| Recentes: as 8 últimas tarefas abertas no detalhe, mais recente primeiro, sem repetir.                                                              | `rememberIssue`             |
+
+## Edição de campos da tarefa
+
+| Regra                                                                                                                                                                   | Onde                                             |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Editáveis no detalhe: prioridade, responsável, versão, início, previsão e % concluído. Cada mudança é salva sozinha, na hora.                                           | `IssueFieldEditors`, `EditIssueFieldsUseCase`    |
+| Início não pode ser depois da previsão; a comparação usa a data nova junto com a outra já salva.                                                                        | `assertValidChange` (`issue.datesOrder`)         |
+| % concluído entre 0 e 100; o seletor oferece passos de 10.                                                                                                              | `assertValidChange`, `DONE_RATIO_STEPS`          |
+| Responsável: membros do projeto (usuários e grupos), sem repetir; "Ninguém" limpa.                                                                                      | `listProjectMembers`, `IssueQueries.editOptions` |
+| Versão: só versões não fechadas do projeto; "Sem versão" limpa.                                                                                                         | `IssueQueries.editOptions`                       |
+| O valor atual continua escolhível mesmo fora da lista (versão fechada, ex-membro, prioridade inativa).                                                                  | `withCurrent`                                    |
+| Prioridades inativas não são oferecidas.                                                                                                                                | `ReferenceDataQueries.priorities`                |
+| Datas são salvas ao sair do campo ou com Enter, não a cada tecla (enquanto se digita o ano, o campo já tem datas válidas como 0002-10-05). Apagar a data limpa o campo. | `DateField`                                      |
+| O Redmine ignora em silêncio campos que o fluxo deixa só para leitura: depois de salvar, a tarefa é lida de novo e os campos que não mudaram são avisados.              | `ignoredFields`                                  |
+
 ## Quadros (kanban)
 
 | Regra                                                                                                                                                                                                  | Onde                        |

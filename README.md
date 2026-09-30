@@ -48,7 +48,8 @@ Como usar cada tela: [manual do usuário](docs/MANUAL.md).
 
 **Detalhes da atividade**
 
-- Clique em qualquer tarefa (kanban, início, sprints) abre um modal com descrição (Markdown), campos, anexos, subtarefas, relações e histórico; permite mudar status e comentar. Links `#1234` abrem no próprio modal. Botão "Abrir no Redmine".
+- Clique em qualquer tarefa (kanban, início, sprints) abre um modal com descrição (Markdown), campos, anexos, subtarefas, relações e histórico; permite mudar status, comentar e editar prioridade, responsável, versão, datas e % concluído.
+- **Busca rápida** (`⌘K` / `Ctrl+K`): tarefa por `#número` ou título, quadros, telas e tarefas recentes. Links `#1234` abrem no próprio modal. Botão "Abrir no Redmine".
 
 **Kanban**
 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { ExternalLink, Link2, Paperclip, X } from 'lucide-react'
 import type {
     Attachment,
@@ -9,14 +9,13 @@ import type {
     Relation
 } from '@domain/redmine/entities'
 import { RedmineLinks } from '@domain/redmine/links'
-import { isOverdue } from '@domain/redmine/queue'
 import { relationFrom } from '@domain/redmine/relations'
 import { useChangeIssueStatus, useCommentOnIssue, useIssue } from '@/hooks/issues'
 import { useStatuses } from '@/hooks/reference'
 import { useSettings } from '@/hooks/session'
 import { api } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
-import { cn } from '@/lib/cn'
+import { rememberIssue } from '@/lib/recent-issues'
 import { Avatar } from '../atoms/Avatar'
 import { Button } from '../atoms/Button'
 import { Select, Textarea } from '../atoms/fields'
@@ -26,6 +25,7 @@ import { Dialog } from '../molecules/Dialog'
 import { Markdown } from '../molecules/Markdown'
 import { Alert, Property } from '../molecules/surfaces'
 import { useToast } from '../molecules/Toast'
+import { IssueFieldEditors } from './IssueFieldEditors'
 
 type Translate = ReturnType<typeof useI18n>['t']
 
@@ -69,6 +69,9 @@ function IssueModal({ id, onClose, canGoBack }: { id: number; onClose: () => voi
     const changeStatus = useChangeIssueStatus(id)
     const comment = useCommentOnIssue(id)
     const issue = issueQuery.data
+    useEffect(() => {
+        if (issue) rememberIssue({ id: issue.id, subject: issue.subject, project: issue.project.name })
+    }, [issue])
     const statusName = new Map((statuses.data ?? []).map((status) => [status.id, status.name]))
     const saving = changeStatus.isPending || comment.isPending
     const markdownLinks: MarkdownLinkProps = { links, onIssue: openIssue, onExternal: openExternal }
@@ -322,30 +325,12 @@ function IssueSidebar({
                     ))}
                 </Select>
             </Property>
-            <Property label={t('issue.priority')}>{issue.priority.name}</Property>
-            <Property label={t('issue.assignee')}>
-                <PersonValue name={issue.assigned_to?.name} />
-            </Property>
+            <IssueFieldEditors issue={issue} busy={saving} />
             <Property label={t('issue.author')}>
                 <PersonValue name={issue.author.name} />
             </Property>
-            <Property label={t('issue.version')}>{issue.fixed_version?.name ?? '—'}</Property>
-            <Property label={t('issue.start')}>{dates.date(issue.start_date, true)}</Property>
-            <Property label={t('issue.due')}>
-                <span className={cn(isOverdue(issue, now) && 'font-medium text-danger')}>
-                    {dates.date(issue.due_date, true)}
-                </span>
-            </Property>
             <Property label={t('issue.estimated')}>{dates.hours(issue.estimated_hours)}</Property>
             <Property label={t('issue.spent')}>{dates.hours(issue.spent_hours)}</Property>
-            <Property label={t('issue.done')}>
-                <div className="flex items-center gap-2">
-                    <div className="h-1.5 flex-1 overflow-hidden rounded bg-line">
-                        <div className="h-full bg-ok" style={{ width: `${issue.done_ratio}%` }} />
-                    </div>
-                    {issue.done_ratio}%
-                </div>
-            </Property>
             {customFields.map((field) => (
                 <Property key={field.id} label={field.name}>
                     {formatCustomFieldValue(field.value, t)}

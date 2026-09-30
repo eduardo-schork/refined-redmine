@@ -66,6 +66,8 @@ export const enUS: Resources = {
         'update.http': 'HTTP error {{status}} from GitHub.',
         'update.untrusted':
             'The published version is not from the app maintainer ({{publisher}}) and was ignored for safety.',
+        'issue.datesOrder': 'The start date cannot be after the due date.',
+        'issue.doneRatio': 'Done % must be between 0 and 100.',
         'calendar.titleRequired': 'Give the event a title.',
         'calendar.invalidIssue': 'Invalid issue number.',
         unexpected: 'Unexpected error: {{detail}}'
@@ -387,7 +389,28 @@ export const enUS: Resources = {
             closedColumn: 'Closed'
         }
     },
+    search: {
+        button: 'Search',
+        placeholder: 'Issue by #number or title, screens and boards…',
+        recent: 'Recently opened',
+        issues: 'Issues',
+        pages: 'Screens',
+        boards: 'Boards',
+        searching: 'Searching…',
+        noResults: 'Nothing found for “{{term}}”.',
+        idNotFound: 'Issue #{{id}} not found or not accessible.',
+        empty: 'Type #1234 to open an issue, or part of the title to search every project.',
+        keys: '↑↓ navigate · Enter open · Esc close'
+    },
     issue: {
+        edit: {
+            saved: '{{field}}: {{value}}',
+            ignored: 'Redmine did not apply: {{fields}}. That field is read-only for you at this workflow step.',
+            nobody: 'Nobody',
+            noVersion: 'No version',
+            noDate: 'No date',
+            clearDate: 'Clear date'
+        },
         parent: '· parent #{{id}}',
         loadError: 'Could not load',
         noDescription: 'No description.',

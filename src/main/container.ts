@@ -20,6 +20,7 @@ import {
 import {
     ChangeIssueStatusUseCase,
     CommentOnIssueUseCase,
+    EditIssueFieldsUseCase,
     IssueQueries,
     ReferenceDataQueries
 } from '@application/use-cases/issues'
@@ -173,6 +174,7 @@ export function createContainer(presentation: () => Presentation) {
     const reference = new ReferenceDataQueries(gateway)
     const changeStatus = new ChangeIssueStatusUseCase(gateway)
     const comment = new CommentOnIssueUseCase(gateway)
+    const editIssue = new EditIssueFieldsUseCase(gateway)
     const versionStats = new GetVersionStatsUseCase(gateway)
     const inspectProject = new InspectSprintProjectUseCase(gateway)
     const boardIssues = new ListBoardIssuesUseCase(gateway, settings, boardFilter)
@@ -243,12 +245,16 @@ export function createContainer(presentation: () => Presentation) {
             get: (id) => issues.get(id),
             allowedStatuses: (id) => issues.allowedStatuses(id),
             changeStatus: (id, statusId) => changeStatus.execute(id, statusId),
-            comment: (id, notes) => comment.execute(id, notes)
+            comment: (id, notes) => comment.execute(id, notes),
+            search: (input) => issues.search(input),
+            edit: (id, change) => editIssue.execute(id, change),
+            editOptions: (projectId) => issues.editOptions(projectId)
         },
         reference: {
             statuses: () => reference.statuses(),
             projects: () => reference.projects(),
-            savedQueries: () => reference.savedQueries()
+            savedQueries: () => reference.savedQueries(),
+            priorities: () => reference.priorities()
         },
         boards: {
             issues: (boardId) => boardIssues.execute(boardId),

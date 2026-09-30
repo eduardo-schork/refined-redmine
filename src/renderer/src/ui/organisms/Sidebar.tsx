@@ -7,6 +7,7 @@ import {
     KanbanSquare,
     Plus,
     ScrollText,
+    Search,
     Settings as SettingsIcon
 } from 'lucide-react'
 import type { MonitorStatus } from '@domain/monitor/monitor-status'
@@ -16,19 +17,23 @@ import { useUpdateStatus } from '@/hooks/updates'
 import { useSettings } from '@/hooks/session'
 import { useI18n } from '@/lib/i18n'
 import type { Route } from '@/lib/router'
+import { SEARCH_SHORTCUT } from '@/lib/shortcuts'
 import { Avatar } from '../atoms/Avatar'
 import { Badge } from '../atoms/Badge'
+import { Kbd } from '../atoms/Kbd'
 import { Overline, StatusDot } from '../atoms/misc'
 import { NavItem } from '../molecules/NavItem'
 
 export function Sidebar({
     route,
     onNavigate,
-    onNewBoard
+    onNewBoard,
+    onSearch
 }: {
     route: Route
     onNavigate: (route: Route) => void
     onNewBoard: () => void
+    onSearch: () => void
 }) {
     const { t } = useI18n()
     const settings = useSettings()
@@ -41,6 +46,14 @@ export function Sidebar({
     return (
         <aside className="flex w-60 shrink-0 flex-col border-r border-line bg-panel">
             <div className="drag h-12 shrink-0" />
+            <button
+                onClick={onSearch}
+                className="mx-2 mb-2 flex h-8 cursor-default items-center gap-2 rounded-md border border-line px-2 text-[13px] text-muted hover:text-fg"
+            >
+                <Search size={14} />
+                <span className="flex-1 text-left">{t('search.button')}</span>
+                <Kbd>{SEARCH_SHORTCUT}</Kbd>
+            </button>
             <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2">
                 <NavItem
                     active={isActive('home')}

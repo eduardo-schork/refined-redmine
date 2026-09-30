@@ -3,6 +3,8 @@ import type {
     BoardIssues,
     BoardNotifications,
     DeleteEventCommand,
+    IssueEditOptions,
+    IssueEditResult,
     ProjectInspection,
     SaveEventCommand,
     SettingsView,
@@ -15,7 +17,16 @@ import type { LogEntry } from '@domain/log/log-entry'
 import type { MonitorStatus } from '@domain/monitor/monitor-status'
 import type { AppNotification } from '@domain/notification/notification'
 import type { NotifyPermissionInfo, NotifyProbeResult } from '@domain/notification/permission'
-import type { Issue, IssueDetail, IssueStatus, Page, Project, SavedQuery } from '@domain/redmine/entities'
+import type {
+    Issue,
+    IssueDetail,
+    IssuePriority,
+    IssueStatus,
+    Page,
+    Project,
+    SavedQuery
+} from '@domain/redmine/entities'
+import type { IssueFieldsChange } from '@domain/redmine/issue-edit'
 import type { IssueFilter } from '@domain/redmine/issue-filter'
 import type { SettingsPatch } from '@domain/settings/settings'
 import type { SerializedError } from '@domain/shared/errors'
@@ -38,11 +49,16 @@ export interface RefinedApi {
         allowedStatuses(id: number): IssueStatus[]
         changeStatus(id: number, statusId: number): void
         comment(id: number, notes: string): void
+        /** Quick search: "#1234" or "1234" finds that issue; text searches the titles. */
+        search(input: string): Issue[]
+        edit(id: number, change: IssueFieldsChange): IssueEditResult
+        editOptions(projectId: number): IssueEditOptions
     }
     reference: {
         statuses(): IssueStatus[]
         projects(): Project[]
         savedQueries(): SavedQuery[]
+        priorities(): IssuePriority[]
     }
     boards: {
         issues(boardId: string): BoardIssues
@@ -100,8 +116,8 @@ export interface RefinedApi {
 export const API_METHODS = {
     session: ['get', 'login', 'logout'],
     settings: ['update'],
-    issues: ['list', 'get', 'allowedStatuses', 'changeStatus', 'comment'],
-    reference: ['statuses', 'projects', 'savedQueries'],
+    issues: ['list', 'get', 'allowedStatuses', 'changeStatus', 'comment', 'search', 'edit', 'editOptions'],
+    reference: ['statuses', 'projects', 'savedQueries', 'priorities'],
     boards: ['issues', 'save', 'remove', 'move'],
     sprints: ['list', 'stats', 'inspectProject'],
     calendar: ['list', 'save', 'remove'],
@@ -153,6 +169,8 @@ export type {
     BoardIssues,
     BoardNotifications,
     DeleteEventCommand,
+    IssueEditOptions,
+    IssueEditResult,
     ProjectInspection,
     SaveEventCommand,
     SettingsView,

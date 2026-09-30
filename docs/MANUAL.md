@@ -52,6 +52,7 @@ Fechar a janela não encerra o app: ele continua na bandeja (barra de menus no m
 
 O painel resume o seu dia:
 
+- **Barra de busca**, logo abaixo da saudação: a mesma [busca rápida](#busca-rápida), direto na tela. Clique nela (ou use `Tab`) e digite; os resultados abrem logo abaixo.
 - **Indicadores**: tarefas na sua fila, paradas, atrasadas e notificações não lidas.
 - **Sprints**: cartões das sprints ativas com fase, prazo dos devs, data de publicação e progresso. **Ver sprints** abre a tela completa.
 - **Agenda de hoje**: os compromissos do dia. **Abrir agenda** leva à Agenda.
@@ -60,6 +61,22 @@ O painel resume o seu dia:
 - **Prazos**: tarefas vencidas ou que vencem nos próximos 7 dias.
 
 Clique em qualquer tarefa para abrir o [detalhe da tarefa](#4-detalhe-da-tarefa).
+
+### Busca rápida
+
+![Busca rápida](images/search.png)
+
+Aperte `⌘K` (Mac) ou `Ctrl+K` (Windows), em qualquer tela, ou clique em **Buscar** no topo do menu lateral. No Início, a barra de busca abaixo da saudação faz o mesmo sem abrir a janela.
+
+![Busca no Início](images/home-search.png)
+
+- Sem digitar nada, aparecem as **tarefas recentes** (as últimas que você abriu), os quadros e as telas do app.
+- **Número da tarefa**: digite `#1234` ou só `1234` e aperte `Enter` para abrir a tarefa.
+- **Texto**: a partir de 2 letras, busca no título das tarefas de todos os projetos que você vê, em qualquer status (até 20 resultados, das mais recentes para as mais antigas).
+- Quadros e telas também são filtrados pelo texto, sem diferenciar acentos ("configuracoes" acha "Configurações").
+- Navegue com `↑` `↓`, abra com `Enter` e feche com `Esc`.
+
+![Resultados da busca](images/search-text.png)
 
 ## 3. Quadros kanban
 
@@ -113,13 +130,19 @@ O quadro passa a aparecer também em **Configurações → Notificações → Mo
 
 ![Detalhe da tarefa](images/modal.png)
 
-Clicar em uma tarefa, em qualquer tela, abre o detalhe sem sair do app.
+Clicar em uma tarefa, em qualquer tela, abre o detalhe sem sair do app. As tarefas abertas ficam na lista de recentes da [busca rápida](#busca-rápida).
 
 - **Descrição**, com formatação (listas, tabelas, negrito, links).
 - **Anexos**, **Relações** e **Histórico** (comentários e mudanças de campos).
 - **Status**: troque direto pelo seletor; só aparecem os status permitidos para a tarefa.
 - **Adicionar comentário**: aceita Markdown e é publicado no Redmine.
-- Na lateral: prioridade, responsável, autor, versão, datas, horas estimadas e gastas, % concluído, campos personalizados e observadores.
+- **Campos editáveis na lateral**: prioridade, responsável, versão, início, previsão e % concluído. Cada mudança é salva no Redmine na hora e confirmada com um aviso.
+  - **Responsável**: lista os membros do projeto; "Ninguém" tira o responsável.
+  - **Versão**: lista as versões abertas do projeto; "Sem versão" tira a versão.
+  - **Datas**: são salvas quando você sai do campo ou aperta `Enter`. Apague a data para limpá-la. O início não pode ser depois da previsão.
+  - **% concluído**: de 10 em 10.
+  - Se o Redmine não aplicar algum campo (por exemplo, quando o fluxo da tarefa deixa a versão só para leitura), aparece um aviso em vermelho dizendo qual campo não foi salvo.
+- Também na lateral, só para leitura: autor, horas estimadas e gastas, campos personalizados e observadores.
 - **Abrir no Redmine** abre a tarefa no navegador.
 
 ## 5. Sprints
@@ -307,6 +330,14 @@ As configurações ficam divididas em abas, na coluna à esquerda.
 
 ## 10. Atalhos e perguntas frequentes
 
+### Atalhos gerais
+
+| Tecla               | Ação                       |
+| ------------------- | -------------------------- |
+| `⌘K` / `Ctrl+K`     | Abrir a busca rápida       |
+| `↑` / `↓` e `Enter` | Escolher e abrir, na busca |
+| `Esc`               | Fechar a busca             |
+
 ### Atalhos da Agenda
 
 | Tecla                 | Ação                             |
@@ -352,3 +383,9 @@ A chave salva não pôde ser lida neste computador (por exemplo, depois de insta
 
 **Fechei a janela. O app parou?**
 Não, ele segue na bandeja. Para encerrar, use **Sair** no menu da bandeja.
+
+**Mudei a versão (ou outro campo) da tarefa e apareceu "O Redmine não aplicou".**
+O Redmine aceitou o salvamento, mas ignorou aquele campo: o fluxo de trabalho deixa o campo só para leitura no status atual, ou falta permissão. O detalhe mostra o valor que ficou no Redmine; mude o status ou peça para quem tem permissão.
+
+**A busca não acha uma tarefa pelo número.**
+A busca só mostra tarefas que a sua conta do Redmine pode ver. Se a tarefa for de um projeto em que você não está, ela não aparece.

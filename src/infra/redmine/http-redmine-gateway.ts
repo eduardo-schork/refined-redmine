@@ -2,7 +2,9 @@ import type { IssueUpdate, RedmineCredentials, RedmineGateway } from '@applicati
 import type {
     Issue,
     IssueDetail,
+    IssuePriority,
     IssueStatus,
+    Named,
     Page,
     Project,
     RedmineUser,
@@ -45,6 +47,27 @@ export function issueParams(filter: IssueFilter): Params {
 }
 
 type IssueDto = Issue & Partial<Omit<IssueDetail, keyof Issue>>
+
+interface Membership {
+    user?: Named
+    group?: Named
+}
+
+/** Redmine clears a field with an empty string; undefined keys are left out of the JSON (field unchanged). */
+const clearable = (value: number | string | null | undefined) => (value === null ? '' : value)
+
+function issueBody(update: IssueUpdate) {
+    return {
+        status_id: update.statusId,
+        notes: update.notes,
+        assigned_to_id: clearable(update.assignedToId),
+        fixed_version_id: clearable(update.fixedVersionId),
+        priority_id: update.priorityId,
+        start_date: clearable(update.startDate),
+        due_date: clearable(update.dueDate),
+        done_ratio: update.doneRatio
+    }
+}
 
 /** Redmine omits the collections that were not requested in `include`. */
 function toDetail(issue: IssueDto): IssueDetail {
@@ -126,7 +149,7 @@ export class HttpRedmineGateway implements RedmineGateway {
     }
 
     async updateIssue(id: number, update: IssueUpdate): Promise<void> {
-        const body = { issue: { status_id: update.statusId, notes: update.notes } }
+        const body = { issue: issueBody(update) }
         await this.http.request('PUT', `/issues/${id}.json`, { body })
     }
 
@@ -143,6 +166,25 @@ export class HttpRedmineGateway implements RedmineGateway {
     async listSavedQueries(): Promise<SavedQuery[]> {
         const page = await this.paginate<SavedQuery>('/queries.json', 'queries', {}, MAX_LISTED_ITEMS)
         return page.items
+    }
+
+    async listProjectMembers(projectId: number): Promise<Named[]> {
+        const path = `/projects/${projectId}/memberships.json`
+        const page = await this.paginate<Membership>(path, 'memberships', {}, MAX_LISTED_ITEMS)
+        const members = new Map<number, Named>()
+        for (const membership of page.items) {
+            const principal = membership.user ?? membership.group
+            if (principal) members.set(principal.id, principal)
+        }
+        return [...members.values()]
+    }
+
+    async listPriorities(): Promise<IssuePriority[]> {
+        const response = await this.http.request<{ issue_priorities: IssuePriority[] }>(
+            'GET',
+            '/enumerations/issue_priorities.json'
+        )
+        return response.issue_priorities
     }
 
     async listVersions(projectId: number): Promise<Version[]> {

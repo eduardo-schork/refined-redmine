@@ -52,9 +52,11 @@ const statusById = new Map(statuses.map((status) => [status.id, status]))
 const project = { id: 10, name: 'Loja Virtual - Desenvolvimento' }
 const trackers = { dev: { id: 1, name: 'Desenvolvimento' }, bug: { id: 2, name: 'Defeito' } }
 const priorities = {
+    low: { id: 1, name: 'Baixa' },
     normal: { id: 2, name: 'Normal' },
     high: { id: 3, name: 'Alta' },
-    urgent: { id: 4, name: 'Urgente' }
+    urgent: { id: 4, name: 'Urgente' },
+    immediate: { id: 5, name: 'Imediata' }
 }
 
 function version(id, name, status, devDeadline, release) {
@@ -262,9 +264,29 @@ function matchesStatus(value, status) {
     return value.split('|').map(Number).includes(status.id)
 }
 
+/** Redmine's f[]/op[]/v[] form, for the fields the app uses (status and title search). */
+function matchesFieldFilters(item, params) {
+    return params.getAll('f[]').every((field) => {
+        const operator = params.get(`op[${field}]`)
+        const values = params.getAll(`v[${field}][]`)
+        if (field === 'status_id') {
+            if (operator === '*') return true
+            if (operator === 'o') return !item.status.is_closed
+            if (operator === 'c') return item.status.is_closed
+            return values.map(Number).includes(item.status.id)
+        }
+        if (field === 'subject') {
+            const needle = (values[0] ?? '').toLowerCase()
+            return item.subject.toLowerCase().includes(needle)
+        }
+        return true
+    })
+}
+
 function matchesFilter(item, params) {
     const queryId = params.get('query_id')
     if (queryId) return queryFilters[queryId]?.(item) ?? false
+    if (params.getAll('f[]').length) return matchesFieldFilters(item, params)
 
     const watcher = params.get('watcher_id')
     const isWatching = !watcher || item.watcherIds.includes(me.id)
@@ -322,10 +344,46 @@ function listIssues(params) {
     return { issues: page, total_count: matching.length, offset, limit }
 }
 
+const personById = (id) => Object.values(people).find((person) => person.id === Number(id))
+
+/** Applies the editable fields like Redmine: "" clears; in "Em teste" the version is read-only and silently kept. */
+function updateFields(item, fields) {
+    const details = []
+    const change = (name, oldValue, newValue) => details.push({ property: 'attr', name, old_value: oldValue, new_value: newValue })
+    if ('assigned_to_id' in fields) {
+        change('assigned_to_id', item.assigned_to?.id ?? null, fields.assigned_to_id || null)
+        item.assigned_to = fields.assigned_to_id ? personById(fields.assigned_to_id) : undefined
+    }
+    const versionReadOnly = item.status.id === 110
+    if ('fixed_version_id' in fields && !versionReadOnly) {
+        const version = versionById.get(Number(fields.fixed_version_id))
+        change('fixed_version_id', item.fixed_version?.id ?? null, fields.fixed_version_id || null)
+        item.fixed_version = version ? { id: version.id, name: version.name } : undefined
+    }
+    if ('priority_id' in fields) {
+        change('priority_id', item.priority.id, fields.priority_id)
+        item.priority = Object.values(priorities).find((priority) => priority.id === Number(fields.priority_id))
+    }
+    for (const [name, key] of [['start_date', 'start_date'], ['due_date', 'due_date']]) {
+        if (!(name in fields)) continue
+        change(name, item[key], fields[name] || null)
+        item[key] = fields[name] || null
+    }
+    if ('done_ratio' in fields) {
+        change('done_ratio', item.done_ratio, fields.done_ratio)
+        item.done_ratio = Number(fields.done_ratio)
+    }
+    return details
+}
+
 function updateIssue(id, body) {
     const item = issueById.get(id)
     const statusId = body.issue?.status_id
     if (statusId) item.status = statusById.get(Number(statusId))
+    const details = updateFields(item, body.issue ?? {})
+    if (details.length) {
+        item.journals.push({ id: item.journals.length + 100, user: people.marina, notes: '', created_on: daysAgo(0), details })
+    }
     const notes = body.issue?.notes
     if (notes) {
         const journal = {
@@ -377,6 +435,14 @@ function route(method, url, body) {
     if (path === '/projects.json') return { projects: [{ ...project, identifier: 'loja' }], total_count: 1 }
     if (path === '/queries.json') return { queries: savedQueries, total_count: savedQueries.length }
     if (path === `/projects/${project.id}/versions.json`) return { versions }
+    if (path === `/projects/${project.id}/memberships.json`) {
+        const memberships = Object.values(people).map((person, index) => ({ id: index + 1, user: person }))
+        return { memberships, total_count: memberships.length }
+    }
+    if (path === '/enumerations/issue_priorities.json') {
+        const list = Object.values(priorities).map((priority) => ({ ...priority, is_default: priority.id === 2, active: true }))
+        return { issue_priorities: list }
+    }
     if (path === '/issues.json') return listIssues(url.searchParams)
 
     const issueMatch = path.match(/^\/issues\/(\d+)\.json$/)

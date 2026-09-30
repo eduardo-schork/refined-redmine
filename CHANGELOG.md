@@ -2,6 +2,13 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
+## 0.3.0 — busca rápida e edição de campos
+
+- **Busca rápida**: `⌘K` no Mac ou `Ctrl+K` no Windows, em qualquer tela (ou **Buscar** no menu). Digite `#1234` para abrir a tarefa ou parte do título para achá-la em qualquer projeto e status. Também leva aos quadros e às telas e mostra as últimas tarefas que você abriu. No Início, a busca fica logo abaixo da saudação.
+- **Editar a tarefa no detalhe**: prioridade, responsável, versão, datas de início e previsão e % concluído, direto na lateral. Cada mudança é salva no Redmine na hora. Se o Redmine não aplicar algum campo (por exemplo, a versão travada pelo fluxo), o app avisa.
+
+Quem está na 0.2.0 recebe esta versão pelo próprio app (Configurações → Geral → Atualizações).
+
 ## 0.2.0 — atualizações pelo GitHub
 
 - **Atualizações**: com o seu token do GitHub (Configurações → Geral → Atualizações), o app avisa quando sai versão nova, baixa o instalador e, no Windows, atualiza e reabre sozinho. No Mac, abre o `.dmg` para você arrastar para Aplicativos. Sem token, nada muda.

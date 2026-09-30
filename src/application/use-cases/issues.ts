@@ -1,5 +1,17 @@
-import type { Issue, IssueDetail, IssueStatus, Page, Project, SavedQuery } from '@domain/redmine/entities'
+import type {
+    Issue,
+    IssueDetail,
+    IssuePriority,
+    IssueStatus,
+    Page,
+    Project,
+    SavedQuery
+} from '@domain/redmine/entities'
+import { assertValidChange, ignoredFields, type IssueFieldsChange } from '@domain/redmine/issue-edit'
 import type { IssueFilter } from '@domain/redmine/issue-filter'
+import { MAX_SEARCH_RESULTS, parseIssueSearch, titleSearchQuery } from '@domain/redmine/issue-search'
+import { AppError } from '@domain/shared/errors'
+import type { IssueEditOptions, IssueEditResult } from '../dto'
 import type { RedmineGateway } from '../ports/redmine-gateway'
 
 export class IssueQueries {
@@ -15,6 +27,50 @@ export class IssueQueries {
 
     allowedStatuses(id: number): Promise<IssueStatus[]> {
         return this.gateway.allowedStatuses(id)
+    }
+
+    /** Quick search: an issue number opens that issue; text searches the titles in every project. */
+    async search(input: string): Promise<Issue[]> {
+        const search = parseIssueSearch(input)
+        if (search.type === 'empty') return []
+        if (search.type === 'id') return this.issueById(search.id)
+        const page = await this.gateway.listIssues({ rawQuery: titleSearchQuery(search.term) }, MAX_SEARCH_RESULTS)
+        return page.items
+    }
+
+    private async issueById(id: number): Promise<Issue[]> {
+        try {
+            return [await this.gateway.getIssue(id)]
+        } catch (error) {
+            const notVisible =
+                error instanceof AppError && ['redmine.notFound', 'redmine.forbidden'].includes(error.code)
+            if (notVisible) return []
+            throw error
+        }
+    }
+
+    /** People and versions of the issue's project; the closed versions are kept out. */
+    async editOptions(projectId: number): Promise<IssueEditOptions> {
+        const [members, versions] = await Promise.all([
+            this.gateway.listProjectMembers(projectId),
+            this.gateway.listVersions(projectId)
+        ])
+        return {
+            assignees: [...members].sort(byName),
+            versions: versions.filter((version) => version.status !== 'closed').sort(byName)
+        }
+    }
+}
+
+export class EditIssueFieldsUseCase {
+    constructor(private readonly gateway: RedmineGateway) {}
+
+    async execute(issueId: number, change: IssueFieldsChange): Promise<IssueEditResult> {
+        const current = await this.gateway.getIssue(issueId)
+        assertValidChange(current, change)
+        await this.gateway.updateIssue(issueId, change)
+        const saved = await this.gateway.getIssue(issueId)
+        return { issue: saved, ignored: ignoredFields(change, saved) }
     }
 }
 
@@ -50,6 +106,13 @@ export class ReferenceDataQueries {
         return this.cached('projects', async () => {
             const projects = await this.gateway.listProjects()
             return projects.sort(byName)
+        })
+    }
+
+    priorities(): Promise<IssuePriority[]> {
+        return this.cached('priorities', async () => {
+            const priorities = await this.gateway.listPriorities()
+            return priorities.filter((priority) => priority.active !== false)
         })
     }
 

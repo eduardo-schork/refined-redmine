@@ -9,5 +9,7 @@ export const useStatuses = () =>
     useQuery({ queryKey: qk.statuses, queryFn: () => api.reference.statuses(), staleTime: DAY })
 export const useProjects = () =>
     useQuery({ queryKey: qk.projects, queryFn: () => api.reference.projects(), staleTime: DAY })
+export const usePriorities = () =>
+    useQuery({ queryKey: qk.priorities, queryFn: () => api.reference.priorities(), staleTime: DAY })
 export const useSavedQueries = () =>
     useQuery({ queryKey: qk.savedQueries, queryFn: () => api.reference.savedQueries(), staleTime: FIVE_MINUTES })

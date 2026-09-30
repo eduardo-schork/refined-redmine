@@ -146,13 +146,13 @@ src/
   preload/                    ponte gerada a partir de API_METHODS → window.bridge
   renderer/src/
     app/App.tsx               sessão, idioma, providers e rotas
-    lib/                      api (cliente do contrato), router, i18n (useI18n), query-keys, ids, cn
+    lib/                      api (cliente do contrato), router, i18n (useI18n), query-keys, ids, cn, recent-issues, shortcuts
     hooks/                    session, reference, issues, boards, sprints, calendar (useDisplayItems), notifications (+ sync de eventos), activity-log
     ui/atoms/                 Button, IconButton, Input/Select/AddSelect/Textarea, Switch, Badge, Avatar, ColorDot, ProgressBar, Overline, TextLink, StatusDot
     ui/molecules/             Field/ToggleField, Dialog, Toast, SearchInput, SegmentedControl, Card/Panel/StatTile/Alert/EmptyState/Property,
                               NavItem, RichText, RefreshButton, RemovableChip, ReminderPicker/ColorPicker/WeekdayPicker/HourSelect, PhaseBadge/DateCountdown,
                               Markdown, IssueRow, IssueCard, ScheduleFields
-    ui/organisms/             Sidebar, IssueModal (+ provider), BoardEditor, KanbanBoard, SprintCard, SprintIssuesDialog, SprintSetupForm,
+    ui/organisms/             Sidebar, search/ (QuickSearch, HomeSearch, useQuickSearch), IssueModal (+ provider), IssueFieldEditors, BoardEditor, KanbanBoard, SprintCard, SprintIssuesDialog, SprintSetupForm,
                               NotificationList/Rows, NotificationPermission (gate + status), HomePanels, calendar/*, settings/sections + MonitorsSection,
                               monitors/ (MonitorEditor, MonitorEventsFields), SavedQuerySelect, FilterUrlField
     ui/templates/             AppShell, PageLayout, CenteredLayout
@@ -181,8 +181,8 @@ docs/                         MANUAL.md (+ images/), REGRAS-DE-NEGOCIO.md, FUNCI
 5. **Interface**: hook em `renderer/src/hooks`, componente no nível certo do atomic design, textos em `shared/i18n/locales/pt-BR.ts` **e** `en-US.ts` (o tipo obriga).
 6. `npm run check` (tipos + lint + testes) e atualizar este arquivo.
 
-**Contrato IPC (`window.bridge`)**: `session.{get,login,logout}`, `settings.update`, `issues.{list,get,allowedStatuses,changeStatus,comment}`,
-`reference.{statuses,projects,savedQueries}`, `boards.{issues,save(board, notifications?),remove,move}`, `sprints.{list,stats,inspectProject}`,
+**Contrato IPC (`window.bridge`)**: `session.{get,login,logout}`, `settings.update`, `issues.{list,get,allowedStatuses,changeStatus,comment,search,edit,editOptions}`,
+`reference.{statuses,projects,priorities,savedQueries}`, `boards.{issues,save(board, notifications?),remove,move}`, `sprints.{list,stats,inspectProject}`,
 `calendar.{list,save,remove}`, `notifications.{list,markRead,clear,test,permission,openSettings}`, `monitor.{status,runNow}`, `log.{list,clear}`, `updates.{status,check,setToken,testToken,download,install}`, `app.{openExternal,info,openDataFolder,supportReport}`, `notifications.confirm`;
 eventos `notifications.changed`, `monitor.status`, `permission.changed`, `update.status`, `navigate`.
 
@@ -239,6 +239,14 @@ eventos `notifications.changed`, `monitor.status`, `permission.changed`, `update
 - Descrição em Markdown; `#1234` vira link e abre no próprio modal.
 - Anexos, subtarefas, relações (com sentido correto), histórico (notas + alterações), observadores, campos personalizados.
 - Ações: trocar status (entre os permitidos), comentar, **Abrir no Redmine**.
+- Lateral editável (`IssueFieldEditors` → `issues.edit` → `EditIssueFieldsUseCase`): prioridade, responsável (membros do projeto), versão (não fechadas), início, previsão e % concluído. Um campo por `PUT`; depois a tarefa é relida e os campos que o Redmine ignorou (fluxo só leitura) viram aviso (`ignoredFields`). Validação no domínio: `domain/redmine/issue-edit.ts`.
+
+### Busca rápida
+
+- `⌘K`/`Ctrl+K` em qualquer tela ou botão **Buscar** no menu (`QuickSearch`, atalho em `App.tsx`); no Início, a mesma busca como campo abaixo da saudação (`HomeSearch`).
+- Peças: `useQuickSearch` (texto, resultados, teclado; `ui/organisms/search/`), `SearchResultList` (molécula com seções e linhas), `Kbd` (átomo), `lib/shortcuts.ts` (rótulo do atalho). A paleta e o campo do Início só mudam o invólucro.
+- `#1234`/`1234` → tarefa por número; texto (2+ caracteres) → título em todos os status via `f[]`, até 20 (`domain/redmine/issue-search.ts`, `IssueQueries.search`).
+- Também filtra quadros e telas (sem acento) e mostra as 8 tarefas recentes (`lib/recent-issues.ts`, no `localStorage`).
 
 ### Agenda
 
@@ -323,9 +331,9 @@ eventos `notifications.changed`, `monitor.status`, `permission.changed`, `update
 - [ ] Agenda: fuso horário por evento (hoje tudo é horário local "flutuante").
 - [ ] Integração com o Mattermost (enviar notificações/DM, links de tarefas).
 - [x] Atualizações pelo GitHub Releases com o token de cada usuário (2026-09-29). Falta: instalação automática no Mac (exige Developer ID).
-- [ ] Edição de mais campos no modal (responsável, versão, datas, % concluído, horas).
+- [x] Edição de mais campos no modal: prioridade, responsável, versão, datas e % concluído (2026-09-29). Falta: horas estimadas.
 - [ ] Apontamento de horas (time entries).
-- [ ] Busca global de tarefas (#id / texto).
+- [x] Busca global de tarefas (#id / texto), `⌘K`/`Ctrl+K` (2026-09-29).
 - [ ] Monitores: intervalo de verificação próprio por monitor (como no redmine-adapter; hoje só o horário é próprio).
 - [ ] Monitores: modelos de texto da notificação por monitor (o redmine-adapter tem `{queryName}`, `{diff}`…).
 - [ ] Log: exportar/abrir a pasta do arquivo.
@@ -347,7 +355,7 @@ eventos `notifications.changed`, `monitor.status`, `permission.changed`, `update
 - [ ] Início configurável: escolher e ordenar os painéis; esconder sprints que não são do meu time.
 - [ ] Quadro: limite de cartões por coluna (WIP) com alerta, campos exibidos no cartão, ordenação (prioridade, data, atualização), densidade compacta.
 - [ ] Cores por status do Redmine (bolinha/borda no cartão e no modal).
-- [ ] Atalhos de teclado globais (abrir o app, busca rápida por #id) e editáveis.
+- [ ] Atalhos de teclado globais do sistema (abrir o app de fora dele) e editáveis. A busca rápida dentro do app já existe (`⌘K`).
 - [ ] Formato de data e hora (24 h / 12 h, dd/mm) e fuso para exibição.
 - [ ] Vários perfis de Redmine (trabalho, cliente) com troca rápida.
 - [ ] Exportar/importar configurações (quadros, monitores, aparência) em um arquivo, para levar a outro computador ou compartilhar com o time.
@@ -391,7 +399,8 @@ Pode esperar: Developer ID + notarização (conta Apple Developer paga), atualiz
 - [x] Gerar e testar o `.dmg` instalado (`npm run dist:mac`).
 - [ ] Certificado Apple Developer ID + notarização para eliminar o aviso do Gatekeeper (e permitir atualização automática no Mac).
 - [x] Teste do token real contra o repositório privado no GitHub (Configurações → Atualizações → Testar), feito pelo usuário em 2026-09-29 no perfil de demonstração.
-- [ ] Primeira publicação pelo `npm run release` (0.2.0) — feita pelo usuário; conferir o fluxo completo: aviso, download, instalação no Windows e no Mac.
+- [x] Primeira publicação pelo `npm run release` (0.2.0), feita pelo usuário em 2026-09-29 (`--draft` + revisão no GitHub + Publish).
+- [ ] Ciclo automático completo: publicar uma 0.2.1 e conferir aviso, download e instalação nos apps já na 0.2.0 (Mac e Windows).
 - [ ] Opcional: publicar pelo GitHub Actions (build na nuvem ao criar a tag).
 
 **Agenda — verificado**
@@ -459,3 +468,7 @@ npm run icons           # regera ícones
 | 2026-09-29 | Usuário testou no perfil de demonstração: grupo 1 (confirmação de notificações, suporte), seção Atualizações e teste de um token real com acesso ao repositório — tudo funcionando. Falta a primeira publicação (0.2.0).                                                                                                                                                                                                                                                                                                                                                                                       |
 | 2026-09-29 | Auditoria de segredos antes do push: nenhuma chave/token/senha no código, no histórico ou nos arquivos que o git envia. Correções: chave/token com caractere inválido recusados antes da rede e segredos removidos de mensagens de erro (`isWellFormedSecret`, `redactSecret`); atualizações só de Releases do dono do repositório (`TRUSTED_PUBLISHER`); builds com `--publish never` e sem `GITHUB_TOKEN`. 109 testes.                                                                                                                                                                                       |
 | 2026-09-29 | Token fine-grained (`github_pat_…`) aceito e recomendado no app e nos docs (clássico como alternativa). Endurecimento: `electronFuses` no build e app instalado recusa `--remote-debugging-port`/`--inspect`. Falta conferir no primeiro build.                                                                                                                                                                                                                                                                                                                                                                |
+| 2026-09-29 | **0.2.0 publicada** no GitHub Releases pelo usuário (`npm run dist:mac` + `dist:win`, `npm run release -- --draft --skip-build`, revisão e Publish). Lição: com `--skip-build`, os três instaladores precisam estar em `dist/`.                                                                                                                                                                                                                                                                                                                                                                                |
+| 2026-09-29 | **Busca rápida** (`⌘K`/`Ctrl+K`: #id, título em todos os status, quadros, telas e 8 recentes) e **edição de campos** no detalhe (prioridade, responsável, versão, início, previsão, % concluído; relê a tarefa após salvar e avisa campos ignorados pelo Redmine). Portas novas `listProjectMembers` e `listPriorities`; demo com membros, prioridades, filtro `f[]` e versão só leitura em "Em teste". Testado no perfil de demonstração.                                                                                                                                                                     |
+| 2026-09-29 | Busca também no **Início** (campo abaixo da saudação, `HomeSearch`). A busca rápida foi dividida em peças reaproveitáveis: `useQuickSearch`, `SearchResultList` (molécula), `Kbd` (átomo) e `lib/shortcuts.ts`; paleta e campo do Início usam as mesmas. Testado no perfil de demonstração.                                                                                                                                                                                                                                                                                                                    |
+| 2026-09-29 | Versão **0.3.0** preparada (busca rápida, busca no Início, edição de campos): `package.json`, `CHANGELOG.md`, commit e tag `v0.3.0`. Push e `npm run release` pelo usuário. É a primeira versão que deve chegar pelo ciclo automático a partir da 0.2.0.                                                                                                                                                                                                                                                                                                                                                       |

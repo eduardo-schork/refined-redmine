@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { SettingsView } from '@contracts/api'
 import type { Board } from '@domain/board/board'
 import { resolveLocale } from '@shared/i18n/index'
@@ -19,6 +19,7 @@ import { ToastProvider } from '@/ui/molecules/Toast'
 import { BoardEditor } from '@/ui/organisms/BoardEditor'
 import { IssueModalProvider } from '@/ui/organisms/IssueModal'
 import { NotificationPermissionGate } from '@/ui/organisms/NotificationPermission'
+import { QuickSearch } from '@/ui/organisms/search/QuickSearch'
 import { WhatsNewDialog } from '@/ui/organisms/WhatsNewDialog'
 import { Sidebar } from '@/ui/organisms/Sidebar'
 import { AppShell } from '@/ui/templates/layouts'
@@ -45,7 +46,11 @@ function AuthenticatedApp() {
     // undefined = editor closed; an object (empty or prefilled) = editor open.
     const [newBoard, setNewBoard] = useState<Partial<Board> | undefined>()
     const navigate = useCallback((nextRoute: Route) => setRoute(nextRoute), [])
+    const [searching, setSearching] = useState(false)
+    const openSearch = useCallback(() => setSearching(true), [])
+    const closeSearch = useCallback(() => setSearching(false), [])
     useAppEventsSync(navigate)
+    useSearchShortcut(openSearch)
 
     const openEmptyBoardEditor = () => setNewBoard({})
     const closeBoardEditor = () => setNewBoard(undefined)
@@ -59,7 +64,16 @@ function AuthenticatedApp() {
             <IssueModalProvider>
                 <NotificationPermissionGate />
                 <WhatsNewDialog />
-                <AppShell sidebar={<Sidebar route={route} onNavigate={navigate} onNewBoard={openEmptyBoardEditor} />}>
+                <AppShell
+                    sidebar={
+                        <Sidebar
+                            route={route}
+                            onNavigate={navigate}
+                            onNewBoard={openEmptyBoardEditor}
+                            onSearch={openSearch}
+                        />
+                    }
+                >
                     {route.page === 'home' && <HomePage />}
                     {route.page === 'calendar' && (
                         <CalendarPage
@@ -83,7 +97,22 @@ function AuthenticatedApp() {
                     {route.page === 'settings' && <SettingsPage key={route.tab} tab={route.tab} />}
                 </AppShell>
                 {newBoard && <BoardEditor initial={newBoard} onClose={closeBoardEditor} onSaved={handleBoardSaved} />}
+                {searching && <QuickSearch onClose={closeSearch} />}
             </IssueModalProvider>
         </NavContext.Provider>
     )
+}
+
+/** ⌘K on macOS, Ctrl+K on Windows, from any screen. */
+function useSearchShortcut(open: () => void) {
+    useEffect(() => {
+        const handleKeyDown = (keyboardEvent: KeyboardEvent) => {
+            const withModifier = keyboardEvent.metaKey || keyboardEvent.ctrlKey
+            if (!withModifier || keyboardEvent.key.toLowerCase() !== 'k') return
+            keyboardEvent.preventDefault()
+            open()
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [open])
 }

@@ -6,6 +6,7 @@ import { MonitorService } from './services/monitor-service'
 import { LoginUseCase } from './use-cases/session'
 import { BoardFilterResolver, DeleteBoardUseCase, MoveIssueToColumnUseCase, SaveBoardUseCase } from './use-cases/boards'
 import { ListSprintsUseCase } from './use-cases/sprints'
+import { EditIssueFieldsUseCase, IssueQueries } from './use-cases/issues'
 import { ReminderDispatcher, SaveCalendarEventUseCase } from './use-cases/calendar'
 import {
     detail,
@@ -411,5 +412,38 @@ describe('calendar', () => {
             type: 'route',
             route: '/calendar?date=2026-09-28&event=e'
         })
+    })
+})
+
+describe('issues', () => {
+    it('quick search: a number opens that issue; an issue the user cannot see is just no result', async () => {
+        const gateway = new FakeGateway()
+        gateway.details.set(7, detail(issue(7)))
+        const queries = new IssueQueries(gateway)
+        expect((await queries.search('#7')).map((found) => found.id)).toEqual([7])
+        expect(await queries.search('#8')).toEqual([])
+        expect(await queries.search('x')).toEqual([])
+    })
+
+    it('quick search by text sends the title filter', async () => {
+        const gateway = new FakeGateway()
+        await new IssueQueries(gateway).search('cupom')
+        expect(gateway.filters.at(-1)?.rawQuery).toContain('v%5Bsubject%5D%5B%5D=cupom')
+    })
+
+    it('editing validates, saves and reports the fields Redmine ignored', async () => {
+        const gateway = new FakeGateway()
+        const current = detail(issue(10, { start_date: '2026-10-01', due_date: '2026-10-10' }))
+        gateway.details.set(10, current)
+        const editIssue = new EditIssueFieldsUseCase(gateway)
+
+        await expect(editIssue.execute(10, { startDate: '2026-11-01' })).rejects.toMatchObject({
+            code: 'issue.datesOrder'
+        })
+        expect(gateway.updates).toEqual([])
+
+        const result = await editIssue.execute(10, { doneRatio: 40 })
+        expect(gateway.updates).toEqual([{ id: 10, update: { doneRatio: 40 } }])
+        expect(result.ignored).toEqual(['doneRatio'])
     })
 })

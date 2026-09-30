@@ -1,13 +1,16 @@
 import type {
     Issue,
     IssueDetail,
+    IssuePriority,
     IssueStatus,
+    Named,
     Page,
     Project,
     RedmineUser,
     SavedQuery,
     Version
 } from '@domain/redmine/entities'
+import type { IssueFieldsChange } from '@domain/redmine/issue-edit'
 import type { IssueFilter } from '@domain/redmine/issue-filter'
 
 export interface RedmineCredentials {
@@ -15,7 +18,7 @@ export interface RedmineCredentials {
     apiKey: string
 }
 
-export interface IssueUpdate {
+export interface IssueUpdate extends IssueFieldsChange {
     statusId?: number
     notes?: string
 }
@@ -33,4 +36,7 @@ export interface RedmineGateway {
     listProjects(): Promise<Project[]>
     listSavedQueries(): Promise<SavedQuery[]>
     listVersions(projectId: number): Promise<Version[]>
+    /** Project members (users and groups) — the people issues of the project can be assigned to. */
+    listProjectMembers(projectId: number): Promise<Named[]>
+    listPriorities(): Promise<IssuePriority[]>
 }

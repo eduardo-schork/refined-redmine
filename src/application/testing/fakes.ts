@@ -77,6 +77,16 @@ export class FakeGateway implements RedmineGateway {
     async listVersions() {
         return this.versions
     }
+    members: { id: number; name: string }[] = []
+    async listProjectMembers() {
+        return this.members
+    }
+    async listPriorities() {
+        return [
+            { id: 2, name: 'Normal', is_default: true },
+            { id: 3, name: 'Alta', is_default: false }
+        ]
+    }
 }
 
 export class MemorySettings implements SettingsRepository {

@@ -14,3 +14,11 @@ export function safeRegex(pattern: string, fallback: RegExp): RegExp {
         return fallback
     }
 }
+
+/** Lowercase without accents, so "configuracoes" finds "Configurações". */
+export function foldForSearch(text: string): string {
+    return text
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .toLowerCase()
+}

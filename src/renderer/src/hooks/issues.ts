@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import type { Issue } from '@domain/redmine/entities'
+import type { IssueFieldsChange } from '@domain/redmine/issue-edit'
 import { MY_OPEN_QUEUE } from '@domain/redmine/issue-filter'
 import { api } from '@/lib/api'
 import { qk } from '@/lib/query-keys'
@@ -57,5 +58,32 @@ export function useCommentOnIssue(id: number) {
     return useMutation({
         mutationFn: (notes: string) => api.issues.comment(id, notes),
         onSuccess: () => invalidateIssueViews(queryClient, id)
+    })
+}
+
+export const useIssueSearch = (input: string) =>
+    useQuery({
+        queryKey: qk.issueSearch(input),
+        queryFn: () => api.issues.search(input),
+        enabled: input.trim().length > 0,
+        staleTime: 30_000,
+        placeholderData: (previous) => previous
+    })
+
+export const useIssueEditOptions = (projectId: number) =>
+    useQuery({
+        queryKey: qk.issueEditOptions(projectId),
+        queryFn: () => api.issues.editOptions(projectId),
+        staleTime: 5 * 60_000
+    })
+
+export function useEditIssue(id: number) {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: (change: IssueFieldsChange) => api.issues.edit(id, change),
+        onSuccess: (result) => {
+            queryClient.setQueryData(qk.issue(id), result.issue)
+            invalidateIssueViews(queryClient, id)
+        }
     })
 }

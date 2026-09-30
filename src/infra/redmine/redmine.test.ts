@@ -90,3 +90,28 @@ describe('HttpRedmineGateway', () => {
         expect([page.items.length, page.total, requestCount]).toEqual([150, 150, 2])
     })
 })
+
+describe('HttpRedmineGateway.updateIssue', () => {
+    it('clears fields with an empty string and leaves untouched ones out of the body', async () => {
+        const bodies: unknown[] = []
+        const client = new RedmineHttpClient(async (_url, init) => {
+            bodies.push(JSON.parse(String(init.body)))
+            return new Response(null, { status: 204 })
+        }, credentials)
+        await new HttpRedmineGateway(client).updateIssue(5, { assignedToId: null, dueDate: null, doneRatio: 30 })
+        expect(bodies[0]).toEqual({ issue: { assigned_to_id: '', due_date: '', done_ratio: 30 } })
+    })
+
+    it('never sends a pasted key with invalid characters: the network error is scrubbed of it', async () => {
+        const client = new RedmineHttpClient(
+            async () => {
+                throw new TypeError('Invalid header value "bad key"')
+            },
+            () => ({ baseUrl: 'https://r.test/', apiKey: 'bad key' }),
+            async () => {}
+        )
+        await expect(client.request('GET', '/x.json')).rejects.toMatchObject({
+            params: { detail: expect.not.stringContaining('bad key') }
+        })
+    })
+})

@@ -32,6 +32,8 @@ export type ErrorCode =
     | 'update.noInstaller'
     | 'update.http'
     | 'update.untrusted'
+    | 'issue.datesOrder'
+    | 'issue.doneRatio'
     | 'calendar.titleRequired'
     | 'calendar.invalidIssue'
     | 'unexpected'

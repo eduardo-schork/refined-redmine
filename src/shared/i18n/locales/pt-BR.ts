@@ -68,6 +68,8 @@ export const ptBR = {
         'update.http': 'Erro HTTP {{status}} do GitHub.',
         'update.untrusted':
             'A versão publicada não é do mantenedor do app ({{publisher}}) e foi ignorada por segurança.',
+        'issue.datesOrder': 'A data de início não pode ser depois da previsão.',
+        'issue.doneRatio': 'O % concluído precisa estar entre 0 e 100.',
         'calendar.titleRequired': 'Dê um título ao compromisso.',
         'calendar.invalidIssue': 'Número de tarefa inválido.',
         unexpected: 'Erro inesperado: {{detail}}'
@@ -390,7 +392,28 @@ export const ptBR = {
             closedColumn: 'Fechadas'
         }
     },
+    search: {
+        button: 'Buscar',
+        placeholder: 'Tarefa por #número ou título, telas e quadros…',
+        recent: 'Abertas recentemente',
+        issues: 'Tarefas',
+        pages: 'Telas',
+        boards: 'Quadros',
+        searching: 'Buscando…',
+        noResults: 'Nada encontrado para “{{term}}”.',
+        idNotFound: 'Tarefa #{{id}} não encontrada ou sem acesso.',
+        empty: 'Digite #1234 para abrir uma tarefa, ou parte do título para procurar em todos os projetos.',
+        keys: '↑↓ navegar · Enter abrir · Esc fechar'
+    },
     issue: {
+        edit: {
+            saved: '{{field}}: {{value}}',
+            ignored: 'O Redmine não aplicou: {{fields}}. Esse campo é somente leitura para você nesta etapa do fluxo.',
+            nobody: 'Ninguém',
+            noVersion: 'Sem versão',
+            noDate: 'Sem data',
+            clearDate: 'Limpar data'
+        },
         parent: '· pai #{{id}}',
         loadError: 'Erro ao carregar',
         noDescription: 'Sem descrição.',

@@ -100,6 +100,11 @@ export interface SavedQuery extends Named {
     project_id?: number | null
 }
 
+export interface IssuePriority extends Named {
+    is_default: boolean
+    active?: boolean
+}
+
 export interface Project extends Named {
     identifier: string
     parent?: Named

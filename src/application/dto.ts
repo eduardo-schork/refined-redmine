@@ -1,10 +1,11 @@
 import type { Board } from '@domain/board/board'
+import type { EditableField } from '@domain/redmine/issue-edit'
 import type { LogEntry } from '@domain/log/log-entry'
 import type { MonitorStatus } from '@domain/monitor/monitor-status'
 import type { NotifyPermissionInfo } from '@domain/notification/permission'
 import type { Monitor } from '@domain/monitor/monitor'
 import type { CalendarEvent, EditScope } from '@domain/calendar/calendar-event'
-import type { Issue, Page } from '@domain/redmine/entities'
+import type { Issue, IssueDetail, Named, Page, Version } from '@domain/redmine/entities'
 import type { Settings } from '@domain/settings/settings'
 import type { DetectedFields } from '@domain/sprint/sprint-classifier'
 import type { Sprint } from '@domain/sprint/sprint'
@@ -37,6 +38,18 @@ export interface AppInfo {
     platform: string
     arch: string
     dataPath: string
+}
+
+/** Result of saving issue fields: `ignored` lists the fields Redmine did not apply (read-only in the workflow). */
+export interface IssueEditResult {
+    issue: IssueDetail
+    ignored: EditableField[]
+}
+
+/** Choices offered when editing an issue of a project. */
+export interface IssueEditOptions {
+    assignees: Named[]
+    versions: Version[]
 }
 
 /** What "Copy support information" puts on the clipboard. Never includes the API key. */

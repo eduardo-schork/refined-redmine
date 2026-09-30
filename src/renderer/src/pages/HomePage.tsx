@@ -12,6 +12,7 @@ import { RefreshButton } from '@/ui/molecules/RefreshButton'
 import { SectionTitle } from '@/ui/molecules/surfaces'
 import { LatestNotifications, QueuePanels, QueueTiles, TodayAgenda } from '@/ui/organisms/HomePanels'
 import { useOpenIssue } from '@/ui/organisms/IssueModal'
+import { HomeSearch } from '@/ui/organisms/search/HomeSearch'
 import { SprintCard } from '@/ui/organisms/SprintCard'
 import { PageLayout } from '@/ui/templates/layouts'
 
@@ -58,6 +59,8 @@ export default function HomePage() {
                     {dates.format(new Date(), { weekday: 'long', day: 'numeric', month: 'long' })}
                 </p>
             </div>
+
+            <HomeSearch />
 
             <QueueTiles
                 unread={unreadCount(notifications)}
