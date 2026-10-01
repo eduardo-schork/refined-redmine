@@ -2,7 +2,7 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
-## Próxima versão — horas, cronômetro, lista e filtros nos quadros
+## 0.7.0 — horas, cronômetro, lista e filtros nos quadros
 
 - **Lançar horas** direto no detalhe da tarefa: data, horas do jeito que preferir (1,5 · 1:30 · 1h30 · 90m), atividade e comentário. A seção Horas mostra o total contra o estimado e todos os lançamentos, com editar e excluir os seus.
 - **Cronômetro**: comece a contar numa tarefa e pare quando terminar; o tempo vai pronto para o lançamento. Ele aparece na barra lateral e na barra de menus, continua com a janela fechada e pausa sozinho quando o computador dorme ou você fica fora por 10 minutos.
