@@ -288,8 +288,22 @@ describe('LoginUseCase', () => {
         const setup = monitorSetup()
         return { ...setup, login: new LoginUseCase(setup.gateway, setup.settings, setup.secrets, setup.monitor) }
     }
-    it('rejects a URL without protocol', async () =>
-        expect(loginSetup().login.execute('redmine.com', 'key')).rejects.toMatchObject({ code: 'auth.invalidUrl' }))
+    it('adds https:// and drops a pasted page from the address', async () => {
+        const view = await loginSetup().login.execute(' r.test/my/account ', 'key')
+        expect(view.baseUrl).toBe('https://r.test')
+    })
+    it('rejects an address that is not http or https', async () =>
+        expect(loginSetup().login.execute('ftp://r.test', 'key')).rejects.toMatchObject({ code: 'auth.invalidUrl' }))
+    it('explains a missing /my/account as "not a Redmine"', async () => {
+        const setup = loginSetup()
+        setup.gateway.currentUser = async () => {
+            throw new AppError('redmine.notFound', {}, 404)
+        }
+        await expect(setup.login.execute('https://r.test', 'key')).rejects.toMatchObject({
+            code: 'auth.notRedmine',
+            status: 404
+        })
+    })
     it('translates 401 into an invalid API key', async () =>
         expect(loginSetup().login.execute('https://r.test', 'wrong')).rejects.toMatchObject({
             code: 'auth.invalidKey'

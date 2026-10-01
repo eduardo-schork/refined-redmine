@@ -29,7 +29,11 @@ export function TextLink({
     className?: string
 }) {
     return (
-        <button type="button" onClick={onClick} className={cn('text-left text-accent hover:underline', className)}>
+        <button
+            type="button"
+            onClick={onClick}
+            className={cn('inline-flex items-center gap-1 text-left text-accent hover:underline', className)}
+        >
             {children}
         </button>
     )

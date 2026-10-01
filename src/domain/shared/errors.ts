@@ -17,6 +17,8 @@ export type ErrorCode =
     | 'network.unknown'
     | 'auth.invalidUrl'
     | 'auth.invalidKey'
+    | 'auth.notRedmine'
+    | 'auth.apiDisabled'
     | 'workflow.transitionNotAllowed'
     | 'board.nameRequired'
     | 'board.projectRequired'

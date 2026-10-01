@@ -66,15 +66,15 @@ ciclo (MonitorService.runChecks)
 
 `infra/redmine/http-client.ts` (`RedmineHttpClient`) + `http-redmine-gateway.ts`:
 
-| Item             | Valor                                                                                                                                                     |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Transporte       | `net.fetch` do Electron (pilha de rede do Chromium: proxy e certificados do sistema)                                                                      |
-| Autenticação     | cabeçalho `X-Redmine-API-Key` (nunca na URL)                                                                                                              |
-| Timeout          | 30 s por tentativa                                                                                                                                        |
-| Novas tentativas | só `GET`: até 3 tentativas, espera de 400 ms e depois 800 ms, em erro de rede ou 5xx; 4xx não repete. `PUT` (mudar status, comentar) tenta uma vez só     |
-| Paginação        | 100 por página; para no máximo pedido, no `total_count` ou numa página incompleta. Tarefas: até 500 (quadros e monitores); projetos e consultas: até 1000 |
-| Erros            | viram `AppError` com código (`network.dns`, `redmine.unauthorized`…) e são traduzidos na interface                                                        |
-| Log              | cada tentativa gera um registro (observador passado ao cliente em `main/container.ts`)                                                                    |
+| Item             | Valor                                                                                                                                                                                                                                                          |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Transporte       | `net.fetch` do Electron (pilha de rede do Chromium: proxy e certificados do sistema)                                                                                                                                                                           |
+| Autenticação     | cabeçalho `X-Redmine-API-Key` (nunca na URL)                                                                                                                                                                                                                   |
+| Timeout          | 30 s por tentativa                                                                                                                                                                                                                                             |
+| Novas tentativas | só `GET`: até 3 tentativas, espera de 400 ms e depois 800 ms, em erro de rede ou 5xx; 4xx não repete. `PUT` (mudar status, comentar) tenta uma vez só. O login (`GET /my/account.json`) também tenta uma vez só (`noRetry`): no máximo 30 s até o erro na tela |
+| Paginação        | 100 por página; para no máximo pedido, no `total_count` ou numa página incompleta. Tarefas: até 500 (quadros e monitores); projetos e consultas: até 1000                                                                                                      |
+| Erros            | viram `AppError` com código (`network.dns`, `redmine.unauthorized`…) e são traduzidos na interface                                                                                                                                                             |
+| Log              | cada tentativa gera um registro (observador passado ao cliente em `main/container.ts`)                                                                                                                                                                         |
 
 Requisições da busca e da edição:
 

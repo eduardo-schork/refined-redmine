@@ -88,7 +88,11 @@ export class HttpRedmineGateway implements RedmineGateway {
     constructor(private readonly http: RedmineHttpClient) {}
 
     async currentUser(credentials?: RedmineCredentials): Promise<RedmineUser> {
-        const response = await this.http.request<{ user: RedmineUser }>('GET', '/my/account.json', { credentials })
+        // Only the connection screen asks for the current user: it shows the error after one attempt (30 s at most).
+        const response = await this.http.request<{ user: RedmineUser }>('GET', '/my/account.json', {
+            credentials,
+            noRetry: true
+        })
         return response.user
     }
 

@@ -29,9 +29,11 @@ O passo a passo (macOS e Windows, com os avisos de segurança do sistema na prim
 
 ![Tela de conexão](images/onboarding.png)
 
-1. Em **URL do Redmine**, informe o endereço que você usa no navegador (ex.: `https://redmine.suaempresa.com.br`).
-2. Em **Chave de acesso à API**, cole a sua chave. No Redmine: **Minha conta → Chave de acesso à API → Mostrar**.
-3. Clique em **Conectar**.
+1. Em **URL do Redmine**, informe o endereço que você usa no navegador (ex.: `https://redmine.suaempresa.com.br`). Pode digitar sem `https://` ou colar o endereço de uma página do Redmine (como `…/my/account` ou `…/issues/1234`): o app ajusta e mostra embaixo o **Endereço usado**. Depois de desconectar, o endereço já vem preenchido.
+2. Em **Chave de acesso à API**, cole a sua chave. No Redmine: **Minha conta → Chave de acesso à API → Mostrar**. O link **Abrir "Minha conta" no Redmine** abre essa página no navegador; o ícone de olho mostra ou esconde a chave.
+3. Clique em **Conectar**. Enquanto conecta, os campos ficam travados e aparece **Conectando a …** com os segundos. Se passar de 8 segundos, o app avisa o que conferir (VPN, rede). Sem resposta em 30 segundos, ele mostra o erro.
+
+Se não der certo, o app diz o motivo e o que fazer: chave recusada, endereço que não é de um Redmine, API REST desligada no Redmine, endereço não encontrado (DNS ou VPN), tempo esgotado ou conexão segura recusada (proxy, antivírus, certificado). Ao corrigir um campo, o aviso some.
 
 A chave é guardada criptografada pelo sistema (Keychain no macOS, DPAPI no Windows) e nunca sai do seu computador, a não ser nas chamadas ao próprio Redmine.
 

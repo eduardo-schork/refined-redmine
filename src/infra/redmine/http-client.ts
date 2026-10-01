@@ -14,6 +14,8 @@ interface RequestOptions {
     rawQuery?: string
     body?: unknown
     credentials?: RedmineCredentials
+    /** One attempt even for a GET: someone is waiting on screen and can try again (connection screen). */
+    noRetry?: boolean
 }
 
 /** What happened in one attempt of a request (for the activity log). */
@@ -78,13 +80,21 @@ function redmineErrorMessages(body: string): string[] {
 }
 
 export function httpError(status: number, body: string): AppError {
-    const errors = redmineErrorMessages(body)
-    if (errors.length) return new AppError('redmine.rejected', { detail: errors.join('; ') }, status)
-
+    // The status decides first: some Redmines and proxies answer 401/403/404 with an "errors" body too, and an
+    // invalid key must read as an invalid key, not as a rejected change.
     const code = HTTP_STATUS_ERROR_CODES[status]
     if (code) return new AppError(code, {}, status)
+
+    const errors = redmineErrorMessages(body)
+    if (errors.length) return new AppError('redmine.rejected', { detail: errors.join('; ') }, status)
     if (status === 422) return new AppError('redmine.rejected', { detail: '' }, status)
     return new AppError('redmine.http', { status }, status)
+}
+
+/** Only reads are retried: repeating a write could apply it twice. */
+function attemptsFor(method: HttpMethod, options: RequestOptions): number {
+    const canRetry = method === 'GET' && !options.noRetry
+    return canRetry ? MAX_ATTEMPTS : 1
 }
 
 function sleep(ms: number): Promise<void> {
@@ -125,7 +135,7 @@ export class RedmineHttpClient {
         if (!credentials?.baseUrl || !credentials.apiKey) throw new AppError('redmine.notConfigured')
 
         const url = buildUrl(credentials.baseUrl, path, options.params, options.rawQuery)
-        const maxAttempts = method === 'GET' ? MAX_ATTEMPTS : 1
+        const maxAttempts = attemptsFor(method, options)
         let lastError: AppError | undefined
 
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {

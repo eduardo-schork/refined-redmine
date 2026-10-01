@@ -52,6 +52,22 @@ describe('RedmineHttpClient', () => {
         expect(callCount).toBe(3)
     })
 
+    it('tries once when asked not to retry (connection screen)', async () => {
+        let callCount = 0
+        const client = new RedmineHttpClient(
+            async () => {
+                callCount += 1
+                return json({}, 502)
+            },
+            credentials,
+            async () => {}
+        )
+        await expect(client.request('GET', '/my/account.json', { noRetry: true })).rejects.toMatchObject({
+            code: 'redmine.http'
+        })
+        expect(callCount).toBe(1)
+    })
+
     it('translates errors', async () => {
         const client = new RedmineHttpClient(
             async () => json({ errors: ['Status inválido'] }, 422),
@@ -63,6 +79,9 @@ describe('RedmineHttpClient', () => {
             params: { detail: 'Status inválido' }
         })
         expect(httpError(401, '').code).toBe('redmine.unauthorized')
+        // An invalid key stays an invalid key even when the answer also carries an "errors" body.
+        expect(httpError(401, '{"errors":["Invalid API key"]}').code).toBe('redmine.unauthorized')
+        expect(httpError(422, '{"errors":["Subject cannot be blank"]}').code).toBe('redmine.rejected')
         expect(networkErrorCode('net::ERR_NAME_NOT_RESOLVED')).toBe('network.dns')
         await expect(
             new RedmineHttpClient(

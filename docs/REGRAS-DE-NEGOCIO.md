@@ -167,6 +167,16 @@ Registro de todas as regras que o app aplica. Cada regra aponta para onde está 
 | Cada requisição ao Redmine é registrada com método, caminho + parâmetros, status, tempo, tamanho da resposta e tentativa; a API key vai no cabeçalho e nunca aparece no log. | `RedmineHttpClient`, `ActivityLogFile` |
 | O arquivo (`logs/activity.log`) vai até 5 MB; ao passar, os 40% mais antigos são descartados. Falha ao gravar o log nunca afeta o app.                                       | `ActivityLogFile`                      |
 
+## Conexão
+
+| Regra                                                                                                                                                                                                                                                                     | Onde                                                        |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Endereço: sem esquema ganha `https://`; página do Redmine colada (`/my/account`, `/login`, `/my/page`, `/issues…`, `/projects…`), query e `/` no fim são removidos; um Redmine em subcaminho (`https://host/redmine`) mantém o subcaminho. Só `http`/`https` são aceitos. | `prepareBaseUrl`, `LoginUseCase`                            |
+| Respostas no login: 401 = chave inválida; 404 em `/my/account` ou resposta que não é JSON = "não é um Redmine"; 403 = API REST desligada; o resto (DNS, recusa, TLS, tempo esgotado…) mantém a mensagem de rede.                                                          | `loginErrorCode`                                            |
+| O login faz **uma** tentativa (no máximo 30 s): quem está na tela vê o erro e tenta de novo. As outras leituras continuam com até 3 tentativas.                                                                                                                           | `HttpRedmineGateway.currentUser` (`noRetry`), `attemptsFor` |
+| O status HTTP 401/403/404 vale antes do corpo `{"errors": …}` da resposta: chave errada é sempre "chave inválida".                                                                                                                                                        | `httpError`                                                 |
+| Aviso de demora depois de 8 s conectando.                                                                                                                                                                                                                                 | `ConnectionForm` (`SLOW_AFTER_SECONDS`)                     |
+
 ## Conta e segurança
 
 | Regra                                                                                                                                                                                                          | Onde                               |

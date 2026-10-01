@@ -427,6 +427,9 @@ function simulateChange(params) {
     return { ok: true }
 }
 
+/** The demo profile and the connection screen use this fake key. */
+const DEMO_API_KEY = 'demo'
+
 function route(method, url, body) {
     const path = url.pathname
     if (path === '/__demo/change') return simulateChange(url.searchParams)
@@ -467,6 +470,13 @@ function startServer() {
     const server = createServer(async (request, response) => {
         const url = new URL(request.url, `http://localhost:${port}`)
         const body = await readBody(request)
+        // Like Redmine, an API request with another key is refused (lets the connection screen show the error).
+        const isApiCall = url.pathname.endsWith('.json')
+        if (isApiCall && request.headers['x-redmine-api-key'] !== DEMO_API_KEY) {
+            response.writeHead(401, { 'Content-Type': 'application/json' })
+            response.end(JSON.stringify({ errors: ['Invalid API key'] }))
+            return
+        }
         const result = route(request.method, url, body)
         response.writeHead(result ? 200 : 404, { 'Content-Type': 'application/json' })
         response.end(JSON.stringify(result ?? { errors: ['Not found'] }))
@@ -488,7 +498,7 @@ function demoConfig() {
     ]
     return {
         baseUrl: `http://localhost:${port}`,
-        apiKeyPlain: 'demo',
+        apiKeyPlain: DEMO_API_KEY,
         user: me,
         language: 'pt-BR',
         pollSeconds: 600,

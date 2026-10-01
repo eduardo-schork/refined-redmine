@@ -50,6 +50,8 @@ export const enUS: Resources = {
         'network.unknown': 'Network error: {{detail}} ({{host}})',
         'auth.invalidUrl': 'Enter the full URL, including http:// or https://',
         'auth.invalidKey': 'Invalid API key.',
+        'auth.notRedmine': 'No Redmine was found at that address.',
+        'auth.apiDisabled': 'Redmine answered, but its REST API is switched off.',
         'workflow.transitionNotAllowed': 'The Redmine workflow does not allow moving to “{{column}}”.',
         'board.nameRequired': 'Give the board a name.',
         'board.projectRequired': 'Choose the project.',
@@ -262,7 +264,23 @@ export const enUS: Resources = {
         apiKey: 'API access key',
         apiKeyHint: 'In Redmine: <b>My account → API access key → Show</b>.',
         connect: 'Connect',
-        connecting: 'Connecting…'
+        connecting: 'Connecting…',
+        urlPreview: 'Address used: {{url}}',
+        showKey: 'Show the key',
+        hideKey: 'Hide the key',
+        openMyAccount: 'Open "My account" in Redmine to copy the key',
+        connectingTo: 'Connecting to {{host}}…',
+        elapsed: '{{seconds}} s',
+        slow: 'This is taking longer than usual. If your Redmine only opens on the internal network, check the VPN. Without an answer in 30 s the app shows the error and you can try again.',
+        suggestion: {
+            invalidKey:
+                'Copy the key again from My account → API access key → Show. It changes when someone clicks Reset.',
+            notRedmine: 'Use the address of the Redmine home page, e.g. https://redmine.yourcompany.com.',
+            apiDisabled: 'An administrator has to enable Administration → Settings → API → "Enable REST web service".',
+            network: 'Check the address and, if Redmine only opens on the company network, the VPN.',
+            timeout: 'Redmine did not answer in time. Try again; if it keeps happening, check the VPN or the network.',
+            tls: 'The secure connection was refused: it may be the company proxy or antivirus, or an expired certificate.'
+        }
     },
     home: {
         helloMorning: 'Good morning, {{name}}',

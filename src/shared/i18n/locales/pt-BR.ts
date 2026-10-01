@@ -52,6 +52,8 @@ export const ptBR = {
         'network.unknown': 'Falha de rede: {{detail}} ({{host}})',
         'auth.invalidUrl': 'Informe a URL completa, com http:// ou https://',
         'auth.invalidKey': 'API key inválida.',
+        'auth.notRedmine': 'Não encontramos um Redmine nesse endereço.',
+        'auth.apiDisabled': 'O Redmine respondeu, mas a API REST está desligada.',
         'workflow.transitionNotAllowed': 'O fluxo do Redmine não permite mover para “{{column}}”.',
         'board.nameRequired': 'Dê um nome ao quadro.',
         'board.projectRequired': 'Escolha o projeto.',
@@ -264,7 +266,24 @@ export const ptBR = {
         apiKey: 'Chave de acesso à API',
         apiKeyHint: 'No Redmine: <b>Minha conta → Chave de acesso à API → Mostrar</b>.',
         connect: 'Conectar',
-        connecting: 'Conectando…'
+        connecting: 'Conectando…',
+        urlPreview: 'Endereço usado: {{url}}',
+        showKey: 'Mostrar a chave',
+        hideKey: 'Esconder a chave',
+        openMyAccount: 'Abrir "Minha conta" no Redmine para copiar a chave',
+        connectingTo: 'Conectando a {{host}}…',
+        elapsed: '{{seconds}} s',
+        slow: 'Está demorando mais que o normal. Se o Redmine da empresa só abre na rede interna, confira a VPN. Sem resposta em 30 s, o app mostra o erro e você pode tentar de novo.',
+        suggestion: {
+            invalidKey:
+                'Copie a chave de novo em Minha conta → Chave de acesso à API → Mostrar. Ela muda quando alguém clica em Redefinir.',
+            notRedmine: 'Use o endereço da página inicial do Redmine, por exemplo https://redmine.suaempresa.com.br.',
+            apiDisabled:
+                'Um administrador precisa ligar em Administração → Configurações → API → "Habilitar a API REST".',
+            network: 'Confira o endereço e, se o Redmine só abre na rede da empresa, a VPN.',
+            timeout: 'O Redmine não respondeu a tempo. Tente de novo; se continuar, confira a VPN ou a rede.',
+            tls: 'A conexão segura foi recusada: pode ser o proxy ou o antivírus da empresa, ou um certificado vencido.'
+        }
     },
     home: {
         helloMorning: 'Bom dia, {{name}}',

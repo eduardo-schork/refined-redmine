@@ -2,6 +2,12 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
+## Próxima versão — conexão mais rápida e clara
+
+- **Login sem espera**: depois de conectar, o Início abre na hora. Antes, a tela de conexão podia ficar parada por minutos mesmo com a conexão já feita.
+- **Tela de conexão com retorno**: mostra o progresso e os segundos, avisa quando está demorando e, se der errado, explica o motivo e o que fazer (chave recusada, endereço que não é de um Redmine, API desligada, VPN ou rede, certificado). Sem resposta em 30 segundos, mostra o erro em vez de ficar esperando.
+- **Endereço mais fácil**: pode digitar sem `https://` ou colar o link de uma página do Redmine, que o app ajusta. Depois de desconectar, o endereço já vem preenchido.
+
 ## 0.6.0 — publicação automática
 
 - **Versões novas publicadas automaticamente**: cada versão agora é gerada e publicada pelo próprio GitHub, sem depender de um computador específico. Para você nada muda: a atualização continua chegando pelo app.
