@@ -88,11 +88,23 @@ Aperte `⌘K` (Mac) ou `Ctrl+K` (Windows), em qualquer tela, ou clique em **Busc
 Os quadros ficam na barra lateral, em **Quadros**. Cada coluna agrupa um ou mais status do Redmine.
 
 - **Arrastar um card para outra coluna muda o status no Redmine.** O app só permite soltar onde a transição é aceita pelo fluxo de trabalho da tarefa.
-- **Buscar** filtra por título, `#id` ou projeto.
-- **Todos os responsáveis** filtra os cards por pessoa.
+- No topo, **Quadro | Lista | Resumo** troca a forma de ver o quadro (veja [Lista](#lista) e [Resumo do quadro](#resumo-do-quadro)).
 - Os ícones no canto superior direito atualizam, editam e excluem o quadro.
 
-**Contadores de atenção**, acima das colunas: quantas tarefas do quadro estão **atrasadas**, com **prioridade alta**, **paradas** ou **sem responsável** (só aparecem os que têm alguma). Clique em um para ver só essas tarefas; clique de novo para voltar a ver todas. Eles respeitam a busca e o filtro de responsável.
+### Filtros rápidos
+
+![Filtros rápidos](images/board-filters.png)
+
+Na linha abaixo do título, valem tanto para o quadro quanto para a lista:
+
+- **Buscar** filtra por título, `#id` ou projeto.
+- **Responsável**, **Tipo**, **Situação** e **Versão** abrem uma lista com o que existe no quadro e quantas tarefas tem cada opção. Marque uma ou mais; nenhuma marcada é "Todos". Responsável tem "Sem responsável" e Versão tem "Sem versão".
+- Filtros diferentes se somam (Tipo Defeito **e** Situação Em andamento); opções do mesmo filtro valem qualquer uma (Defeito **ou** Funcionalidade).
+- **Limpar filtros** aparece quando há algum filtro e tira todos. Dentro de cada lista, **Limpar este filtro** tira só aquele.
+- Com filtro, o título mostra **"3 de 6 tarefas"**.
+- Cada quadro lembra os seus filtros, a forma de ver (quadro, lista ou resumo), o agrupamento e a ordenação, mesmo depois de fechar o app.
+
+**Contadores de atenção**, abaixo dos filtros: quantas tarefas do quadro estão **atrasadas**, com **prioridade alta**, **paradas** ou **sem responsável** (só aparecem os que têm alguma). Clique em um para ver só essas tarefas; clique de novo para voltar a ver todas. Eles contam só as tarefas que passam pelos filtros.
 
 Ao lado do nome de cada coluna, além do total, aparecem em vermelho as **atrasadas** e em amarelo as de **prioridade alta** daquela coluna.
 
@@ -107,11 +119,21 @@ A barra verde embaixo é o percentual concluído.
 
 **Cores dos status**: o Redmine não tem cores de status, então o app escolhe uma pelo nome (dá para trocar em [Cores das tarefas](#cores-das-tarefas)): cinza para novas, azul para em andamento, roxo para em aprovação ou revisão, verde-água para em teste ou homologação, amarelo para em pausa ou aguardando, verde para resolvidas e fechadas, cinza apagado para rejeitadas ou canceladas. A cor aparece na bolinha do cabeçalho de cada coluna, nas etiquetas de status dos cards, das listas do Início e do detalhe da tarefa, e no resumo do quadro.
 
+### Lista
+
+![Lista do quadro](images/board-list.png)
+
+**Lista** mostra as tarefas do quadro em linhas, como a lista de tarefas do Redmine: número, tipo, situação, prioridade, título, responsável, versão e previsão (vermelha se venceu, amarela se vence em breve).
+
+- **Agrupar por** (à direita dos filtros): versão (padrão), situação, responsável, tipo ou nenhum. Cada grupo mostra quantas tarefas tem; clique no nome do grupo para recolher ou abrir. Versões seguem a ordem das versões (3.9 antes de 3.10), situações a ordem do Redmine, e o grupo "Sem versão" ou "Sem responsável" fica por último.
+- **Ordenar**: clique no nome de uma coluna; clique de novo para inverter. A seta mostra a coluna e o sentido. O padrão é por prioridade, da mais urgente para a mais baixa. Tarefas sem responsável, sem versão ou sem previsão ficam no fim em qualquer sentido; empates mostram primeiro a atualizada mais recentemente.
+- Clique em uma linha para abrir o detalhe da tarefa.
+
 ### Resumo do quadro
 
 ![Resumo do quadro](images/board-summary.png)
 
-No topo do quadro, **Quadro | Resumo** troca entre os cards e os números do quadro. O resumo usa **todas** as tarefas do quadro, sem a busca e os filtros.
+**Resumo** mostra os números do quadro. Ele usa **todas** as tarefas do quadro, sem a busca e os filtros rápidos.
 
 - **Sprint** (só nos quadros de sprint), no topo:
   - **Datas**: início (estimado: o dia seguinte ao prazo dos devs da sprint anterior), prazo dos devs e publicação, com quantos dias faltam.
@@ -119,7 +141,7 @@ No topo do quadro, **Quadro | Resumo** troca entre os cards e os números do qua
   - **Fechadas nos últimos 7 dias**, **para fechar por dia útil** até o prazo dos devs, **entraram depois do início** (tarefas criadas durante a sprint, em amarelo quando há alguma) e **estimativa das abertas** em horas.
 - **Indicadores**: total, abertas, fechadas (com o percentual), estimativa total em horas, atrasadas, prioridade alta, paradas e sem responsável.
 - **Distribuição por status**: uma barra dividida na ordem das colunas, com a quantidade e o percentual de cada status.
-- **Por pessoa**: abertas, fechadas, progresso (fechadas ÷ total), atrasadas, de prioridade alta, paradas e horas estimadas de cada responsável. **Clique em uma pessoa** para voltar ao quadro mostrando só os cards dela.
+- **Por pessoa**: abertas, fechadas, progresso (fechadas ÷ total), atrasadas, de prioridade alta, paradas e horas estimadas de cada responsável. **Clique em uma pessoa** para voltar ao quadro com o filtro de responsável dela.
 - **Por tipo** e **Por prioridade**: quantas tarefas de cada tipo e de cada prioridade (da mais urgente para a mais baixa).
 
 ### Raias por responsável

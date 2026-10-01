@@ -1,23 +1,27 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { KanbanSquare, Pencil, Trash2 } from 'lucide-react'
 import type { Board } from '@domain/board/board'
+import { nextSort } from '@domain/board/issue-list'
+import { EMPTY_QUICK_FILTER, matchesQuickFilter, NONE } from '@domain/board/quick-filter'
 import type { Issue } from '@domain/redmine/entities'
+import type { Sprint } from '@domain/sprint/sprint'
 import { countSignals, hasSignal, type IssueSignal } from '@domain/redmine/issue-signals'
 import { useBoardIssues, useDeleteBoard } from '@/hooks/boards'
 import { useSettings } from '@/hooks/session'
 import { useIssueStyle } from '@/lib/issue-style'
+import { loadViewPrefs, saveViewPrefs, type BoardViewPrefs } from '@/lib/board-view-prefs'
 import { useI18n } from '@/lib/i18n'
 import { Button } from '@/ui/atoms/Button'
-import { Select } from '@/ui/atoms/fields'
 import { IconButton } from '@/ui/atoms/IconButton'
 import { RefreshButton } from '@/ui/molecules/RefreshButton'
 import { SegmentedControl } from '@/ui/molecules/SegmentedControl'
-import { SearchInput } from '@/ui/molecules/SearchInput'
 import { SignalFilter } from '@/ui/molecules/SignalFilter'
 import { Alert, EmptyState } from '@/ui/molecules/surfaces'
 import { BoardEditor } from '@/ui/organisms/BoardEditor'
+import { BoardFilters } from '@/ui/organisms/BoardFilters'
 import { BoardSummary } from '@/ui/organisms/BoardSummary'
 import { useOpenIssue } from '@/ui/organisms/IssueModal'
+import { IssueList } from '@/ui/organisms/IssueList'
 import { KanbanBoard } from '@/ui/organisms/KanbanBoard'
 import { PageLayout } from '@/ui/templates/layouts'
 
@@ -49,47 +53,32 @@ export default function BoardPage({
             </div>
         )
     }
-    return <BoardView board={board} onDeleted={onDeleted} />
+    return <BoardView key={board.id} board={board} onDeleted={onDeleted} />
 }
 
-function assigneeName(issue: Issue, noAssignee: string): string {
-    return issue.assigned_to?.name ?? noAssignee
-}
+type BoardViewMode = BoardViewPrefs['mode']
 
-function matchesSearch(issue: Issue, searchText: string): boolean {
-    if (!searchText) return true
-    const inSubject = issue.subject.toLowerCase().includes(searchText)
-    const inId = String(issue.id).includes(searchText)
-    const inProject = issue.project.name.toLowerCase().includes(searchText)
-    return inSubject || inId || inProject
+/** View, quick filters, list grouping and sort of this board, remembered on this computer. */
+function useBoardViewPrefs(boardId: string) {
+    const [prefs, setPrefs] = useState(() => loadViewPrefs(boardId))
+    useEffect(() => saveViewPrefs(boardId, prefs), [boardId, prefs])
+    const update = (patch: Partial<BoardViewPrefs>) => setPrefs((current) => ({ ...current, ...patch }))
+    return { prefs, update }
 }
-
-type BoardViewMode = 'board' | 'summary'
 
 function BoardView({ board, onDeleted }: { board: Board; onDeleted: () => void }) {
     const { t, error } = useI18n()
-    const openIssue = useOpenIssue()
     const boardIssues = useBoardIssues(board.id)
     const remove = useDeleteBoard()
     const [editing, setEditing] = useState(false)
-    const [search, setSearch] = useState('')
-    const [assignee, setAssignee] = useState('')
     const [signal, setSignal] = useState<IssueSignal | null>(null)
-    const [mode, setMode] = useState<BoardViewMode>('board')
+    const { prefs, update } = useBoardViewPrefs(board.id)
+    const { mode, filter } = prefs
     const staleDays = useSettings().dashboard.staleDays
     const rules = useIssueStyle()
-    const noAssignee = t('board.noAssignee')
 
     const allIssues = useMemo(() => boardIssues.data?.issues.items ?? [], [boardIssues.data])
-    const assignees = useMemo(() => {
-        const names = allIssues.map((issue) => assigneeName(issue, noAssignee))
-        return [...new Set(names)].sort()
-    }, [allIssues, noAssignee])
-    const searchText = search.trim().toLowerCase()
-    const filtered = allIssues.filter((issue) => {
-        const matchesAssignee = !assignee || assigneeName(issue, noAssignee) === assignee
-        return matchesAssignee && matchesSearch(issue, searchText)
-    })
+    const filtered = useMemo(() => allIssues.filter((issue) => matchesQuickFilter(issue, filter)), [allIssues, filter])
     // Counted before the signal filter, so the other counters stay visible while one is selected.
     const signalOptions = { staleDays, now: new Date(), rules }
     const signalCounts = countSignals(filtered, signalOptions)
@@ -98,17 +87,17 @@ function BoardView({ board, onDeleted }: { board: Board; onDeleted: () => void }
     const source = board.source
     const autoSprintLabel = source.type === 'sprint' && source.auto ? t(`sprint.auto.${source.auto}`) : undefined
 
-    const showBoard = mode === 'board'
-    const viewOptions = [
-        { value: 'board' as const, label: t('board.view.board') },
-        { value: 'summary' as const, label: t('board.view.summary') }
+    const viewOptions: { value: BoardViewMode; label: string }[] = [
+        { value: 'board', label: t('board.view.board') },
+        { value: 'list', label: t('board.view.list') },
+        { value: 'summary', label: t('board.view.summary') }
     ]
 
     /** From the summary: back to the board, showing only that person's cards. */
-    function showPerson(assigneeName: string | undefined) {
-        setAssignee(assigneeName ?? noAssignee)
+    function showPerson(assigneeId: number | undefined) {
+        const assignees = [assigneeId === undefined ? NONE : String(assigneeId)]
+        update({ mode: 'board', filter: { ...EMPTY_QUICK_FILTER, assignees } })
         setSignal(null)
-        setMode('board')
     }
 
     function confirmDelete() {
@@ -124,30 +113,12 @@ function BoardView({ board, onDeleted }: { board: Board; onDeleted: () => void }
     return (
         <PageLayout
             title={board.name}
-            subtitle={<BoardSubtitle board={board} data={data} visibleCount={visible.length} />}
+            subtitle={
+                <BoardSubtitle board={board} data={data} visibleCount={visible.length} totalCount={allIssues.length} />
+            }
             actions={
                 <>
-                    <SegmentedControl value={mode} options={viewOptions} onChange={setMode} />
-                    {showBoard && (
-                        <>
-                            <SearchInput
-                                className="w-64"
-                                value={search}
-                                onChange={setSearch}
-                                placeholder={t('board.searchPlaceholder')}
-                            />
-                            <Select
-                                className="w-56"
-                                value={assignee}
-                                onChange={(event) => setAssignee(event.target.value)}
-                            >
-                                <option value="">{t('board.allAssignees')}</option>
-                                {assignees.map((name) => (
-                                    <option key={name}>{name}</option>
-                                ))}
-                            </Select>
-                        </>
-                    )}
+                    <SegmentedControl value={mode} options={viewOptions} onChange={(next) => update({ mode: next })} />
                     <RefreshButton spinning={boardIssues.isFetching} onClick={() => void boardIssues.refetch()} />
                     <IconButton label={t('board.edit')} icon={<Pencil size={14} />} onClick={() => setEditing(true)} />
                     <IconButton
@@ -165,14 +136,17 @@ function BoardView({ board, onDeleted }: { board: Board; onDeleted: () => void }
                 </Alert>
             )}
             {boardIssues.isError && <Alert className="m-4">{error(boardIssues.error)}</Alert>}
-            {showBoard ? (
-                <>
-                    <SignalFilter counts={signalCounts} active={signal} onChange={setSignal} />
-                    <KanbanBoard board={board} issues={visible} loading={boardIssues.isLoading} onOpen={openIssue} />
-                </>
-            ) : (
-                <BoardSummary board={board} sprint={data?.sprint} issues={allIssues} onSelectPerson={showPerson} />
-            )}
+            <BoardBody
+                board={board}
+                prefs={prefs}
+                update={update}
+                allIssues={allIssues}
+                visible={visible}
+                loading={boardIssues.isLoading}
+                sprint={data?.sprint}
+                signal={{ counts: signalCounts, active: signal, onChange: setSignal }}
+                onSelectPerson={showPerson}
+            />
             {editing && (
                 <BoardEditor board={board} onClose={() => setEditing(false)} onSaved={() => setEditing(false)} />
             )}
@@ -185,15 +159,21 @@ type BoardIssues = NonNullable<ReturnType<typeof useBoardIssues>['data']>
 function BoardSubtitle({
     board,
     data,
-    visibleCount
+    visibleCount,
+    totalCount
 }: {
     board: Board
     data: BoardIssues | undefined
     visibleCount: number
+    totalCount: number
 }) {
     const { t } = useI18n()
     const source = board.source
     const truncated = data && data.issues.total > data.issues.items.length
+    const isFiltered = visibleCount < totalCount
+    const countLabel = isFiltered
+        ? t('board.filters.countOf', { shown: visibleCount, total: totalCount })
+        : t('common.count', { count: visibleCount })
     return (
         <>
             {source.type === 'sprint' && data?.sprint && (
@@ -205,11 +185,66 @@ function BoardSubtitle({
                     {source.auto && <span className="text-muted"> · {t('board.automatic')}</span>}
                 </span>
             )}
-            <span className="text-xs text-muted">{data ? t('common.count', { count: visibleCount }) : ''}</span>
+            <span className="text-xs text-muted">{data ? countLabel : ''}</span>
             {truncated && (
                 <span className="text-xs text-warn">
                     {t('common.showingOf', { shown: data.issues.items.length, total: data.issues.total })}
                 </span>
+            )}
+        </>
+    )
+}
+
+function BoardBody({
+    board,
+    prefs,
+    update,
+    allIssues,
+    visible,
+    loading,
+    sprint,
+    signal,
+    onSelectPerson
+}: {
+    board: Board
+    prefs: BoardViewPrefs
+    update: (patch: Partial<BoardViewPrefs>) => void
+    allIssues: Issue[]
+    visible: Issue[]
+    loading: boolean
+    sprint?: Sprint
+    signal: {
+        counts: Record<IssueSignal, number>
+        active: IssueSignal | null
+        onChange: (signal: IssueSignal | null) => void
+    }
+    onSelectPerson: (assigneeId: number | undefined) => void
+}) {
+    const openIssue = useOpenIssue()
+    const { mode, filter, groupBy, sort } = prefs
+    if (mode === 'summary') {
+        return <BoardSummary board={board} sprint={sprint} issues={allIssues} onSelectPerson={onSelectPerson} />
+    }
+    return (
+        <>
+            <BoardFilters
+                issues={allIssues}
+                filter={filter}
+                onChange={(next) => update({ filter: next })}
+                groupBy={mode === 'list' ? groupBy : undefined}
+                onGroupBy={(next) => update({ groupBy: next })}
+            />
+            <SignalFilter counts={signal.counts} active={signal.active} onChange={signal.onChange} />
+            {mode === 'board' && <KanbanBoard board={board} issues={visible} loading={loading} onOpen={openIssue} />}
+            {mode === 'list' && (
+                <IssueList
+                    issues={visible}
+                    groupBy={groupBy}
+                    sort={sort}
+                    onSort={(column) => update({ sort: nextSort(sort, column) })}
+                    onOpen={openIssue}
+                    loading={loading}
+                />
             )}
         </>
     )

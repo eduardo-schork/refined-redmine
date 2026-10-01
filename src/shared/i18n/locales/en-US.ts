@@ -374,6 +374,7 @@ export const enUS: Resources = {
         moveFailed: 'Could not move #{{id}}: {{error}}',
         view: {
             board: 'Board',
+            list: 'List',
             summary: 'Summary'
         },
         sprint: {
@@ -421,6 +422,39 @@ export const enUS: Resources = {
             progress: 'Closed / total',
             byTracker: 'By type',
             byPriority: 'By priority'
+        },
+        filters: {
+            assignee: 'Assignee',
+            tracker: 'Type',
+            status: 'Status',
+            version: 'Version',
+            all: 'All',
+            none: 'No value',
+            noVersion: 'No version',
+            clear: 'Clear filters',
+            clearField: 'Clear this filter',
+            countOf: '{{shown}} of {{total}} issues'
+        },
+        list: {
+            groupBy: 'Group by',
+            group: {
+                version: 'Version',
+                status: 'Status',
+                assignee: 'Assignee',
+                tracker: 'Type',
+                none: 'No groups'
+            },
+            column: {
+                id: '#',
+                tracker: 'Type',
+                status: 'Status',
+                priority: 'Priority',
+                subject: 'Subject',
+                assignee: 'Assignee',
+                version: 'Version',
+                due: 'Due'
+            },
+            empty: 'No issues with these filters.'
         },
         card: {
             stale_one: 'stalled {{count}} day',

@@ -126,7 +126,7 @@ Pasta: macOS `~/Library/Application Support/Refined Redmine/` · Windows `%APPDA
 
 - JSON corrompido é renomeado para `<arquivo>.corrupted-<timestamp>` e o app recomeça com os padrões.
 - Campos antigos do `config.json` (`scopes`, `eventKinds`, `customQueries`) são convertidos em monitores ao ler e somem no próximo salvamento.
-- As pastas `Cache`, `GPUCache`… são do Chromium; o app não guarda dados nelas. Exceção: `Local Storage` guarda a lista de tarefas recentes da busca rápida (`refined-redmine.recent-issues`: número, título e projeto das 8 últimas tarefas abertas). Se o armazenamento falhar, a lista só fica vazia.
+- As pastas `Cache`, `GPUCache`… são do Chromium; o app não guarda dados nelas. Exceção: `Local Storage` guarda a lista de tarefas recentes da busca rápida (`refined-redmine.recent-issues`: número, título e projeto das 8 últimas tarefas abertas). Se o armazenamento falhar, a lista só fica vazia. Também guarda, por quadro, a visualização escolhida (`refined-redmine.board-view.<id do quadro>`: modo quadro/lista/resumo, filtros rápidos, agrupamento e ordenação). São só ids e o texto da busca do quadro, sem dados das tarefas; se falhar, o quadro abre no padrão.
 
 ### Agenda
 

@@ -377,6 +377,7 @@ export const ptBR = {
         moveFailed: 'Não foi possível mover #{{id}}: {{error}}',
         view: {
             board: 'Quadro',
+            list: 'Lista',
             summary: 'Resumo'
         },
         sprint: {
@@ -424,6 +425,39 @@ export const ptBR = {
             progress: 'Fechadas / total',
             byTracker: 'Por tipo',
             byPriority: 'Por prioridade'
+        },
+        filters: {
+            assignee: 'Responsável',
+            tracker: 'Tipo',
+            status: 'Situação',
+            version: 'Versão',
+            all: 'Todos',
+            none: 'Sem valor',
+            noVersion: 'Sem versão',
+            clear: 'Limpar filtros',
+            clearField: 'Limpar este filtro',
+            countOf: '{{shown}} de {{total}} tarefas'
+        },
+        list: {
+            groupBy: 'Agrupar por',
+            group: {
+                version: 'Versão',
+                status: 'Situação',
+                assignee: 'Responsável',
+                tracker: 'Tipo',
+                none: 'Sem grupos'
+            },
+            column: {
+                id: '#',
+                tracker: 'Tipo',
+                status: 'Situação',
+                priority: 'Prioridade',
+                subject: 'Título',
+                assignee: 'Atribuído para',
+                version: 'Versão',
+                due: 'Previsão'
+            },
+            empty: 'Nenhuma tarefa com esses filtros.'
         },
         card: {
             stale_one: 'parada há {{count}} dia',
