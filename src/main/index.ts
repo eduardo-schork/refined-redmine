@@ -23,7 +23,11 @@ const presentation: Presentation = {
         },
         monitorStatusChanged: (status) => window.send('monitor.status', status),
         permissionChanged: (info) => window.send('permission.changed', info),
-        updateStatusChanged: (status) => window.send('update.status', status)
+        updateStatusChanged: (status) => window.send('update.status', status),
+        timerChanged: (timer) => {
+            window.send('timer.status', timer)
+            tray?.setTimer(timer)
+        }
     },
     quitApp: () => {
         window.markQuitting()
@@ -40,6 +44,8 @@ function startApp(): void {
     tray = new TrayController(container.localization, {
         open: (route) => window.show(route),
         checkNow: () => void container.monitor.runNow(),
+        pauseTimer: () => container.timer.pause(),
+        resumeTimer: () => container.timer.resume(),
         quit: () => {
             window.markQuitting()
             app.quit()
@@ -53,6 +59,11 @@ function startApp(): void {
     container.monitor.start()
     container.reminders.start()
     container.updates.start()
+    container.timer.start()
+    tray.setTimer(container.timer.status())
+    // The stopwatch does not count while the computer sleeps or the screen is locked.
+    powerMonitor.on('suspend', () => container.timer.onSleep())
+    powerMonitor.on('lock-screen', () => container.timer.onSleep())
     powerMonitor.on('resume', () => {
         container.monitor.checkAfterWake()
         container.reminders.tick()

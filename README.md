@@ -62,6 +62,10 @@ Como usar cada tela: [manual do usuário](docs/MANUAL.md).
 - **Resumo do quadro**: indicadores, distribuição por status, tabela por pessoa, por tipo e por prioridade; nos quadros de sprint, datas, ritmo (fechadas × tempo), fechadas na semana e abertas por dia útil.
 - Cores de status e níveis de prioridade automáticos, ajustáveis em Configurações → Aparência.
 
+**Horas**
+
+- Lançar, editar e excluir horas no detalhe da tarefa; cronômetro na barra lateral e na bandeja (pausa ao dormir e por ociosidade); tela Minhas horas com a semana, grade tarefas × dias e repetir semana passada.
+
 **Notificações**
 
 - Monitor em segundo plano (continua na bandeja ao fechar a janela).

@@ -28,6 +28,7 @@ import { useToast } from '../molecules/Toast'
 import { IssueFieldEditors } from './IssueFieldEditors'
 import { DueChip, PriorityChip, VersionChip } from '../molecules/issue-chips'
 import { IssueQuickActions } from './IssueQuickActions'
+import { IssueTimeSection } from './time/IssueTimeSection'
 import { StatusTag } from '../molecules/StatusTag'
 
 type Translate = ReturnType<typeof useI18n>['t']
@@ -107,6 +108,7 @@ function IssueModal({ id, onClose, canGoBack }: { id: number; onClose: () => voi
                         <Attachments attachments={issue.attachments} links={links} />
                         <Subtasks subtasks={issue.children} />
                         <Relations issueId={id} relations={issue.relations} />
+                        <IssueTimeSection issue={issue} />
                         <History issue={issue} statusName={statusName} {...markdownLinks} />
                         <CommentBox comment={comment} saving={saving} />
                     </div>

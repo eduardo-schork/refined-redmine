@@ -166,6 +166,7 @@ Clicar em uma tarefa, em qualquer tela, abre o detalhe sem sair do app. As taref
 - **Resumo no topo**, abaixo do título: status, prioridade, previsão (colorida quando está perto ou vencida) e versão.
 - **Ações rápidas**, logo abaixo:
   - **Atribuir a mim** passa a tarefa para você no Redmine, com um clique. Só aparece quando a tarefa não é sua; um aviso confirma, ou diz se o Redmine não aplicou (o fluxo pode não deixar você ser responsável naquela etapa).
+  - **Lançar horas** abre o formulário de lançamento (veja [Horas](#lançar-horas)) e **Iniciar cronômetro** começa a contar o tempo nesta tarefa.
   - Os outros botões copiam para a área de transferência o **Link** da tarefa no Redmine, o **Número** (`#1234`), o **Título**, o **#Número e título** (`#1234 Título`, para mensagens e commits) ou um link em **Markdown** (`[#1234 Título](link)`). Um aviso mostra o que foi copiado.
 - **Status**: troque direto pelo seletor; só aparecem os status permitidos para a tarefa.
 - **Adicionar comentário**: aceita Markdown e é publicado no Redmine.
@@ -177,6 +178,47 @@ Clicar em uma tarefa, em qualquer tela, abre o detalhe sem sair do app. As taref
   - Se o Redmine não aplicar algum campo (por exemplo, quando o fluxo da tarefa deixa a versão só para leitura), aparece um aviso em vermelho dizendo qual campo não foi salvo.
 - Também na lateral, só para leitura: autor, horas estimadas e gastas, campos personalizados e observadores.
 - **Abrir no Redmine** abre a tarefa no navegador.
+
+### Lançar horas
+
+![Horas no detalhe da tarefa](images/time-issue.png)
+
+A seção **Horas** do detalhe mostra o total lançado contra o estimado ("13 h de 16 h estimadas") e todos os lançamentos da tarefa. Os seus aparecem destacados, com os botões para editar e excluir.
+
+![Lançar horas](images/time-dialog.png)
+
+Em **Lançar horas**, informe:
+
+- **Data**: hoje por padrão, com os atalhos **Hoje** e **Ontem**. Qualquer data é aceita.
+- **Horas**: do jeito que for mais fácil, como `1,5`, `1:30`, `1h30` ou `90m`. Ao lado aparece como o app entendeu ("= 1,5 h").
+- **Atividade**: o tipo de trabalho no Redmine (Desenvolvimento, Reunião…), que não é a tarefa. Vem marcada a última que você usou; se o Redmine tiver uma só, o campo nem aparece.
+- **Comentário**: obrigatório, com o que foi feito.
+
+### Cronômetro
+
+**Iniciar cronômetro**, nas ações rápidas, começa a contar o tempo na tarefa. O cronômetro aparece na barra lateral, e no macOS também na barra de menus (⏱ 0:42).
+
+- **Pausar e retomar** pela barra lateral ou pelo menu da bandeja.
+- **Parar e lançar** abre o formulário com as horas contadas. Ao lançar, o cronômetro some. Se cancelar, ele fica pausado.
+- **Descartar** (×) apaga o cronômetro sem lançar nada.
+- Ele continua contando com a janela fechada e mesmo depois de fechar e abrir o app.
+- Ele pausa sozinho quando o computador dorme ou a tela é bloqueada. Depois de 10 minutos sem uso do teclado e do mouse, pausa e não conta o tempo em que você ficou fora; a barra lateral avisa desde quando.
+- Só existe um cronômetro por vez: começar em outra tarefa pede confirmação e descarta o anterior.
+
+### Minhas horas
+
+![Minhas horas](images/time-page.png)
+
+**Minhas horas**, no menu lateral, mostra a sua semana:
+
+- **Totais por dia** no topo, com o dia de hoje destacado.
+- **Grade**: uma linha por tarefa e uma coluna por dia. Clique numa célula para lançar horas naquela tarefa e dia, ou no nome da tarefa para abrir o detalhe.
+- **Lançamentos da semana**: a lista completa, com editar e excluir.
+- **Lançar horas** em outra tarefa: digite o número dela no campo acima da grade.
+- **Repetir semana passada** lança de novo, nesta semana, os lançamentos da semana anterior (mesma tarefa, dia da semana, horas, atividade e comentário), depois de confirmar quantos são. Use uma vez por semana: repetir de novo cria outra cópia.
+- As setas mudam de semana e **Esta semana** volta para a atual. A semana começa no dia escolhido em Configurações → Agenda.
+
+No **Início**, o indicador **Horas hoje** mostra quanto você lançou no dia e abre esta tela.
 
 ## 5. Sprints
 
@@ -429,6 +471,12 @@ A chave salva não pôde ser lida neste computador (por exemplo, depois de insta
 
 **Fechei a janela. O app parou?**
 Não, ele segue na bandeja. Para encerrar, use **Sair** no menu da bandeja.
+
+**O cronômetro parou sozinho.**
+Ele pausa quando o computador dorme, quando a tela é bloqueada ou depois de 10 minutos sem uso, e não conta esse tempo. É só clicar em retomar na barra lateral.
+
+**Lancei horas e o Redmine recusou.**
+A mensagem diz o motivo, normalmente falta de permissão para lançar horas no projeto ou uma tarefa fechada para lançamentos. Peça a permissão ao administrador do Redmine.
 
 **Mudei a versão (ou outro campo) da tarefa e apareceu "O Redmine não aplicou".**
 O Redmine aceitou o salvamento, mas ignorou aquele campo: o fluxo de trabalho deixa o campo só para leitura no status atual, ou falta permissão. O detalhe mostra o valor que ficou no Redmine; mude o status ou peça para quem tem permissão.

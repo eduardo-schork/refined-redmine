@@ -182,9 +182,9 @@ docs/                         MANUAL.md (+ images/), REGRAS-DE-NEGOCIO.md, FUNCI
 6. `npm run check` (tipos + lint + testes) e atualizar este arquivo.
 
 **Contrato IPC (`window.bridge`)**: `session.{get,login,logout}`, `settings.update`, `issues.{list,get,allowedStatuses,changeStatus,comment,search,edit,editOptions}`,
-`reference.{statuses,projects,priorities,savedQueries}`, `boards.{issues,save(board, notifications?),remove,move}`, `sprints.{list,stats,inspectProject}`,
+`reference.{statuses,projects,priorities,savedQueries,timeActivities}`, `time.{forIssue,mine,log,edit,remove,repeatWeek}`, `timer.{status,start,pause,resume,stop,discard}`, `boards.{issues,save(board, notifications?),remove,move}`, `sprints.{list,stats,inspectProject}`,
 `calendar.{list,save,remove}`, `notifications.{list,markRead,clear,test,permission,openSettings}`, `monitor.{status,runNow}`, `log.{list,clear}`, `updates.{status,check,setToken,testToken,download,install}`, `app.{openExternal,info,openDataFolder,supportReport}`, `notifications.confirm`;
-eventos `notifications.changed`, `monitor.status`, `permission.changed`, `update.status`, `navigate`.
+eventos `notifications.changed`, `monitor.status`, `permission.changed`, `update.status`, `timer.status`, `navigate`.
 
 **Dados locais** (`~/Library/Application Support/Refined Redmine` · `%APPDATA%\Refined Redmine`) — detalhes de formato, escrita e o que fica só em memória em [`docs/FUNCIONAMENTO.md`](docs/FUNCIONAMENTO.md) §5–§6
 
@@ -256,6 +256,13 @@ eventos `notifications.changed`, `monitor.status`, `permission.changed`, `update
 - Peças: `useQuickSearch` (texto, resultados, teclado; `ui/organisms/search/`), `SearchResultList` (molécula com seções e linhas), `Kbd` (átomo), `lib/shortcuts.ts` (rótulo do atalho). A paleta e o campo do Início só mudam o invólucro.
 - `#1234`/`1234` → tarefa por número; texto (2+ caracteres) → título em todos os status via `f[]`, até 20 (`domain/redmine/issue-search.ts`, `IssueQueries.search`).
 - Também filtra quadros e telas (sem acento) e mostra as 8 tarefas recentes (`lib/recent-issues.ts`, no `localStorage`).
+
+### Horas
+
+- **Lançar** (`TimeEntryDialog`): data (atalhos hoje/ontem), horas em vários formatos (`parseHours`), atividade (última usada → padrão do Redmine; some com uma só) e comentário obrigatório. Seção "Horas" no detalhe (`IssueTimeSection`) com total × estimado e editar/excluir os próprios.
+- **Cronômetro** (`TimerService` no processo principal, `state.json` → `timer`): um por vez, sobrevive a reiniciar, pausa em `suspend`/`lock-screen` e após 10 min ociosos (descontando o tempo fora). Barra lateral (`TimerWidget`) e bandeja (título "⏱ 0:42" no macOS, dica no Windows, pausar/retomar no menu). Parar abre o lançamento com as horas.
+- **Minhas horas** (`TimePage`, rota `/time`): totais por dia, grade tarefas × dias (`buildTimesheet`), lançamentos da semana, lançar por número, repetir semana passada (`RepeatWeekUseCase`). Indicador "Horas hoje" no Início.
+- Regras em `domain/time/` (`time-entry.ts`, `timer.ts`, `timesheet.ts`).
 
 ### Agenda
 
@@ -343,7 +350,9 @@ eventos `notifications.changed`, `monitor.status`, `permission.changed`, `update
 - [ ] Integração com o Mattermost (enviar notificações/DM, links de tarefas).
 - [x] Atualizações pelo GitHub Releases com o token de cada usuário (2026-09-29). Falta: instalação automática no Mac (exige Developer ID).
 - [x] Edição de mais campos no modal: prioridade, responsável, versão, datas e % concluído (2026-09-29). Falta: horas estimadas.
-- [ ] Apontamento de horas (time entries).
+- [x] Apontamento de horas (2026-10-01): lançar/editar/excluir no detalhe, cronômetro e "Minhas horas" (semana, grade, repetir semana passada), indicador "Horas hoje".
+- [ ] Horas: meta diária (8 h?) e lembrete no fim do dia de quem não lançou — deixado de fora a pedido do usuário; ver se o time quer.
+- [ ] Horas: coluna "Gasto" por pessoa no resumo do quadro (a lista de tarefas do Redmine não traz `spent_hours`; exigiria somar os lançamentos).
 - [x] Busca global de tarefas (#id / texto), `⌘K`/`Ctrl+K` (2026-09-29).
 - [ ] Monitores: intervalo de verificação próprio por monitor (como no redmine-adapter; hoje só o horário é próprio).
 - [ ] Monitores: modelos de texto da notificação por monitor (o redmine-adapter tem `{queryName}`, `{diff}`…).
@@ -531,3 +540,4 @@ npm run icons           # regera ícones
 | 2026-09-30 | **CI/CD no GitHub Actions**: `ci.yml` (verificação em todo push/PR) e `release.yml` (push no `master` com `feat:`/`fix:` → versão pelos commits, `Próxima versão` do CHANGELOG vira a versão, instaladores em runners macOS e Windows, commit + tag atômicos e Release publicada com `RELEASE_TOKEN` do environment `release`). Token só no job de publicação; versão passada por variável de ambiente. Simulado localmente num clone descartável.                                                                                                                                                                                            |
 | 2026-09-30 | **0.5.0 pulada** (commit e tag existem, sem Release; a seção `## 0.5.0` do CHANGELOG fica como está). A pipeline de CI/CD é a **0.6.0**, primeira versão pela Action, com notas próprias em `## Próxima versão` (que também resumem a 0.5.0 para quem vem da 0.4.0). Branch **`develop`** criada para o trabalho; `master` só com merge da `develop` ou correção urgente (proteção por ruleset documentada em `docs/RELEASE.md`).                                                                                                                                                                                                             |
 | 2026-10-01 | **Login**: corrigido o atraso de até minutos para abrir o Início depois de conectar (o log mostrava `/my/account` respondendo em 0,1–0,3 s e a tela parada; causa: `queryClient.clear()` em `replaceSession`). Tela de conexão nova com feedback (progresso, segundos, aviso de demora, erros com sugestão), endereço ajustado, login com uma tentativa, status HTTP antes do corpo de erro. Redmine falso passa a recusar chave diferente de `demo`. Testado no perfil de demonstração.                                                                                                                                                      |
+| 2026-10-01 | **Horas**: lançamentos no detalhe da tarefa (criar, editar, excluir os próprios), **cronômetro** no processo principal (barra lateral, bandeja, pausa ao dormir/bloquear e por ociosidade, sobrevive a reiniciar) e tela **Minhas horas** (semana, grade, repetir semana passada) + indicador "Horas hoje". Corrigido: `Esc` fechava todos os diálogos abertos de uma vez (agora só o de cima). Redmine falso com lançamentos e atividades. Testado no perfil de demonstração.                                                                                                                                                                |

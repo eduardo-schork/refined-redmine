@@ -4,6 +4,7 @@ import type { NotifyPermissionInfo, NotifyProbeResult } from '@domain/notificati
 import type { ThemeMode } from '@domain/settings/appearance'
 import type { UpdateStatus } from '@domain/update/release'
 import type { Language } from '@domain/settings/settings'
+import type { TimerState } from '@domain/time/timer'
 
 export interface Clock {
     now(): Date
@@ -36,6 +37,12 @@ export interface AppEventsPublisher {
     monitorStatusChanged(status: MonitorStatus): void
     permissionChanged(info: NotifyPermissionInfo): void
     updateStatusChanged(status: UpdateStatus): void
+    timerChanged(timer: TimerState | null): void
+}
+
+/** Seconds since the last keyboard or mouse use, from the operating system. */
+export interface IdleProbe {
+    idleSeconds(): number
 }
 
 export interface LoginItem {

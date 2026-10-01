@@ -72,6 +72,10 @@ export const ptBR = {
             'A versão publicada não é do mantenedor do app ({{publisher}}) e foi ignorada por segurança.',
         'issue.datesOrder': 'A data de início não pode ser depois da previsão.',
         'issue.doneRatio': 'O % concluído precisa estar entre 0 e 100.',
+        'time.hours': 'Informe as horas: mais que 0 e até {{max}} (ex.: 1,5 · 1:30 · 1h30 · 90m).',
+        'time.date': 'Informe uma data válida.',
+        'time.comment': 'Escreva um comentário sobre o que foi feito.',
+        'time.issue': 'Escolha a tarefa do lançamento.',
         'calendar.titleRequired': 'Dê um título ao compromisso.',
         'calendar.invalidIssue': 'Número de tarefa inválido.',
         unexpected: 'Erro inesperado: {{detail}}'
@@ -231,6 +235,9 @@ export const ptBR = {
         hotfixOf: 'Correções da {{base}} (staging)'
     },
     tray: {
+        timer: '{{clock}} · #{{id}}',
+        pauseTimer: 'Pausar cronômetro',
+        resumeTimer: 'Retomar cronômetro',
         open: 'Abrir Refined Redmine',
         calendar: 'Agenda',
         notifications: 'Notificações',
@@ -241,6 +248,7 @@ export const ptBR = {
         tooltipUnread_other: 'Refined Redmine — {{count}} não lidas'
     },
     nav: {
+        time: 'Minhas horas',
         home: 'Início',
         calendar: 'Agenda',
         sprints: 'Sprints',
@@ -286,6 +294,7 @@ export const ptBR = {
         }
     },
     home: {
+        tileHoursToday: 'Horas hoje',
         helloMorning: 'Bom dia, {{name}}',
         helloAfternoon: 'Boa tarde, {{name}}',
         helloEvening: 'Boa noite, {{name}}',
@@ -498,6 +507,72 @@ export const ptBR = {
         idNotFound: 'Tarefa #{{id}} não encontrada ou sem acesso.',
         empty: 'Digite #1234 para abrir uma tarefa, ou parte do título para procurar em todos os projetos.',
         keys: '↑↓ navegar · Enter abrir · Esc fechar'
+    },
+    time: {
+        log: 'Lançar horas',
+        logHint: 'Lançar horas nesta tarefa',
+        logTitle: 'Lançar horas em #{{id}}',
+        editTitle: 'Editar lançamento em #{{id}}',
+        date: 'Data',
+        today: 'Hoje',
+        yesterday: 'Ontem',
+        hours: 'Horas',
+        hoursHint: 'Ex.: 1,5 · 1:30 · 1h30 · 90m',
+        hoursInvalid: 'Não entendi. Use 1,5 · 1:30 · 1h30 · 90m',
+        activity: 'Atividade',
+        activityHint: 'O tipo de trabalho no Redmine (não é a tarefa).',
+        comment: 'Comentário',
+        commentPlaceholder: 'O que foi feito',
+        save: 'Lançar',
+        saving: 'Lançando…',
+        logged: '{{hours}} lançadas em #{{id}}',
+        updated: 'Lançamento de #{{id}} atualizado ({{hours}})',
+        deleted: 'Lançamento excluído',
+        confirmDelete: 'Excluir o lançamento de {{hours}} em {{date}}? Isso apaga no Redmine.',
+        section_one: 'Horas ({{count}} lançamento)',
+        section_other: 'Horas ({{count}} lançamentos)',
+        spentOfEstimate: '{{spent}} de {{estimate}} estimadas',
+        spentOnly: '{{spent}} lançadas',
+        noComment: 'sem comentário'
+    },
+    timer: {
+        start: 'Iniciar cronômetro',
+        hint: 'Conta o tempo nesta tarefa; ao parar, você confirma e lança.',
+        runningHere: 'Cronômetro rodando',
+        pausedHere: 'Cronômetro pausado',
+        pause: 'Pausar',
+        resume: 'Retomar',
+        stop: 'Parar e lançar',
+        discard: 'Descartar cronômetro',
+        confirmDiscard: 'Descartar o cronômetro de #{{id}}? O tempo contado não será lançado.',
+        confirmReplace: 'Já existe um cronômetro em #{{id}}. Descartar o tempo dele e começar nesta tarefa?',
+        paused: {
+            sleep: 'Pausado: o computador dormiu ou foi bloqueado ({{since}}).',
+            idle: 'Pausado por ausência desde {{since}}; esse tempo não conta.'
+        }
+    },
+    timePage: {
+        week: 'Semana de {{from}} a {{to}}',
+        previous: 'Semana anterior',
+        next: 'Próxima semana',
+        thisWeek: 'Esta semana',
+        grid: 'Semana',
+        gridHint: 'Clique numa célula para lançar horas naquela tarefa e dia.',
+        issue: 'Tarefa',
+        total: 'Total',
+        cellHint: 'Lançar horas neste dia',
+        noIssue: 'Sem tarefa ({{project}})',
+        entries: 'Lançamentos da semana',
+        issueNumber: '#número da tarefa',
+        emptyTitle: 'Nenhuma hora lançada nesta semana',
+        emptyText: 'Lance pelo detalhe de uma tarefa, pelo cronômetro ou digitando o número da tarefa acima.',
+        repeat: 'Repetir semana passada',
+        repeatHint:
+            'Lança de novo, nesta semana, os lançamentos da semana anterior (mesma tarefa, dia da semana, horas e comentário).',
+        repeatConfirm_one: 'Lançar de novo nesta semana {{count}} lançamento da semana de {{from}} a {{to}}?',
+        repeatConfirm_other: 'Lançar de novo nesta semana {{count}} lançamentos da semana de {{from}} a {{to}}?',
+        repeated_one: '{{count}} lançamento repetido',
+        repeated_other: '{{count}} lançamentos repetidos'
     },
     issue: {
         assignToMe: {

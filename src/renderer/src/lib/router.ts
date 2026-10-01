@@ -15,9 +15,10 @@ export type Route =
     | { page: 'board'; boardId?: string }
     | { page: 'notifications' }
     | { page: 'log' }
+    | { page: 'time' }
     | { page: 'settings'; tab?: SettingsTab }
 
-const PARAMETERLESS_PAGES = ['notifications', 'log', 'sprints', 'home'] as const
+const PARAMETERLESS_PAGES = ['notifications', 'log', 'sprints', 'home', 'time'] as const
 type ParameterlessPage = (typeof PARAMETERLESS_PAGES)[number]
 
 const isParameterlessPage = (page: string): page is ParameterlessPage =>

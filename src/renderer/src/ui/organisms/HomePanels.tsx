@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { AlarmClock, ArrowRight, ChevronsUp, Hourglass, Inbox } from 'lucide-react'
+import { AlarmClock, ArrowRight, ChevronsUp, Clock, Hourglass, Inbox } from 'lucide-react'
 import type { AppNotification } from '@domain/notification/notification'
 import { isHighPriority } from '@domain/redmine/issue-signals'
 import { analyzeQueue, isBlockedStatus } from '@domain/redmine/queue'
@@ -7,6 +7,7 @@ import type { Issue } from '@domain/redmine/entities'
 import { addDays, daysSince, daysUntil, startOfDay, toLocalDate } from '@domain/shared/date'
 import { type DisplayItem, useDisplayItems } from '@/hooks/calendar'
 import { useMyQueue } from '@/hooks/issues'
+import { useMyTime } from '@/hooks/time'
 import { useSettings } from '@/hooks/session'
 import { useIssueStyle } from '@/lib/issue-style'
 import { useI18n } from '@/lib/i18n'
@@ -101,6 +102,24 @@ function useQueue() {
 
 const scrollToPanel = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 
+/** Hours the signed-in user logged today; opens "My hours". */
+function TodayHoursTile() {
+    const { t, dates } = useI18n()
+    const navigate = useNavigate()
+    const today = toLocalDate(new Date())
+    const logged = useMyTime(today, today).data
+    const hours = logged?.entries.reduce((sum, entry) => sum + entry.hours, 0)
+    const value = hours === undefined ? '…' : dates.hours(hours)
+    return (
+        <StatTile
+            label={t('home.tileHoursToday')}
+            value={value}
+            icon={<Clock size={15} />}
+            onClick={() => navigate({ page: 'time' })}
+        />
+    )
+}
+
 export function QueueTiles({ unread, onGoNotifications }: { unread: number; onGoNotifications: () => void }) {
     const { t } = useI18n()
     const { queue, analysis, staleDays, loaded } = useQueue()
@@ -109,7 +128,7 @@ export function QueueTiles({ unread, onGoNotifications }: { unread: number; onGo
     const valueOrLoading = (value: number) => (loaded ? value : '…')
     const toneWhen = (value: number, tone: 'warn' | 'danger') => (value > 0 ? tone : undefined)
     return (
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-6 gap-3">
             <StatTile
                 label={t('home.tileQueue')}
                 value={valueOrLoading(analysis.total)}
@@ -137,6 +156,7 @@ export function QueueTiles({ unread, onGoNotifications }: { unread: number; onGo
                 tone={toneWhen(analysis.overdue.length, 'danger')}
                 onClick={() => scrollToPanel(PANEL_IDS.deadlines)}
             />
+            <TodayHoursTile />
             <StatTile
                 label={t('home.tileUnread')}
                 value={unread}

@@ -43,6 +43,20 @@ Registro de todas as regras que o app aplica. Cada regra aponta para onde está 
 | **Atribuir a mim**: grava só o responsável = usuário conectado (mesmo caminho da edição de campos: um `PUT` e a tarefa relida para conferir). Escondido quando a tarefa já é do usuário; se o Redmine ignorar o campo, avisa em vez de confirmar. | `AssignToMeButton`, `EditIssueFieldsUseCase` |
 | Cópias: link = URL da tarefa no Redmine configurado; número = `#1234`; título sem espaços nas pontas; referência = `#1234 Título`; Markdown = `[#1234 Título](link)`, com `[` e `]` do título escapados para não quebrar o link.                  | `copyText`                                   |
 
+## Horas
+
+| Regra                                                                                                                                                                                                 | Onde                                                       |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Horas digitadas como `1,5`, `1.5`, `2h`, `1:30`, `1h30`, `1h 30m`, `90m` ou `20 min`; o resultado tem duas casas (20 min = 0,33 h). Texto que não é duração é recusado.                               | `parseHours`                                               |
+| Lançamento: mais de 0 e até 24 h, data real (qualquer data, passada ou futura), comentário obrigatório e uma tarefa. Arredondamento livre.                                                            | `assertValidDraft`                                         |
+| Atividade (tipo de trabalho do Redmine, não a tarefa): a última usada neste computador; senão a padrão do Redmine; senão a primeira. Inativas não aparecem; com uma só, o campo some.                 | `defaultActivityId`, `ReferenceDataQueries.timeActivities` |
+| Só os próprios lançamentos podem ser editados ou excluídos pelo app.                                                                                                                                  | `TimeEntryRow`                                             |
+| Cronômetro: um por vez; começar outro descarta o anterior, depois de confirmar. Guarda só instantes (início, pausas), então sobrevive a reiniciar o app.                                              | `TimerService`, `startTimer`                               |
+| Pausa sozinho quando o computador dorme ou a tela é bloqueada. Depois de 10 min sem teclado e mouse (verificado a cada minuto), pausa a partir do momento em que a pessoa saiu: esse tempo não conta. | `TimerService.onSleep`, `checkIdle`, `IDLE_LIMIT_SECONDS`  |
+| Parar = pausar e abrir o lançamento com o tempo contado (duas casas, no mínimo 0,01 h, porque o Redmine recusa 0). O cronômetro só some quando o tempo é lançado ou descartado.                       | `TimerService.stop`, `elapsedHours`                        |
+| Semana de "Minhas horas" começa no dia configurado na Agenda; linhas por tarefa, da que tem mais horas para a que tem menos.                                                                          | `weekDays`, `buildTimesheet`                               |
+| "Repetir semana passada": os lançamentos com tarefa da semana anterior, de novo 7 dias depois (mesma tarefa, horas, atividade e comentário), um por um; não verifica se já foram repetidos.           | `RepeatWeekUseCase`, `shiftedEntries`                      |
+
 ## Busca rápida
 
 | Regra                                                                                                                                               | Onde                        |

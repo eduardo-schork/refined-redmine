@@ -10,6 +10,7 @@ import type { Settings } from '@domain/settings/settings'
 import type { DetectedFields } from '@domain/sprint/sprint-classifier'
 import type { Sprint } from '@domain/sprint/sprint'
 import type { LocalDate } from '@domain/shared/date'
+import type { TimeEntry } from '@domain/time/time-entry'
 
 export type SettingsView = Settings & { hasApiKey: boolean }
 
@@ -47,6 +48,12 @@ export interface IssueEditResult {
 }
 
 /** Choices offered when editing an issue of a project. */
+/** The user's time entries of a period, with the issues they belong to (entries only carry the issue id). */
+export interface MyTimeEntries {
+    entries: TimeEntry[]
+    issues: Record<number, Issue>
+}
+
 export interface IssueEditOptions {
     assignees: Named[]
     versions: Version[]

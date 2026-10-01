@@ -22,5 +22,10 @@ export const qk = {
     permission: ['permission'] as const,
     activityLog: ['activity-log'] as const,
     appInfo: ['app-info'] as const,
-    updateStatus: ['update-status'] as const
+    updateStatus: ['update-status'] as const,
+    timeActivities: ['reference', 'time-activities'] as const,
+    time: ['time'] as const,
+    issueTime: (issueId: number) => ['time', 'issue', issueId] as const,
+    myTime: (from: string, to: string) => ['time', 'mine', from, to] as const,
+    timer: ['timer'] as const
 }

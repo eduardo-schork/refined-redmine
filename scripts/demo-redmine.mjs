@@ -284,6 +284,8 @@ function matchesFieldFilters(item, params) {
 }
 
 function matchesFilter(item, params) {
+    const issueIds = params.get('issue_id')
+    if (issueIds) return issueIds.split(',').map(Number).includes(item.id)
     const queryId = params.get('query_id')
     if (queryId) return queryFilters[queryId]?.(item) ?? false
     if (params.getAll('f[]').length) return matchesFieldFilters(item, params)
@@ -313,7 +315,7 @@ function issueDetail(item) {
     return {
         ...publicIssue(item),
         description: item.description,
-        spent_hours: item.done_ratio ? 6.5 : 0,
+        spent_hours: spentOn(item.id),
         custom_fields: [{ id: 13, name: 'Hotfix', value: '0' }],
         journals: item.journals,
         attachments:
@@ -349,7 +351,8 @@ const personById = (id) => Object.values(people).find((person) => person.id === 
 /** Applies the editable fields like Redmine: "" clears; in "Em teste" the version is read-only and silently kept. */
 function updateFields(item, fields) {
     const details = []
-    const change = (name, oldValue, newValue) => details.push({ property: 'attr', name, old_value: oldValue, new_value: newValue })
+    const change = (name, oldValue, newValue) =>
+        details.push({ property: 'attr', name, old_value: oldValue, new_value: newValue })
     if ('assigned_to_id' in fields) {
         change('assigned_to_id', item.assigned_to?.id ?? null, fields.assigned_to_id || null)
         item.assigned_to = fields.assigned_to_id ? personById(fields.assigned_to_id) : undefined
@@ -364,7 +367,10 @@ function updateFields(item, fields) {
         change('priority_id', item.priority.id, fields.priority_id)
         item.priority = Object.values(priorities).find((priority) => priority.id === Number(fields.priority_id))
     }
-    for (const [name, key] of [['start_date', 'start_date'], ['due_date', 'due_date']]) {
+    for (const [name, key] of [
+        ['start_date', 'start_date'],
+        ['due_date', 'due_date']
+    ]) {
         if (!(name in fields)) continue
         change(name, item[key], fields[name] || null)
         item[key] = fields[name] || null
@@ -382,7 +388,13 @@ function updateIssue(id, body) {
     if (statusId) item.status = statusById.get(Number(statusId))
     const details = updateFields(item, body.issue ?? {})
     if (details.length) {
-        item.journals.push({ id: item.journals.length + 100, user: people.marina, notes: '', created_on: daysAgo(0), details })
+        item.journals.push({
+            id: item.journals.length + 100,
+            user: people.marina,
+            notes: '',
+            created_on: daysAgo(0),
+            details
+        })
     }
     const notes = body.issue?.notes
     if (notes) {
@@ -427,6 +439,95 @@ function simulateChange(params) {
     return { ok: true }
 }
 
+const timeActivities = [
+    { id: 8, name: 'Análise', is_default: false, active: true },
+    { id: 9, name: 'Desenvolvimento', is_default: true, active: true },
+    { id: 10, name: 'Reunião', is_default: false, active: true },
+    { id: 11, name: 'Testes', is_default: false, active: true }
+]
+const activityById = new Map(timeActivities.map((activity) => [activity.id, activity]))
+
+/** Fictional time entries: Marina's last and current week, plus a colleague's entry. */
+let nextTimeEntryId = 500
+function timeEntry(issueId, offsetDays, hours, activityId, comments, user = people.marina) {
+    nextTimeEntryId += 1
+    return {
+        id: nextTimeEntryId,
+        project,
+        issue: { id: issueId },
+        user,
+        activity: activityById.get(activityId),
+        hours,
+        comments,
+        spent_on: localDate(offsetDays),
+        created_on: daysAgo(Math.max(0, -offsetDays)),
+        updated_on: daysAgo(Math.max(0, -offsetDays))
+    }
+}
+const timeEntries = [
+    timeEntry(1201, -8, 3, 9, 'Busca do endereço pelo CEP'),
+    timeEntry(1201, -7, 2.5, 9, 'Validação e mensagens de erro'),
+    timeEntry(1203, -7, 1, 10, 'Alinhamento do relatório com o time'),
+    timeEntry(1206, -6, 4, 9, 'Filtro por faixa de preço'),
+    timeEntry(1201, -1, 2, 9, 'Ajustes do layout do formulário'),
+    timeEntry(1206, -1, 1.5, 11, 'Testes do filtro'),
+    timeEntry(1201, 0, 1, 10, 'Daily e revisão'),
+    timeEntry(1201, -2, 3, 9, 'Integração com a API de CEP', people.lucas)
+]
+
+const spentOn = (issueId) =>
+    Math.round(
+        timeEntries.filter((entry) => entry.issue?.id === issueId).reduce((sum, entry) => sum + entry.hours, 0) * 100
+    ) / 100
+
+function listTimeEntries(params) {
+    const userId = params.get('user_id') === 'me' ? me.id : Number(params.get('user_id') || 0)
+    const issueId = Number(params.get('issue_id') || 0)
+    const from = params.get('from')
+    const to = params.get('to')
+    const matching = timeEntries.filter(
+        (entry) =>
+            (!userId || entry.user.id === userId) &&
+            (!issueId || entry.issue?.id === issueId) &&
+            (!from || entry.spent_on >= from) &&
+            (!to || entry.spent_on <= to)
+    )
+    const offset = Number(params.get('offset') ?? 0)
+    const limit = Number(params.get('limit') ?? 25)
+    return { time_entries: matching.slice(offset, offset + limit), total_count: matching.length, offset, limit }
+}
+
+/** Fields like Redmine: hours, date, activity (default when missing) and comments. */
+function applyTimeEntryFields(entry, fields) {
+    if (fields.hours !== undefined) entry.hours = Number(fields.hours)
+    if (fields.spent_on) entry.spent_on = fields.spent_on
+    if (fields.activity_id) entry.activity = activityById.get(Number(fields.activity_id)) ?? entry.activity
+    if (fields.comments !== undefined) entry.comments = fields.comments
+    if (fields.issue_id) entry.issue = { id: Number(fields.issue_id) }
+    entry.updated_on = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
+}
+
+function createTimeEntry(fields) {
+    if (!issueById.has(Number(fields.issue_id))) return { errors: ['Tarefa não é válida'] }
+    if (!(Number(fields.hours) > 0)) return { errors: ['Horas não é válido'] }
+    const entry = timeEntry(Number(fields.issue_id), 0, 0, 9, '')
+    applyTimeEntryFields(entry, fields)
+    timeEntries.push(entry)
+    return { time_entry: entry }
+}
+
+function timeEntryRoute(method, path, body) {
+    const match = path.match(/^\/time_entries\/(\d+)\.json$/)
+    const index = match ? timeEntries.findIndex((entry) => entry.id === Number(match[1])) : -1
+    if (index === -1) return undefined
+    if (method === 'DELETE') {
+        timeEntries.splice(index, 1)
+        return {}
+    }
+    if (method === 'PUT') applyTimeEntryFields(timeEntries[index], body.time_entry ?? {})
+    return { time_entry: timeEntries[index] }
+}
+
 /** The demo profile and the connection screen use this fake key. */
 const DEMO_API_KEY = 'demo'
 
@@ -443,10 +544,18 @@ function route(method, url, body) {
         return { memberships, total_count: memberships.length }
     }
     if (path === '/enumerations/issue_priorities.json') {
-        const list = Object.values(priorities).map((priority) => ({ ...priority, is_default: priority.id === 2, active: true }))
+        const list = Object.values(priorities).map((priority) => ({
+            ...priority,
+            is_default: priority.id === 2,
+            active: true
+        }))
         return { issue_priorities: list }
     }
     if (path === '/issues.json') return listIssues(url.searchParams)
+    if (path === '/enumerations/time_entry_activities.json') return { time_entry_activities: timeActivities }
+    if (path === '/time_entries.json' && method === 'POST') return createTimeEntry(body.time_entry ?? {})
+    if (path === '/time_entries.json') return listTimeEntries(url.searchParams)
+    if (path.startsWith('/time_entries/')) return timeEntryRoute(method, path, body)
 
     const issueMatch = path.match(/^\/issues\/(\d+)\.json$/)
     const item = issueMatch && issueById.get(Number(issueMatch[1]))
@@ -478,7 +587,8 @@ function startServer() {
             return
         }
         const result = route(request.method, url, body)
-        response.writeHead(result ? 200 : 404, { 'Content-Type': 'application/json' })
+        const status = result?.errors ? 422 : result ? 200 : 404
+        response.writeHead(status, { 'Content-Type': 'application/json' })
         response.end(JSON.stringify(result ?? { errors: ['Not found'] }))
     })
     server.listen(port, () => console.log(`demo Redmine on http://localhost:${port}`))

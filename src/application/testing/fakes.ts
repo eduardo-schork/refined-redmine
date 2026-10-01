@@ -9,15 +9,18 @@ import type { Issue, IssueDetail, IssueStatus, Page, RedmineUser, Version } from
 import type { IssueFilter } from '@domain/redmine/issue-filter'
 import { DEFAULT_SETTINGS, type Settings } from '@domain/settings/settings'
 import { AppError } from '@domain/shared/errors'
+import type { TimeEntry, TimeEntryActivity, TimeEntryDraft } from '@domain/time/time-entry'
+import type { TimerState } from '@domain/time/timer'
 import type { UpdateStatus } from '@domain/update/release'
 import type { ActivityLog } from '../ports/activity-log'
-import type { IssueUpdate, RedmineCredentials, RedmineGateway } from '../ports/redmine-gateway'
+import type { IssueUpdate, RedmineCredentials, RedmineGateway, TimeEntryQuery } from '../ports/redmine-gateway'
 import type {
     CalendarRepository,
     MonitorStateRepository,
     NotificationRepository,
     SecretStore,
-    SettingsRepository
+    SettingsRepository,
+    TimerRepository
 } from '../ports/repositories'
 import type { AppEventsPublisher, Clock, IdGenerator, Scheduler, SystemNotifier } from '../ports/system'
 
@@ -85,6 +88,37 @@ export class FakeGateway implements RedmineGateway {
         return [
             { id: 2, name: 'Normal', is_default: true },
             { id: 3, name: 'Alta', is_default: false }
+        ]
+    }
+    timeEntries: TimeEntry[] = []
+    createdTimeEntries: TimeEntryDraft[] = []
+    async listTimeEntries(query: TimeEntryQuery) {
+        const inRange = (entry: TimeEntry) =>
+            (!query.from || entry.spent_on >= query.from) && (!query.to || entry.spent_on <= query.to)
+        const ofIssue = (entry: TimeEntry) => !query.issueId || entry.issue?.id === query.issueId
+        return this.timeEntries.filter((entry) => inRange(entry) && ofIssue(entry))
+    }
+    async createTimeEntry(draft: TimeEntryDraft): Promise<TimeEntry> {
+        this.createdTimeEntries.push(draft)
+        return {
+            id: 1000 + this.createdTimeEntries.length,
+            project: { id: 10, name: 'Loja Virtual' },
+            issue: { id: draft.issueId },
+            user: { id: ME.id, name: 'Marina Costa' },
+            activity: { id: draft.activityId ?? 9, name: 'Desenvolvimento' },
+            hours: draft.hours,
+            comments: draft.comments,
+            spent_on: draft.spentOn,
+            created_on: '',
+            updated_on: ''
+        }
+    }
+    async updateTimeEntry() {}
+    async deleteTimeEntry() {}
+    async listTimeEntryActivities(): Promise<TimeEntryActivity[]> {
+        return [
+            { id: 9, name: 'Desenvolvimento', is_default: true },
+            { id: 10, name: 'Reunião', active: false }
         ]
     }
 }
@@ -221,6 +255,20 @@ export class FakeEvents implements AppEventsPublisher {
     updates: UpdateStatus[] = []
     updateStatusChanged(status: UpdateStatus) {
         this.updates.push(status)
+    }
+    timers: (TimerState | null)[] = []
+    timerChanged(timer: TimerState | null) {
+        this.timers.push(timer)
+    }
+}
+
+export class MemoryTimer implements TimerRepository {
+    constructor(public value: TimerState | null = null) {}
+    get() {
+        return this.value
+    }
+    save(timer: TimerState | null) {
+        this.value = timer
     }
 }
 

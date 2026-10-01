@@ -70,6 +70,10 @@ export const enUS: Resources = {
             'The published version is not from the app maintainer ({{publisher}}) and was ignored for safety.',
         'issue.datesOrder': 'The start date cannot be after the due date.',
         'issue.doneRatio': 'Done % must be between 0 and 100.',
+        'time.hours': 'Enter the hours: more than 0 and up to {{max}} (e.g. 1.5 · 1:30 · 1h30 · 90m).',
+        'time.date': 'Enter a valid date.',
+        'time.comment': 'Write a comment about what was done.',
+        'time.issue': 'Choose the issue of the entry.',
         'calendar.titleRequired': 'Give the event a title.',
         'calendar.invalidIssue': 'Invalid issue number.',
         unexpected: 'Unexpected error: {{detail}}'
@@ -229,6 +233,9 @@ export const enUS: Resources = {
         hotfixOf: 'Fixes for {{base}} (staging)'
     },
     tray: {
+        timer: '{{clock}} · #{{id}}',
+        pauseTimer: 'Pause stopwatch',
+        resumeTimer: 'Resume stopwatch',
         open: 'Open Refined Redmine',
         calendar: 'Calendar',
         notifications: 'Notifications',
@@ -239,6 +246,7 @@ export const enUS: Resources = {
         tooltipUnread_other: 'Refined Redmine — {{count}} unread'
     },
     nav: {
+        time: 'My hours',
         home: 'Home',
         calendar: 'Calendar',
         sprints: 'Sprints',
@@ -283,6 +291,7 @@ export const enUS: Resources = {
         }
     },
     home: {
+        tileHoursToday: 'Hours today',
         helloMorning: 'Good morning, {{name}}',
         helloAfternoon: 'Good afternoon, {{name}}',
         helloEvening: 'Good evening, {{name}}',
@@ -494,6 +503,71 @@ export const enUS: Resources = {
         idNotFound: 'Issue #{{id}} not found or not accessible.',
         empty: 'Type #1234 to open an issue, or part of the title to search every project.',
         keys: '↑↓ navigate · Enter open · Esc close'
+    },
+    time: {
+        log: 'Log time',
+        logHint: 'Log time on this issue',
+        logTitle: 'Log time on #{{id}}',
+        editTitle: 'Edit entry on #{{id}}',
+        date: 'Date',
+        today: 'Today',
+        yesterday: 'Yesterday',
+        hours: 'Hours',
+        hoursHint: 'E.g. 1.5 · 1:30 · 1h30 · 90m',
+        hoursInvalid: 'Not understood. Use 1.5 · 1:30 · 1h30 · 90m',
+        activity: 'Activity',
+        activityHint: 'The kind of work in Redmine (not the issue).',
+        comment: 'Comment',
+        commentPlaceholder: 'What was done',
+        save: 'Log',
+        saving: 'Logging…',
+        logged: '{{hours}} logged on #{{id}}',
+        updated: 'Entry on #{{id}} updated ({{hours}})',
+        deleted: 'Entry deleted',
+        confirmDelete: 'Delete the {{hours}} entry of {{date}}? This deletes it in Redmine.',
+        section_one: 'Hours ({{count}} entry)',
+        section_other: 'Hours ({{count}} entries)',
+        spentOfEstimate: '{{spent}} of {{estimate}} estimated',
+        spentOnly: '{{spent}} logged',
+        noComment: 'no comment'
+    },
+    timer: {
+        start: 'Start stopwatch',
+        hint: 'Counts time on this issue; when you stop, you confirm and log it.',
+        runningHere: 'Stopwatch running',
+        pausedHere: 'Stopwatch paused',
+        pause: 'Pause',
+        resume: 'Resume',
+        stop: 'Stop and log',
+        discard: 'Discard stopwatch',
+        confirmDiscard: 'Discard the stopwatch of #{{id}}? The counted time will not be logged.',
+        confirmReplace: 'There is a stopwatch on #{{id}}. Discard its time and start on this issue?',
+        paused: {
+            sleep: 'Paused: the computer slept or was locked ({{since}}).',
+            idle: 'Paused for inactivity since {{since}}; that time does not count.'
+        }
+    },
+    timePage: {
+        week: 'Week of {{from}} to {{to}}',
+        previous: 'Previous week',
+        next: 'Next week',
+        thisWeek: 'This week',
+        grid: 'Week',
+        gridHint: 'Click a cell to log time on that issue and day.',
+        issue: 'Issue',
+        total: 'Total',
+        cellHint: 'Log time on this day',
+        noIssue: 'No issue ({{project}})',
+        entries: 'Entries of the week',
+        issueNumber: 'Issue #number',
+        emptyTitle: 'No time logged this week',
+        emptyText: 'Log from an issue detail, with the stopwatch or by typing the issue number above.',
+        repeat: 'Repeat last week',
+        repeatHint: 'Logs again, this week, the entries of the previous week (same issue, weekday, hours and comment).',
+        repeatConfirm_one: 'Log again this week {{count}} entry of the week of {{from}} to {{to}}?',
+        repeatConfirm_other: 'Log again this week {{count}} entries of the week of {{from}} to {{to}}?',
+        repeated_one: '{{count}} entry repeated',
+        repeated_other: '{{count}} entries repeated'
     },
     issue: {
         assignToMe: {

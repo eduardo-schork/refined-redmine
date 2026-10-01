@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import {
     Bell,
     CalendarDays,
+    Clock,
     Flag,
     History,
     Home,
@@ -24,12 +25,16 @@ import { useOpenIssue } from '../IssueModal'
 
 const SEARCH_DELAY_MS = 250
 
-type PageRoute = Extract<Route, { page: 'home' | 'calendar' | 'sprints' | 'notifications' | 'log' | 'settings' }>
+type PageRoute = Extract<
+    Route,
+    { page: 'home' | 'calendar' | 'sprints' | 'time' | 'notifications' | 'log' | 'settings' }
+>
 
 const PAGES: { route: PageRoute; labelKey: string; icon: LucideIcon }[] = [
     { route: { page: 'home' }, labelKey: 'nav.home', icon: Home },
     { route: { page: 'calendar' }, labelKey: 'nav.calendar', icon: CalendarDays },
     { route: { page: 'sprints' }, labelKey: 'nav.sprints', icon: Flag },
+    { route: { page: 'time' }, labelKey: 'nav.time', icon: Clock },
     { route: { page: 'notifications' }, labelKey: 'nav.notifications', icon: Bell },
     { route: { page: 'log' }, labelKey: 'nav.log', icon: ScrollText },
     { route: { page: 'settings' }, labelKey: 'nav.settings', icon: SettingsIcon }

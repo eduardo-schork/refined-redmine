@@ -12,10 +12,20 @@ import type {
 } from '@domain/redmine/entities'
 import type { IssueFieldsChange } from '@domain/redmine/issue-edit'
 import type { IssueFilter } from '@domain/redmine/issue-filter'
+import type { LocalDate } from '@domain/shared/date'
+import type { TimeEntry, TimeEntryActivity, TimeEntryDraft } from '@domain/time/time-entry'
 
 export interface RedmineCredentials {
     baseUrl: string
     apiKey: string
+}
+
+/** Time entries of the signed-in user, of an issue, or both, between two dates (inclusive). */
+export interface TimeEntryQuery {
+    mine?: boolean
+    issueId?: number
+    from?: LocalDate
+    to?: LocalDate
 }
 
 export interface IssueUpdate extends IssueFieldsChange {
@@ -39,4 +49,9 @@ export interface RedmineGateway {
     /** Project members (users and groups) — the people issues of the project can be assigned to. */
     listProjectMembers(projectId: number): Promise<Named[]>
     listPriorities(): Promise<IssuePriority[]>
+    listTimeEntries(query: TimeEntryQuery): Promise<TimeEntry[]>
+    createTimeEntry(draft: TimeEntryDraft): Promise<TimeEntry>
+    updateTimeEntry(id: number, draft: TimeEntryDraft): Promise<void>
+    deleteTimeEntry(id: number): Promise<void>
+    listTimeEntryActivities(): Promise<TimeEntryActivity[]>
 }

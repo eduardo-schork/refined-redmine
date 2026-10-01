@@ -2,8 +2,11 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
-## Próxima versão — conexão mais rápida e clara
+## Próxima versão — horas, cronômetro e conexão mais clara
 
+- **Lançar horas** direto no detalhe da tarefa: data, horas do jeito que preferir (1,5 · 1:30 · 1h30 · 90m), atividade e comentário. A seção Horas mostra o total contra o estimado e todos os lançamentos, com editar e excluir os seus.
+- **Cronômetro**: comece a contar numa tarefa e pare quando terminar; o tempo vai pronto para o lançamento. Ele aparece na barra lateral e na barra de menus, continua com a janela fechada e pausa sozinho quando o computador dorme ou você fica fora por 10 minutos.
+- **Minhas horas**: a sua semana numa tela só, com o total de cada dia, uma grade tarefas × dias (clique para lançar) e o botão Repetir semana passada. No Início, o indicador Horas hoje.
 - **Login sem espera**: depois de conectar, o Início abre na hora. Antes, a tela de conexão podia ficar parada por minutos mesmo com a conexão já feita.
 - **Tela de conexão com retorno**: mostra o progresso e os segundos, avisa quando está demorando e, se der errado, explica o motivo e o que fazer (chave recusada, endereço que não é de um Redmine, API desligada, VPN ou rede, certificado). Sem resposta em 30 segundos, mostra o erro em vez de ficar esperando.
 - **Endereço mais fácil**: pode digitar sem `https://` ou colar o link de uma página do Redmine, que o app ajusta. Depois de desconectar, o endereço já vem preenchido.
