@@ -32,7 +32,10 @@ export function useUpdateSettings() {
 
 // A different account (or none) must not see the previous account's cached data.
 function replaceSession(queryClient: QueryClient, session: SettingsView) {
-    queryClient.clear()
+    // Not queryClient.clear(): it would also drop the session entry the app is watching, and the screen would keep
+    // showing the old session (e.g. the connection screen after a successful login) until something re-rendered it.
+    const isSession = (queryKey: readonly unknown[]) => queryKey[0] === qk.session[0]
+    queryClient.removeQueries({ predicate: (query) => !isSession(query.queryKey) })
     queryClient.setQueryData(qk.session, session)
 }
 
