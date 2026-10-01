@@ -47,13 +47,23 @@ import {
     JsonCalendarRepository,
     JsonMonitorStateRepository,
     JsonNotificationRepository,
-    JsonSettingsRepository
+    JsonSettingsRepository,
+    JsonTimerRepository
 } from '@infra/persistence/repositories'
 import { RedmineHttpClient } from '@infra/redmine/http-client'
 import { HttpRedmineGateway } from '@infra/redmine/http-redmine-gateway'
 import { systemClock, timerScheduler, uuidGenerator } from '@infra/system/system'
 import type { ApiHandlers } from './ipc-router'
 import { openExternal } from './window'
+import { TimerService } from '@application/services/timer-service'
+import {
+    DeleteTimeEntryUseCase,
+    EditTimeEntryUseCase,
+    LogTimeUseCase,
+    RepeatWeekUseCase,
+    TimeQueries
+} from '@application/use-cases/time'
+import { electronIdleProbe } from '@infra/electron/idle-probe'
 
 export interface Presentation {
     publisher: AppEventsPublisher
@@ -109,7 +119,8 @@ export function createContainer(presentation: () => Presentation) {
         notificationsChanged: (items) => presentation().publisher.notificationsChanged(items),
         monitorStatusChanged: (status) => presentation().publisher.monitorStatusChanged(status),
         permissionChanged: (info) => presentation().publisher.permissionChanged(info),
-        updateStatusChanged: (status) => presentation().publisher.updateStatusChanged(status)
+        updateStatusChanged: (status) => presentation().publisher.updateStatusChanged(status),
+        timerChanged: (timer) => presentation().publisher.timerChanged(timer)
     }
 
     // The dev build and the installed app share this folder but are different apps for the operating system.
@@ -186,6 +197,18 @@ export function createContainer(presentation: () => Presentation) {
     const saveEvent = new SaveCalendarEventUseCase(calendarRepo, ids, clock)
     const deleteEvent = new DeleteCalendarEventUseCase(calendarRepo, clock)
     const permission = new NotificationPermissionService(permissionProbe, notifier, state, systemClock, appCopy)
+    const timeQueries = new TimeQueries(gateway)
+    const logTime = new LogTimeUseCase(gateway)
+    const editTime = new EditTimeEntryUseCase(gateway)
+    const deleteTime = new DeleteTimeEntryUseCase(gateway)
+    const repeatWeek = new RepeatWeekUseCase(gateway)
+    const timer = new TimerService({
+        repository: new JsonTimerRepository(stateFile),
+        events: publisher,
+        clock,
+        scheduler,
+        idle: electronIdleProbe
+    })
 
     const appInfo = () => ({
         version: app.getVersion(),
@@ -254,7 +277,24 @@ export function createContainer(presentation: () => Presentation) {
             statuses: () => reference.statuses(),
             projects: () => reference.projects(),
             savedQueries: () => reference.savedQueries(),
-            priorities: () => reference.priorities()
+            priorities: () => reference.priorities(),
+            timeActivities: () => reference.timeActivities()
+        },
+        time: {
+            forIssue: (issueId) => timeQueries.forIssue(issueId),
+            mine: (from, to) => timeQueries.mine(from, to),
+            log: (draft) => logTime.execute(draft),
+            edit: (id, draft) => editTime.execute(id, draft),
+            remove: (id) => deleteTime.execute(id),
+            repeatWeek: (from, to) => repeatWeek.execute(from, to)
+        },
+        timer: {
+            status: () => timer.status(),
+            start: (issue) => timer.begin(issue),
+            pause: () => timer.pause(),
+            resume: () => timer.resume(),
+            stop: () => timer.stop(),
+            discard: () => timer.discard()
         },
         boards: {
             issues: (boardId) => boardIssues.execute(boardId),
@@ -305,5 +345,5 @@ export function createContainer(presentation: () => Presentation) {
         }
     }
 
-    return { api, monitor, reminders, updates, localization, feed }
+    return { api, monitor, reminders, updates, localization, feed, timer }
 }

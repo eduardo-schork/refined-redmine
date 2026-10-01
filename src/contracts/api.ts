@@ -5,6 +5,7 @@ import type {
     DeleteEventCommand,
     IssueEditOptions,
     IssueEditResult,
+    MyTimeEntries,
     ProjectInspection,
     SaveEventCommand,
     SettingsView,
@@ -30,6 +31,9 @@ import type { IssueFieldsChange } from '@domain/redmine/issue-edit'
 import type { IssueFilter } from '@domain/redmine/issue-filter'
 import type { SettingsPatch } from '@domain/settings/settings'
 import type { SerializedError } from '@domain/shared/errors'
+import type { LocalDate } from '@domain/shared/date'
+import type { TimeEntry, TimeEntryActivity, TimeEntryDraft } from '@domain/time/time-entry'
+import type { StoppedTimer, TimerState } from '@domain/time/timer'
 import type { UpdateStatus } from '@domain/update/release'
 import type { VersionStats } from '@domain/sprint/sprint'
 
@@ -59,6 +63,26 @@ export interface RefinedApi {
         projects(): Project[]
         savedQueries(): SavedQuery[]
         priorities(): IssuePriority[]
+        timeActivities(): TimeEntryActivity[]
+    }
+    time: {
+        forIssue(issueId: number): TimeEntry[]
+        /** The signed-in user's entries between two dates (inclusive), with their issues. */
+        mine(from: LocalDate, to: LocalDate): MyTimeEntries
+        log(draft: TimeEntryDraft): TimeEntry
+        edit(id: number, draft: TimeEntryDraft): void
+        remove(id: number): void
+        /** Logs the previous week's entries again one week later; returns how many were created. */
+        repeatWeek(previousWeekStart: LocalDate, previousWeekEnd: LocalDate): number
+    }
+    timer: {
+        status(): TimerState | null
+        start(issue: { id: number; subject: string }): TimerState
+        pause(): TimerState | null
+        resume(): TimerState | null
+        /** Pauses and returns the counted hours to log; the stopwatch stays paused until logged or discarded. */
+        stop(): StoppedTimer | null
+        discard(): null
     }
     boards: {
         issues(boardId: string): BoardIssues
@@ -117,7 +141,9 @@ export const API_METHODS = {
     session: ['get', 'login', 'logout'],
     settings: ['update'],
     issues: ['list', 'get', 'allowedStatuses', 'changeStatus', 'comment', 'search', 'edit', 'editOptions'],
-    reference: ['statuses', 'projects', 'savedQueries', 'priorities'],
+    reference: ['statuses', 'projects', 'savedQueries', 'priorities', 'timeActivities'],
+    time: ['forIssue', 'mine', 'log', 'edit', 'remove', 'repeatWeek'],
+    timer: ['status', 'start', 'pause', 'resume', 'stop', 'discard'],
     boards: ['issues', 'save', 'remove', 'move'],
     sprints: ['list', 'stats', 'inspectProject'],
     calendar: ['list', 'save', 'remove'],
@@ -134,6 +160,7 @@ export interface AppEvents {
     'monitor.status': MonitorStatus
     'permission.changed': NotifyPermissionInfo
     'update.status': UpdateStatus
+    'timer.status': TimerState | null
     navigate: string
 }
 
@@ -142,6 +169,7 @@ export const EVENT_CHANNELS = [
     'monitor.status',
     'permission.changed',
     'update.status',
+    'timer.status',
     'navigate'
 ] as const satisfies readonly (keyof AppEvents)[]
 

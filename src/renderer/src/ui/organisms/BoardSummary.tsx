@@ -30,7 +30,7 @@ export function BoardSummary({
     /** Present on sprint boards. */
     sprint?: Sprint
     issues: Issue[]
-    onSelectPerson: (assigneeName: string | undefined) => void
+    onSelectPerson: (assigneeId: number | undefined) => void
 }) {
     const { t } = useI18n()
     const staleDays = useSettings().dashboard.staleDays
@@ -136,7 +136,7 @@ function PeopleTable({
     onSelect
 }: {
     people: PersonSummary[]
-    onSelect: (assigneeName: string | undefined) => void
+    onSelect: (assigneeId: number | undefined) => void
 }) {
     const { t } = useI18n()
     return (
@@ -167,13 +167,13 @@ function Count({ value, tone }: { value: number; tone?: 'warn' | 'danger' }) {
     )
 }
 
-function PersonRow({ person, onSelect }: { person: PersonSummary; onSelect: (name: string | undefined) => void }) {
+function PersonRow({ person, onSelect }: { person: PersonSummary; onSelect: (id: number | undefined) => void }) {
     const { t, dates } = useI18n()
     const percent = person.total ? Math.round((person.closed / person.total) * 100) : 0
     return (
         <button
             type="button"
-            onClick={() => onSelect(person.name)}
+            onClick={() => onSelect(person.id)}
             className={cn(
                 COLUMNS,
                 'w-full cursor-default border-t border-line px-5 py-2.5 text-left text-sm hover:bg-panel-2'

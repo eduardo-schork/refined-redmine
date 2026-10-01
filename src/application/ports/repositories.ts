@@ -3,6 +3,7 @@ import type { QuerySnapshot } from '@domain/monitor/query-diff'
 import type { AppNotification } from '@domain/notification/notification'
 import type { DeliveryConfirmation, DeliveryRecord } from '@domain/notification/permission'
 import type { Settings } from '@domain/settings/settings'
+import type { TimerState } from '@domain/time/timer'
 
 export interface SettingsRepository {
     get(): Settings
@@ -39,6 +40,12 @@ export interface MonitorStateRepository {
     setDelivery(record: DeliveryRecord): void
     getConfirmation(): DeliveryConfirmation | undefined
     setConfirmation(confirmation: DeliveryConfirmation): void
+}
+
+/** The stopwatch, kept on disk so it survives closing and reopening the app. */
+export interface TimerRepository {
+    get(): TimerState | null
+    save(timer: TimerState | null): void
 }
 
 export interface CalendarRepository {

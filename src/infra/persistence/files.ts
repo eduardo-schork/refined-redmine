@@ -3,6 +3,7 @@ import type { QuerySnapshot } from '@domain/monitor/query-diff'
 import type { AppNotification, NotificationKind } from '@domain/notification/notification'
 import type { AppCopy, DeliveryConfirmation } from '@domain/notification/permission'
 import type { Settings } from '@domain/settings/settings'
+import type { TimerState } from '@domain/time/timer'
 
 // Kept compatible with the files written by previous versions of the app.
 
@@ -33,6 +34,8 @@ export interface StateFile {
     notifyConfirmation?: DeliveryConfirmation
     events: (AppNotification | LegacyNotification)[]
     querySnapshots: Record<string, QuerySnapshot>
+    /** Running or paused stopwatch (instants only). */
+    timer?: TimerState
 }
 
 /** calendar.json: events + reminders already fired. */

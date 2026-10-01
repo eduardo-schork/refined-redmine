@@ -29,9 +29,11 @@ O passo a passo (macOS e Windows, com os avisos de segurança do sistema na prim
 
 ![Tela de conexão](images/onboarding.png)
 
-1. Em **URL do Redmine**, informe o endereço que você usa no navegador (ex.: `https://redmine.suaempresa.com.br`).
-2. Em **Chave de acesso à API**, cole a sua chave. No Redmine: **Minha conta → Chave de acesso à API → Mostrar**.
-3. Clique em **Conectar**.
+1. Em **URL do Redmine**, informe o endereço que você usa no navegador (ex.: `https://redmine.suaempresa.com.br`). Pode digitar sem `https://` ou colar o endereço de uma página do Redmine (como `…/my/account` ou `…/issues/1234`): o app ajusta e mostra embaixo o **Endereço usado**. Depois de desconectar, o endereço já vem preenchido.
+2. Em **Chave de acesso à API**, cole a sua chave. No Redmine: **Minha conta → Chave de acesso à API → Mostrar**. O link **Abrir "Minha conta" no Redmine** abre essa página no navegador; o ícone de olho mostra ou esconde a chave.
+3. Clique em **Conectar**. Enquanto conecta, os campos ficam travados e aparece **Conectando a …** com os segundos. Se passar de 8 segundos, o app avisa o que conferir (VPN, rede). Sem resposta em 30 segundos, ele mostra o erro.
+
+Se não der certo, o app diz o motivo e o que fazer: chave recusada, endereço que não é de um Redmine, API REST desligada no Redmine, endereço não encontrado (DNS ou VPN), tempo esgotado ou conexão segura recusada (proxy, antivírus, certificado). Ao corrigir um campo, o aviso some.
 
 A chave é guardada criptografada pelo sistema (Keychain no macOS, DPAPI no Windows) e nunca sai do seu computador, a não ser nas chamadas ao próprio Redmine.
 
@@ -86,11 +88,23 @@ Aperte `⌘K` (Mac) ou `Ctrl+K` (Windows), em qualquer tela, ou clique em **Busc
 Os quadros ficam na barra lateral, em **Quadros**. Cada coluna agrupa um ou mais status do Redmine.
 
 - **Arrastar um card para outra coluna muda o status no Redmine.** O app só permite soltar onde a transição é aceita pelo fluxo de trabalho da tarefa.
-- **Buscar** filtra por título, `#id` ou projeto.
-- **Todos os responsáveis** filtra os cards por pessoa.
+- No topo, **Quadro | Lista | Resumo** troca a forma de ver o quadro (veja [Lista](#lista) e [Resumo do quadro](#resumo-do-quadro)).
 - Os ícones no canto superior direito atualizam, editam e excluem o quadro.
 
-**Contadores de atenção**, acima das colunas: quantas tarefas do quadro estão **atrasadas**, com **prioridade alta**, **paradas** ou **sem responsável** (só aparecem os que têm alguma). Clique em um para ver só essas tarefas; clique de novo para voltar a ver todas. Eles respeitam a busca e o filtro de responsável.
+### Filtros rápidos
+
+![Filtros rápidos](images/board-filters.png)
+
+Na linha abaixo do título, valem tanto para o quadro quanto para a lista:
+
+- **Buscar** filtra por título, `#id` ou projeto.
+- **Responsável**, **Tipo**, **Situação** e **Versão** abrem uma lista com o que existe no quadro e quantas tarefas tem cada opção. Marque uma ou mais; nenhuma marcada é "Todos". Responsável tem "Sem responsável" e Versão tem "Sem versão".
+- Filtros diferentes se somam (Tipo Defeito **e** Situação Em andamento); opções do mesmo filtro valem qualquer uma (Defeito **ou** Funcionalidade).
+- **Limpar filtros** aparece quando há algum filtro e tira todos. Dentro de cada lista, **Limpar este filtro** tira só aquele.
+- Com filtro, o título mostra **"3 de 6 tarefas"**.
+- Cada quadro lembra os seus filtros, a forma de ver (quadro, lista ou resumo), o agrupamento e a ordenação, mesmo depois de fechar o app.
+
+**Contadores de atenção**, abaixo dos filtros: quantas tarefas do quadro estão **atrasadas**, com **prioridade alta**, **paradas** ou **sem responsável** (só aparecem os que têm alguma). Clique em um para ver só essas tarefas; clique de novo para voltar a ver todas. Eles contam só as tarefas que passam pelos filtros.
 
 Ao lado do nome de cada coluna, além do total, aparecem em vermelho as **atrasadas** e em amarelo as de **prioridade alta** daquela coluna.
 
@@ -105,11 +119,21 @@ A barra verde embaixo é o percentual concluído.
 
 **Cores dos status**: o Redmine não tem cores de status, então o app escolhe uma pelo nome (dá para trocar em [Cores das tarefas](#cores-das-tarefas)): cinza para novas, azul para em andamento, roxo para em aprovação ou revisão, verde-água para em teste ou homologação, amarelo para em pausa ou aguardando, verde para resolvidas e fechadas, cinza apagado para rejeitadas ou canceladas. A cor aparece na bolinha do cabeçalho de cada coluna, nas etiquetas de status dos cards, das listas do Início e do detalhe da tarefa, e no resumo do quadro.
 
+### Lista
+
+![Lista do quadro](images/board-list.png)
+
+**Lista** mostra as tarefas do quadro em linhas, como a lista de tarefas do Redmine: número, tipo, situação, prioridade, título, responsável, versão e previsão (vermelha se venceu, amarela se vence em breve).
+
+- **Agrupar por** (à direita dos filtros): versão (padrão), situação, responsável, tipo ou nenhum. Cada grupo mostra quantas tarefas tem; clique no nome do grupo para recolher ou abrir. Versões seguem a ordem das versões (3.9 antes de 3.10), situações a ordem do Redmine, e o grupo "Sem versão" ou "Sem responsável" fica por último.
+- **Ordenar**: clique no nome de uma coluna; clique de novo para inverter. A seta mostra a coluna e o sentido. O padrão é por prioridade, da mais urgente para a mais baixa. Tarefas sem responsável, sem versão ou sem previsão ficam no fim em qualquer sentido; empates mostram primeiro a atualizada mais recentemente.
+- Clique em uma linha para abrir o detalhe da tarefa.
+
 ### Resumo do quadro
 
 ![Resumo do quadro](images/board-summary.png)
 
-No topo do quadro, **Quadro | Resumo** troca entre os cards e os números do quadro. O resumo usa **todas** as tarefas do quadro, sem a busca e os filtros.
+**Resumo** mostra os números do quadro. Ele usa **todas** as tarefas do quadro, sem a busca e os filtros rápidos.
 
 - **Sprint** (só nos quadros de sprint), no topo:
   - **Datas**: início (estimado: o dia seguinte ao prazo dos devs da sprint anterior), prazo dos devs e publicação, com quantos dias faltam.
@@ -117,7 +141,7 @@ No topo do quadro, **Quadro | Resumo** troca entre os cards e os números do qua
   - **Fechadas nos últimos 7 dias**, **para fechar por dia útil** até o prazo dos devs, **entraram depois do início** (tarefas criadas durante a sprint, em amarelo quando há alguma) e **estimativa das abertas** em horas.
 - **Indicadores**: total, abertas, fechadas (com o percentual), estimativa total em horas, atrasadas, prioridade alta, paradas e sem responsável.
 - **Distribuição por status**: uma barra dividida na ordem das colunas, com a quantidade e o percentual de cada status.
-- **Por pessoa**: abertas, fechadas, progresso (fechadas ÷ total), atrasadas, de prioridade alta, paradas e horas estimadas de cada responsável. **Clique em uma pessoa** para voltar ao quadro mostrando só os cards dela.
+- **Por pessoa**: abertas, fechadas, progresso (fechadas ÷ total), atrasadas, de prioridade alta, paradas e horas estimadas de cada responsável. **Clique em uma pessoa** para voltar ao quadro com o filtro de responsável dela.
 - **Por tipo** e **Por prioridade**: quantas tarefas de cada tipo e de cada prioridade (da mais urgente para a mais baixa).
 
 ### Raias por responsável
@@ -164,6 +188,7 @@ Clicar em uma tarefa, em qualquer tela, abre o detalhe sem sair do app. As taref
 - **Resumo no topo**, abaixo do título: status, prioridade, previsão (colorida quando está perto ou vencida) e versão.
 - **Ações rápidas**, logo abaixo:
   - **Atribuir a mim** passa a tarefa para você no Redmine, com um clique. Só aparece quando a tarefa não é sua; um aviso confirma, ou diz se o Redmine não aplicou (o fluxo pode não deixar você ser responsável naquela etapa).
+  - **Lançar horas** abre o formulário de lançamento (veja [Horas](#lançar-horas)) e **Iniciar cronômetro** começa a contar o tempo nesta tarefa.
   - Os outros botões copiam para a área de transferência o **Link** da tarefa no Redmine, o **Número** (`#1234`), o **Título**, o **#Número e título** (`#1234 Título`, para mensagens e commits) ou um link em **Markdown** (`[#1234 Título](link)`). Um aviso mostra o que foi copiado.
 - **Status**: troque direto pelo seletor; só aparecem os status permitidos para a tarefa.
 - **Adicionar comentário**: aceita Markdown e é publicado no Redmine.
@@ -175,6 +200,47 @@ Clicar em uma tarefa, em qualquer tela, abre o detalhe sem sair do app. As taref
   - Se o Redmine não aplicar algum campo (por exemplo, quando o fluxo da tarefa deixa a versão só para leitura), aparece um aviso em vermelho dizendo qual campo não foi salvo.
 - Também na lateral, só para leitura: autor, horas estimadas e gastas, campos personalizados e observadores.
 - **Abrir no Redmine** abre a tarefa no navegador.
+
+### Lançar horas
+
+![Horas no detalhe da tarefa](images/time-issue.png)
+
+A seção **Horas** do detalhe mostra o total lançado contra o estimado ("13 h de 16 h estimadas") e todos os lançamentos da tarefa. Os seus aparecem destacados, com os botões para editar e excluir.
+
+![Lançar horas](images/time-dialog.png)
+
+Em **Lançar horas**, informe:
+
+- **Data**: hoje por padrão, com os atalhos **Hoje** e **Ontem**. Qualquer data é aceita.
+- **Horas**: do jeito que for mais fácil, como `1,5`, `1:30`, `1h30` ou `90m`. Ao lado aparece como o app entendeu ("= 1,5 h").
+- **Atividade**: o tipo de trabalho no Redmine (Desenvolvimento, Reunião…), que não é a tarefa. Vem marcada a última que você usou; se o Redmine tiver uma só, o campo nem aparece.
+- **Comentário**: obrigatório, com o que foi feito.
+
+### Cronômetro
+
+**Iniciar cronômetro**, nas ações rápidas, começa a contar o tempo na tarefa. O cronômetro aparece na barra lateral, e no macOS também na barra de menus (⏱ 0:42).
+
+- **Pausar e retomar** pela barra lateral ou pelo menu da bandeja.
+- **Parar e lançar** abre o formulário com as horas contadas. Ao lançar, o cronômetro some. Se cancelar, ele fica pausado.
+- **Descartar** (×) apaga o cronômetro sem lançar nada.
+- Ele continua contando com a janela fechada e mesmo depois de fechar e abrir o app.
+- Ele pausa sozinho quando o computador dorme ou a tela é bloqueada. Depois de 10 minutos sem uso do teclado e do mouse, pausa e não conta o tempo em que você ficou fora; a barra lateral avisa desde quando.
+- Só existe um cronômetro por vez: começar em outra tarefa pede confirmação e descarta o anterior.
+
+### Minhas horas
+
+![Minhas horas](images/time-page.png)
+
+**Minhas horas**, no menu lateral, mostra a sua semana:
+
+- **Totais por dia** no topo, com o dia de hoje destacado.
+- **Grade**: uma linha por tarefa e uma coluna por dia. Clique numa célula para lançar horas naquela tarefa e dia, ou no nome da tarefa para abrir o detalhe.
+- **Lançamentos da semana**: a lista completa, com editar e excluir.
+- **Lançar horas** em outra tarefa: digite o número dela no campo acima da grade.
+- **Repetir semana passada** lança de novo, nesta semana, os lançamentos da semana anterior (mesma tarefa, dia da semana, horas, atividade e comentário), depois de confirmar quantos são. Use uma vez por semana: repetir de novo cria outra cópia.
+- As setas mudam de semana e **Esta semana** volta para a atual. A semana começa no dia escolhido em Configurações → Agenda.
+
+No **Início**, o indicador **Horas hoje** mostra quanto você lançou no dia e abre esta tela.
 
 ## 5. Sprints
 
@@ -427,6 +493,12 @@ A chave salva não pôde ser lida neste computador (por exemplo, depois de insta
 
 **Fechei a janela. O app parou?**
 Não, ele segue na bandeja. Para encerrar, use **Sair** no menu da bandeja.
+
+**O cronômetro parou sozinho.**
+Ele pausa quando o computador dorme, quando a tela é bloqueada ou depois de 10 minutos sem uso, e não conta esse tempo. É só clicar em retomar na barra lateral.
+
+**Lancei horas e o Redmine recusou.**
+A mensagem diz o motivo, normalmente falta de permissão para lançar horas no projeto ou uma tarefa fechada para lançamentos. Peça a permissão ao administrador do Redmine.
 
 **Mudei a versão (ou outro campo) da tarefa e apareceu "O Redmine não aplicou".**
 O Redmine aceitou o salvamento, mas ignorou aquele campo: o fluxo de trabalho deixa o campo só para leitura no status atual, ou falta permissão. O detalhe mostra o valor que ficou no Redmine; mude o status ou peça para quem tem permissão.

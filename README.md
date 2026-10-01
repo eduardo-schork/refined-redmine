@@ -56,11 +56,17 @@ Como usar cada tela: [manual do usuário](docs/MANUAL.md).
 - Quadro a partir de: tarefas atribuídas a mim, um projeto (com/sem subprojetos), uma consulta salva, um **filtro copiado da tela do Redmine (URL)** ou uma sprint — fixa ou automática ("sprint em desenvolvimento", "em homologação", "correção aberta"), que troca sozinha quando a sprint muda de fase.
 - Colunas configuráveis; cada coluna agrupa um ou mais status.
 - Arrastar um card muda o status no Redmine. Ao começar a arrastar, o app consulta `allowed_statuses` da tarefa e esmaece as colunas que o fluxo de trabalho não permite.
-- Raias por responsável, busca, filtro por responsável, atualização automática a cada 60 s.
+- Raias por responsável, atualização automática a cada 60 s.
+- **Filtros rápidos** para quadro e lista: busca, responsável, tipo, situação e versão (várias opções de cada).
+- **Lista**: as tarefas do quadro em linhas, como no Redmine, agrupadas por versão, situação, responsável ou tipo e ordenáveis por coluna. Cada quadro lembra a visualização, os filtros e a ordenação.
 - Notificações do quadro (opcional): cards que entram, saem ou mudam de coluna, comentários e menções.
 - Cards com prioridade em destaque, etiquetas de versão e prazo, responsável e "parada há N dias"; contadores clicáveis de atrasadas, prioridade alta, paradas e sem responsável.
 - **Resumo do quadro**: indicadores, distribuição por status, tabela por pessoa, por tipo e por prioridade; nos quadros de sprint, datas, ritmo (fechadas × tempo), fechadas na semana e abertas por dia útil.
 - Cores de status e níveis de prioridade automáticos, ajustáveis em Configurações → Aparência.
+
+**Horas**
+
+- Lançar, editar e excluir horas no detalhe da tarefa; cronômetro na barra lateral e na bandeja (pausa ao dormir e por ociosidade); tela Minhas horas com a semana, grade tarefas × dias e repetir semana passada.
 
 **Notificações**
 

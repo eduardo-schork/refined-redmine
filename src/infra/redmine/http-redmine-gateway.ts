@@ -1,4 +1,9 @@
-import type { IssueUpdate, RedmineCredentials, RedmineGateway } from '@application/ports/redmine-gateway'
+import type {
+    IssueUpdate,
+    RedmineCredentials,
+    RedmineGateway,
+    TimeEntryQuery
+} from '@application/ports/redmine-gateway'
 import type {
     Issue,
     IssueDetail,
@@ -12,6 +17,7 @@ import type {
     Version
 } from '@domain/redmine/entities'
 import type { IssueFilter } from '@domain/redmine/issue-filter'
+import type { TimeEntry, TimeEntryActivity, TimeEntryDraft } from '@domain/time/time-entry'
 import type { Params, RedmineHttpClient } from './http-client'
 
 const PAGE = 100
@@ -84,11 +90,28 @@ function toDetail(issue: IssueDto): IssueDetail {
 
 type PageResponse = Record<string, unknown> & { total_count?: number }
 
+const MAX_TIME_ENTRIES = 1000
+
+/** Without an activity Redmine uses its default one (when the instance has a default). */
+function timeEntryBody(draft: TimeEntryDraft) {
+    return {
+        issue_id: draft.issueId,
+        spent_on: draft.spentOn,
+        hours: draft.hours,
+        activity_id: draft.activityId,
+        comments: draft.comments
+    }
+}
+
 export class HttpRedmineGateway implements RedmineGateway {
     constructor(private readonly http: RedmineHttpClient) {}
 
     async currentUser(credentials?: RedmineCredentials): Promise<RedmineUser> {
-        const response = await this.http.request<{ user: RedmineUser }>('GET', '/my/account.json', { credentials })
+        // Only the connection screen asks for the current user: it shows the error after one attempt (30 s at most).
+        const response = await this.http.request<{ user: RedmineUser }>('GET', '/my/account.json', {
+            credentials,
+            noRetry: true
+        })
         return response.user
     }
 
@@ -185,6 +208,40 @@ export class HttpRedmineGateway implements RedmineGateway {
             '/enumerations/issue_priorities.json'
         )
         return response.issue_priorities
+    }
+
+    /** Up to 1000 entries: a week or an issue fits easily. */
+    async listTimeEntries(query: TimeEntryQuery): Promise<TimeEntry[]> {
+        const params: Params = {
+            user_id: query.mine ? 'me' : undefined,
+            issue_id: query.issueId,
+            from: query.from,
+            to: query.to
+        }
+        const page = await this.paginate<TimeEntry>('/time_entries.json', 'time_entries', params, MAX_TIME_ENTRIES)
+        return page.items
+    }
+
+    async createTimeEntry(draft: TimeEntryDraft): Promise<TimeEntry> {
+        const body = { time_entry: timeEntryBody(draft) }
+        const response = await this.http.request<{ time_entry: TimeEntry }>('POST', '/time_entries.json', { body })
+        return response.time_entry
+    }
+
+    async updateTimeEntry(id: number, draft: TimeEntryDraft): Promise<void> {
+        await this.http.request('PUT', `/time_entries/${id}.json`, { body: { time_entry: timeEntryBody(draft) } })
+    }
+
+    async deleteTimeEntry(id: number): Promise<void> {
+        await this.http.request('DELETE', `/time_entries/${id}.json`)
+    }
+
+    async listTimeEntryActivities(): Promise<TimeEntryActivity[]> {
+        const response = await this.http.request<{ time_entry_activities: TimeEntryActivity[] }>(
+            'GET',
+            '/enumerations/time_entry_activities.json'
+        )
+        return response.time_entry_activities
     }
 
     async listVersions(projectId: number): Promise<Version[]> {

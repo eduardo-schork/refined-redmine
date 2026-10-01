@@ -2,7 +2,8 @@ import type {
     CalendarRepository,
     MonitorStateRepository,
     NotificationRepository,
-    SettingsRepository
+    SettingsRepository,
+    TimerRepository
 } from '@application/ports/repositories'
 import { applyChange } from '@domain/calendar/event-editing'
 import type { CalendarChange } from '@domain/calendar/calendar-event'
@@ -12,6 +13,7 @@ import type { DeliveryConfirmation, DeliveryRecord } from '@domain/notification/
 import { withDefaults, type Settings } from '@domain/settings/settings'
 import type { CalendarFile, ConfigFile, LegacyNotification, StateFile } from './files'
 import type { JsonFile } from './json-file'
+import type { TimerState } from '@domain/time/timer'
 
 export class JsonSettingsRepository implements SettingsRepository {
     constructor(private readonly file: JsonFile<ConfigFile>) {}
@@ -85,6 +87,18 @@ export class JsonNotificationRepository implements NotificationRepository {
 
     clear(): void {
         this.file.update((state) => ({ ...state, events: [] }))
+    }
+}
+
+export class JsonTimerRepository implements TimerRepository {
+    constructor(private readonly file: JsonFile<StateFile>) {}
+
+    get(): TimerState | null {
+        return this.file.read().timer ?? null
+    }
+
+    save(timer: TimerState | null): void {
+        this.file.update((state) => ({ ...state, timer: timer ?? undefined }))
     }
 }
 

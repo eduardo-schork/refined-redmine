@@ -1,5 +1,6 @@
 import {
     Bell,
+    Clock,
     CalendarDays,
     Download,
     Flag,
@@ -23,6 +24,7 @@ import { Badge } from '../atoms/Badge'
 import { Kbd } from '../atoms/Kbd'
 import { Overline, StatusDot } from '../atoms/misc'
 import { NavItem } from '../molecules/NavItem'
+import { TimerWidget } from './time/TimerWidget'
 
 export function Sidebar({
     route,
@@ -75,6 +77,13 @@ export function Sidebar({
                     icon={<Flag size={15} />}
                 >
                     {t('nav.sprints')}
+                </NavItem>
+                <NavItem
+                    active={isActive('time')}
+                    onClick={() => onNavigate({ page: 'time' })}
+                    icon={<Clock size={15} />}
+                >
+                    {t('nav.time')}
                 </NavItem>
 
                 <div className="flex items-center justify-between px-2 pb-1 pt-4">
@@ -134,6 +143,7 @@ export function Sidebar({
                     {t('nav.settings')}
                 </NavItem>
             </nav>
+            <TimerWidget />
             <UpdateNotice onOpen={() => onNavigate({ page: 'settings', tab: 'general' })} />
             {settings.user && (
                 <footer className="flex items-center gap-2 border-t border-line px-3 py-2.5">

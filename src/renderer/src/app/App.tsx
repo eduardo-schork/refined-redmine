@@ -16,6 +16,7 @@ import NotificationsPage from '@/pages/NotificationsPage'
 import OnboardingPage from '@/pages/OnboardingPage'
 import SettingsPage from '@/pages/SettingsPage'
 import SprintsPage from '@/pages/SprintsPage'
+import TimePage from '@/pages/TimePage'
 import { ToastProvider } from '@/ui/molecules/Toast'
 import { BoardEditor } from '@/ui/organisms/BoardEditor'
 import { IssueModalProvider } from '@/ui/organisms/IssueModal'
@@ -97,6 +98,7 @@ function AuthenticatedApp() {
                         )}
                         {route.page === 'notifications' && <NotificationsPage />}
                         {route.page === 'log' && <LogPage />}
+                        {route.page === 'time' && <TimePage />}
                         {route.page === 'settings' && <SettingsPage key={route.tab} tab={route.tab} />}
                     </AppShell>
                     {newBoard && (

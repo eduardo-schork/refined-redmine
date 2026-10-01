@@ -1,6 +1,7 @@
 import type { RedmineUser } from '@domain/redmine/entities'
 import { isWellFormedSecret } from '@domain/shared/secrets'
-import { isHttpUrl, normalizeBaseUrl } from '@domain/redmine/links'
+import { loginErrorCode, prepareBaseUrl } from '@domain/redmine/connection'
+import { isHttpUrl } from '@domain/redmine/links'
 import { AppError } from '@domain/shared/errors'
 import type { SettingsView } from '../dto'
 import type { RedmineGateway } from '../ports/redmine-gateway'
@@ -38,7 +39,7 @@ export class LoginUseCase {
     ) {}
 
     async execute(rawUrl: string, rawKey: string): Promise<SettingsView> {
-        const baseUrl = normalizeBaseUrl(rawUrl)
+        const baseUrl = prepareBaseUrl(rawUrl)
         const apiKey = rawKey.trim()
         if (!isHttpUrl(baseUrl)) throw new AppError('auth.invalidUrl')
         if (!isWellFormedSecret(apiKey)) throw new AppError('auth.invalidKey')
@@ -55,9 +56,10 @@ export class LoginUseCase {
         try {
             return await this.gateway.currentUser({ baseUrl, apiKey })
         } catch (error) {
-            const isUnauthorized = error instanceof AppError && error.code === 'redmine.unauthorized'
-            if (isUnauthorized) throw new AppError('auth.invalidKey', {}, 401)
-            throw error
+            if (!(error instanceof AppError)) throw error
+            const code = loginErrorCode(error.code)
+            if (code === error.code) throw error
+            throw new AppError(code, error.params, error.status)
         }
     }
 }

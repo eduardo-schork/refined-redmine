@@ -13,6 +13,7 @@ import { MAX_SEARCH_RESULTS, parseIssueSearch, titleSearchQuery } from '@domain/
 import { AppError } from '@domain/shared/errors'
 import type { IssueEditOptions, IssueEditResult } from '../dto'
 import type { RedmineGateway } from '../ports/redmine-gateway'
+import type { TimeEntryActivity } from '@domain/time/time-entry'
 
 export class IssueQueries {
     constructor(private readonly gateway: RedmineGateway) {}
@@ -113,6 +114,14 @@ export class ReferenceDataQueries {
         return this.cached('priorities', async () => {
             const priorities = await this.gateway.listPriorities()
             return priorities.filter((priority) => priority.active !== false)
+        })
+    }
+
+    /** Kinds of work for time entries (Development, Meeting…); inactive ones are not offered. */
+    timeActivities(): Promise<TimeEntryActivity[]> {
+        return this.cached('timeActivities', async () => {
+            const activities = await this.gateway.listTimeEntryActivities()
+            return activities.filter((activity) => activity.active !== false)
         })
     }
 
