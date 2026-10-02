@@ -184,7 +184,12 @@ O quadro passa a aparecer também em **Configurações → Notificações → Mo
 Clicar em uma tarefa, em qualquer tela, abre o detalhe sem sair do app. As tarefas abertas ficam na lista de recentes da [busca rápida](#busca-rápida).
 
 - **Descrição**, com formatação (listas, tabelas, negrito, links).
-- **Anexos**, **Relações** e **Histórico** (comentários e mudanças de campos).
+- **Abas abaixo da descrição**: **Tarefas relacionadas** (aberta por padrão), **Anexos** e **Horas**, uma de cada vez. Ao lado do nome, cada aba mostra quantas tarefas ou anexos tem, ou as horas lançadas. As setas do teclado trocam de aba.
+- **Histórico**, abaixo das abas: comentários e mudanças de campos.
+- **Tarefas relacionadas**: as **Subtarefas** e as **Relações**. Cada tarefa aparece em uma linha com o **número** (clique na linha para abrir), o **título**, o **status** e o **responsável**. Passe o mouse no título para ver o tipo. Tarefas fechadas ficam com o número riscado.
+  - As subtarefas mostram quantas já foram fechadas ("1 de 3 fechadas") com uma barra de progresso.
+  - As relações ficam agrupadas pelo tipo, com o que segura a tarefa primeiro: **Bloqueada por**, **Bloqueia**, **Precede**, **Segue**, **Relacionada a**, **Duplica**, **Duplicada por**, **Copiada de** e **Copiada para**.
+  - A tarefa pai aparece no topo, ao lado do número.
 - **Resumo no topo**, abaixo do título: status, prioridade, previsão (colorida quando está perto ou vencida) e versão.
 - **Ações rápidas**, logo abaixo:
   - **Atribuir a mim** passa a tarefa para você no Redmine, com um clique. Só aparece quando a tarefa não é sua; um aviso confirma, ou diz se o Redmine não aplicou (o fluxo pode não deixar você ser responsável naquela etapa).
@@ -201,11 +206,31 @@ Clicar em uma tarefa, em qualquer tela, abre o detalhe sem sair do app. As taref
 - Também na lateral, só para leitura: autor, horas estimadas e gastas, campos personalizados e observadores.
 - **Abrir no Redmine** abre a tarefa no navegador.
 
+![Abas do detalhe, com as tarefas relacionadas](images/issue-links.png)
+
+### Anexos
+
+![Aba Anexos](images/issue-attachments.png)
+
+A aba **Anexos** mostra cada arquivo da tarefa como um cartão com o nome, o tamanho, quem anexou e quando. Imagens aparecem em miniatura; os outros arquivos, com o ícone do tipo (texto ou código, PDF, documento, planilha, apresentação, vídeo, áudio, arquivo compactado).
+
+Ao clicar num anexo:
+
+- **Imagens** (PNG, JPG, GIF, WebP, SVG…) e **arquivos de texto** (`.txt`, `.log`, `.json`, `.csv`, `.md`, `.sql`, código…) abrem **dentro do app**. JSON aparece já indentado. Arquivos de texto muito grandes mostram só o começo.
+- **PDF, documentos, planilhas, apresentações, vídeos e áudios** abrem no **app do sistema** (Preview, Word, Excel…).
+- **Arquivos compactados** (`.zip`, `.rar`…), **programas** e outros tipos abrem **no Redmine**, no navegador.
+
+![Visualizar anexo](images/attachment-preview.png)
+
+Na visualização, as setas (`←` `→` ou os botões) passam pelos outros anexos que dá para ver no app, e os botões no topo abrem o arquivo no app do sistema ou no Redmine. `Esc` fecha.
+
+Por segurança, o app nunca entrega ao sistema arquivos que podem executar algo ao abrir: programas (`.exe`, `.app`, `.dmg`…), scripts (`.bat`, `.js`, `.sh`, `.ps1`…), páginas (`.html`, `.svg`) e documentos do Office com macro (`.docm`, `.xlsm`, `.pptm`). Esses abrem no Redmine; os de texto ainda dá para ver dentro do app.
+
 ### Lançar horas
 
 ![Horas no detalhe da tarefa](images/time-issue.png)
 
-A seção **Horas** do detalhe mostra o total lançado contra o estimado ("13 h de 16 h estimadas") e todos os lançamentos da tarefa. Os seus aparecem destacados, com os botões para editar e excluir.
+A aba **Horas** do detalhe mostra o total lançado contra o estimado ("13 h de 16 h estimadas") e todos os lançamentos da tarefa. Os seus aparecem destacados, com os botões para editar e excluir.
 
 ![Lançar horas](images/time-dialog.png)
 

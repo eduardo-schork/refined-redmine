@@ -76,6 +76,10 @@ export const enUS: Resources = {
         'time.issue': 'Choose the issue of the entry.',
         'calendar.titleRequired': 'Give the event a title.',
         'calendar.invalidIssue': 'Invalid issue number.',
+        'attachment.tooLarge': 'File too large to open in the app (over {{max}} MB). Open it in Redmine.',
+        'attachment.notPreviewable': 'This file cannot be shown here. Open it in the system app or in Redmine.',
+        'attachment.blockedType': 'For safety, this file type only opens through Redmine.',
+        'attachment.openFailed': 'The system could not open the file: {{detail}}',
         unexpected: 'Unexpected error: {{detail}}'
     },
     fields: {
@@ -538,6 +542,17 @@ export const enUS: Resources = {
         empty: 'Type #1234 to open an issue, or part of the title to search every project.',
         keys: '↑↓ navigate · Enter open · Esc close'
     },
+    attachments: {
+        preview: 'Preview',
+        openInSystem: 'Open in the system app',
+        openInRedmine: 'Open in Redmine',
+        opening: 'Opening {{name}}…',
+        loading: 'Loading…',
+        truncated: 'Showing only the start of the file. Open it in the system app to see everything.',
+        previous: 'Previous',
+        next: 'Next',
+        position: '{{current}} of {{total}}'
+    },
     time: {
         log: 'Log time',
         logHint: 'Log time on this issue',
@@ -559,8 +574,6 @@ export const enUS: Resources = {
         updated: 'Entry on #{{id}} updated ({{hours}})',
         deleted: 'Entry deleted',
         confirmDelete: 'Delete the {{hours}} entry of {{date}}? This deletes it in Redmine.',
-        section_one: 'Hours ({{count}} entry)',
-        section_other: 'Hours ({{count}} entries)',
         spentOfEstimate: '{{spent}} of {{estimate}} estimated',
         spentOnly: '{{spent}} logged',
         noComment: 'no comment'
@@ -642,7 +655,15 @@ export const enUS: Resources = {
         noDescription: 'No description.',
         attachments: 'Attachments ({{count}})',
         subtasks: 'Subtasks ({{count}})',
+        subtasksClosed: '{{closed}} of {{total}} closed',
         relations: 'Relations',
+        tabs: {
+            links: 'Related issues',
+            attachments: 'Attachments',
+            time: 'Time',
+            noLinks: 'No subtasks or relations.',
+            noAttachments: 'No attachments.'
+        },
         history: 'History ({{count}})',
         commentPlaceholder: 'Add a comment (Markdown)…',
         comment: 'Comment',

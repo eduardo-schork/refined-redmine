@@ -5,7 +5,7 @@ import type { QuerySnapshot } from '@domain/monitor/query-diff'
 import type { MonitorStatus } from '@domain/monitor/monitor-status'
 import type { AppNotification } from '@domain/notification/notification'
 import type { DeliveryConfirmation, DeliveryRecord, NotifyPermissionInfo } from '@domain/notification/permission'
-import type { Issue, IssueDetail, IssueStatus, Page, RedmineUser, Version } from '@domain/redmine/entities'
+import type { Attachment, Issue, IssueDetail, IssueStatus, Page, RedmineUser, Version } from '@domain/redmine/entities'
 import type { IssueFilter } from '@domain/redmine/issue-filter'
 import { DEFAULT_SETTINGS, type Settings } from '@domain/settings/settings'
 import { AppError } from '@domain/shared/errors'
@@ -120,6 +120,19 @@ export class FakeGateway implements RedmineGateway {
             { id: 9, name: 'Desenvolvimento', is_default: true },
             { id: 10, name: 'Reunião', active: false }
         ]
+    }
+    attachments = new Map<number, { attachment: Attachment; bytes: Uint8Array }>()
+    downloads: number[] = []
+    async getAttachment(id: number) {
+        const found = this.attachments.get(id)
+        if (!found) throw new AppError('redmine.notFound')
+        return found.attachment
+    }
+    async downloadAttachment(id: number, maxBytes: number) {
+        this.downloads.push(id)
+        const { bytes } = this.attachments.get(id)!
+        if (bytes.length > maxBytes) throw new AppError('attachment.tooLarge')
+        return bytes
     }
 }
 

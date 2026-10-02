@@ -60,6 +60,8 @@ function startApp(): void {
     container.reminders.start()
     container.updates.start()
     container.timer.start()
+    container.fileOpener.clear()
+    app.on('will-quit', () => container.fileOpener.clear())
     tray.setTimer(container.timer.status())
     // The stopwatch does not count while the computer sleeps or the screen is locked.
     powerMonitor.on('suspend', () => container.timer.onSleep())

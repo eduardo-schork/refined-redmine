@@ -33,12 +33,20 @@ export type RequestObserver = (record: RequestRecord) => void
 
 type AttemptOutcome<T> = { succeeded: true; value: T } | { succeeded: false; error: AppError; canRetry: boolean }
 
-interface AttemptRequest {
+interface AttemptRequest<T> {
     url: URL
     method: HttpMethod
     apiKey: string
     body: unknown
     attempt: number
+    reader: ResponseReader<T>
+}
+
+/** How a successful response body is read: JSON for the API, bytes for file downloads. */
+interface ResponseReader<T> {
+    accept: string
+    redirect: 'follow' | 'error'
+    read(response: Response): Promise<{ value: T; bytes: number }>
 }
 
 const TIMEOUT_MS = 30_000
@@ -121,6 +129,36 @@ function parseBody<T>(text: string): T {
     return JSON.parse(text) as T
 }
 
+function jsonReader<T>(): ResponseReader<T> {
+    return {
+        accept: 'application/json',
+        redirect: 'follow',
+        async read(response) {
+            const text = await response.text()
+            return { value: parseBody<T>(text), bytes: new TextEncoder().encode(text).length }
+        }
+    }
+}
+
+/**
+ * Files up to `maxBytes`. Redirects are refused: fetch keeps custom headers across origins, so following one could
+ * hand the API key to another host.
+ */
+function bytesReader(maxBytes: number): ResponseReader<Uint8Array> {
+    const tooLarge = () => new AppError('attachment.tooLarge', { max: Math.round(maxBytes / (1024 * 1024)) })
+    return {
+        accept: '*/*',
+        redirect: 'error',
+        async read(response) {
+            const declaredLength = Number(response.headers.get('content-length') ?? 0)
+            if (declaredLength > maxBytes) throw tooLarge()
+            const bytes = new Uint8Array(await response.arrayBuffer())
+            if (bytes.length > maxBytes) throw tooLarge()
+            return { value: bytes, bytes: bytes.length }
+        }
+    }
+}
+
 /** HTTP client for the Redmine REST API: API key authentication, timeout, retries on GET. */
 export class RedmineHttpClient {
     constructor(
@@ -130,7 +168,16 @@ export class RedmineHttpClient {
         private readonly observe: RequestObserver = () => {}
     ) {}
 
-    async request<T>(method: HttpMethod, path: string, options: RequestOptions = {}): Promise<T> {
+    request<T>(method: HttpMethod, path: string, options: RequestOptions = {}): Promise<T> {
+        return this.send(method, path, options, jsonReader<T>())
+    }
+
+    /** A file from Redmine (attachments), as bytes, refusing anything larger than `maxBytes`. */
+    download(path: string, maxBytes: number): Promise<Uint8Array> {
+        return this.send('GET', path, {}, bytesReader(maxBytes))
+    }
+
+    private async send<T>(method: HttpMethod, path: string, options: RequestOptions, reader: ResponseReader<T>) {
         const credentials = options.credentials ?? this.credentials()
         if (!credentials?.baseUrl || !credentials.apiKey) throw new AppError('redmine.notConfigured')
 
@@ -139,8 +186,8 @@ export class RedmineHttpClient {
         let lastError: AppError | undefined
 
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-            const request = { url, method, apiKey: credentials.apiKey, body: options.body, attempt }
-            const outcome = await this.attempt<T>(request)
+            const request = { url, method, apiKey: credentials.apiKey, body: options.body, attempt, reader }
+            const outcome = await this.attempt(request)
             if (outcome.succeeded) return outcome.value
 
             lastError = outcome.error
@@ -151,7 +198,7 @@ export class RedmineHttpClient {
     }
 
     /** Client errors (4xx) are final; server errors (5xx) and network failures may be retried. */
-    private async attempt<T>(request: AttemptRequest): Promise<AttemptOutcome<T>> {
+    private async attempt<T>(request: AttemptRequest<T>): Promise<AttemptOutcome<T>> {
         const startedAt = Date.now()
         const record = (fields: Pick<RequestRecord, 'status' | 'bytes' | 'errorCode'>) => {
             const url = `${request.url.pathname}${request.url.search}`
@@ -161,26 +208,31 @@ export class RedmineHttpClient {
         try {
             const response = await this.fetch(request.url.toString(), {
                 method: request.method,
+                redirect: request.reader.redirect,
                 headers: {
-                    Accept: 'application/json',
+                    Accept: request.reader.accept,
                     'Content-Type': 'application/json',
                     'X-Redmine-API-Key': request.apiKey
                 },
                 body: request.body === undefined ? undefined : JSON.stringify(request.body),
                 signal: AbortSignal.timeout(TIMEOUT_MS)
             })
-            const text = await response.text()
-            const bytes = new TextEncoder().encode(text).length
             if (response.ok) {
+                const { value, bytes } = await request.reader.read(response)
                 record({ status: response.status, bytes })
-                return { succeeded: true, value: parseBody<T>(text) }
+                return { succeeded: true, value }
             }
 
+            const text = await response.text()
             const error = httpError(response.status, text)
-            record({ status: response.status, bytes, errorCode: error.code })
+            record({ status: response.status, bytes: new TextEncoder().encode(text).length, errorCode: error.code })
             const canRetry = response.status >= 500
             return { succeeded: false, error, canRetry }
         } catch (error) {
+            if (error instanceof AppError) {
+                record({ bytes: 0, errorCode: error.code })
+                throw error
+            }
             if (error instanceof SyntaxError) {
                 record({ bytes: 0, errorCode: 'redmine.invalidResponse' })
                 throw new AppError('redmine.invalidResponse')

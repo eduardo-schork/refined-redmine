@@ -9,7 +9,6 @@ import { cn } from '@/lib/cn'
 import { Avatar } from '../../atoms/Avatar'
 import { Button } from '../../atoms/Button'
 import { IconButton } from '../../atoms/IconButton'
-import { Overline } from '../../atoms/misc'
 import { useToast } from '../../molecules/Toast'
 import { TimeEntryDialog } from './TimeEntryDialog'
 
@@ -27,10 +26,9 @@ export function IssueTimeSection({ issue }: { issue: IssueDetail }) {
         : t('time.spentOnly', { spent: dates.hours(spent) })
 
     return (
-        <section className="mt-7">
-            <div className="mb-2 flex items-center gap-2">
-                <Overline>{t('time.section', { count: entries.length })}</Overline>
-                <span className="text-xs text-muted">{totals}</span>
+        <section>
+            <div className="mb-3 flex items-center gap-2">
+                <span className="text-sm text-muted">{totals}</span>
                 <Button variant="ghost" className="ml-auto h-7 px-2 text-xs" onClick={() => setEditing({})}>
                     <Plus size={13} /> {t('time.log')}
                 </Button>

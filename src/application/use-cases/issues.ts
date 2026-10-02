@@ -12,6 +12,7 @@ import type { IssueFilter } from '@domain/redmine/issue-filter'
 import { MAX_SEARCH_RESULTS, parseIssueSearch, titleSearchQuery } from '@domain/redmine/issue-search'
 import { AppError } from '@domain/shared/errors'
 import type { IssueEditOptions, IssueEditResult } from '../dto'
+import { issuesByIds } from './issue-lookup'
 import type { RedmineGateway } from '../ports/redmine-gateway'
 import type { TimeEntryActivity } from '@domain/time/time-entry'
 
@@ -28,6 +29,11 @@ export class IssueQueries {
 
     allowedStatuses(id: number): Promise<IssueStatus[]> {
         return this.gateway.allowedStatuses(id)
+    }
+
+    /** Several issues by number, to show the status and assignee of subtasks and related issues. */
+    byIds(ids: number[]): Promise<Issue[]> {
+        return issuesByIds(this.gateway, ids)
     }
 
     /** Quick search: an issue number opens that issue; text searches the titles in every project. */

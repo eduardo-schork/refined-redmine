@@ -5,6 +5,7 @@ import type {
     TimeEntryQuery
 } from '@application/ports/redmine-gateway'
 import type {
+    Attachment,
     Issue,
     IssueDetail,
     IssuePriority,
@@ -242,6 +243,16 @@ export class HttpRedmineGateway implements RedmineGateway {
             '/enumerations/time_entry_activities.json'
         )
         return response.time_entry_activities
+    }
+
+    async getAttachment(id: number): Promise<Attachment> {
+        const response = await this.http.request<{ attachment: Attachment }>('GET', `/attachments/${id}.json`)
+        return response.attachment
+    }
+
+    /** Built from the id on the configured Redmine, never from `content_url`, which could point anywhere. */
+    downloadAttachment(id: number, maxBytes: number): Promise<Uint8Array> {
+        return this.http.download(`/attachments/download/${id}`, maxBytes)
     }
 
     async listVersions(projectId: number): Promise<Version[]> {

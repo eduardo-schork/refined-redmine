@@ -42,6 +42,10 @@ export type ErrorCode =
     | 'time.issue'
     | 'calendar.titleRequired'
     | 'calendar.invalidIssue'
+    | 'attachment.tooLarge'
+    | 'attachment.notPreviewable'
+    | 'attachment.blockedType'
+    | 'attachment.openFailed'
     | 'unexpected'
 
 export type ErrorParams = Record<string, string | number>

@@ -78,6 +78,10 @@ export const ptBR = {
         'time.issue': 'Escolha a tarefa do lançamento.',
         'calendar.titleRequired': 'Dê um título ao compromisso.',
         'calendar.invalidIssue': 'Número de tarefa inválido.',
+        'attachment.tooLarge': 'Arquivo grande demais para abrir pelo app (mais de {{max}} MB). Abra no Redmine.',
+        'attachment.notPreviewable': 'Não dá para mostrar este arquivo aqui. Abra no app do sistema ou no Redmine.',
+        'attachment.blockedType': 'Por segurança, este tipo de arquivo só abre pelo Redmine.',
+        'attachment.openFailed': 'O sistema não conseguiu abrir o arquivo: {{detail}}',
         unexpected: 'Erro inesperado: {{detail}}'
     },
     fields: {
@@ -542,6 +546,17 @@ export const ptBR = {
         empty: 'Digite #1234 para abrir uma tarefa, ou parte do título para procurar em todos os projetos.',
         keys: '↑↓ navegar · Enter abrir · Esc fechar'
     },
+    attachments: {
+        preview: 'Ver aqui',
+        openInSystem: 'Abrir no app do sistema',
+        openInRedmine: 'Abrir no Redmine',
+        opening: 'Abrindo {{name}}…',
+        loading: 'Carregando…',
+        truncated: 'Mostrando só o começo do arquivo. Abra no app do sistema para ver tudo.',
+        previous: 'Anterior',
+        next: 'Próximo',
+        position: '{{current}} de {{total}}'
+    },
     time: {
         log: 'Lançar horas',
         logHint: 'Lançar horas nesta tarefa',
@@ -563,8 +578,6 @@ export const ptBR = {
         updated: 'Lançamento de #{{id}} atualizado ({{hours}})',
         deleted: 'Lançamento excluído',
         confirmDelete: 'Excluir o lançamento de {{hours}} em {{date}}? Isso apaga no Redmine.',
-        section_one: 'Horas ({{count}} lançamento)',
-        section_other: 'Horas ({{count}} lançamentos)',
         spentOfEstimate: '{{spent}} de {{estimate}} estimadas',
         spentOnly: '{{spent}} lançadas',
         noComment: 'sem comentário'
@@ -647,7 +660,15 @@ export const ptBR = {
         noDescription: 'Sem descrição.',
         attachments: 'Anexos ({{count}})',
         subtasks: 'Subtarefas ({{count}})',
+        subtasksClosed: '{{closed}} de {{total}} fechadas',
         relations: 'Relações',
+        tabs: {
+            links: 'Tarefas relacionadas',
+            attachments: 'Anexos',
+            time: 'Horas',
+            noLinks: 'Nenhuma subtarefa ou relação.',
+            noAttachments: 'Nenhum anexo.'
+        },
         history: 'Histórico ({{count}})',
         commentPlaceholder: 'Adicionar comentário (Markdown)…',
         comment: 'Comentar',
