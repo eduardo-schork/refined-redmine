@@ -9,8 +9,10 @@ As versões são publicadas como **Releases** do repositório privado `eduardo-s
 | `develop` | onde o trabalho do dia a dia vai (commits e push)                                                             | não; só roda a verificação (`ci.yml`) |
 | `master`  | o que está publicado; recebe **merge da `develop`** (de preferência por pull request) ou **correção urgente** | sim, quando chega `feat:`/`fix:`      |
 
-- **Correção urgente** direto no `master` (`fix: …`): depois de publicada, traga para a `develop` com `git checkout develop && git merge master`, para as duas não divergirem.
-- **O commit de release** (`chore: release x.y.z`) é feito pela Action no `master`. Depois de cada versão, atualize a `develop` com o `master` (`git merge master`), para ela ter o número novo e o CHANGELOG já renomeado.
+- **O commit de release** (`chore: release x.y.z`) é feito pela Action no `master`, e **a própria Action traz o `master` de volta para a `develop`** (job `sync-develop`): a `develop` fica com o número novo e o CHANGELOG já renomeado. No computador, basta um `git pull` na `develop`.
+- **Correção urgente** direto no `master` (`fix: …`): vira versão, então a Action também a leva para a `develop`.
+- **Se der conflito** (geralmente no `CHANGELOG.md`, quando a `develop` ganhou commits durante o build), a Action **não envia nada**, o job `sync-develop` fica vermelho com as instruções no resumo e o GitHub avisa por e-mail. A versão já foi publicada; só falta fazer à mão: `git checkout develop && git merge master`, resolver e enviar.
+- Push no `master` só com `docs:`/`chore:` não gera versão nem sincroniza: traga para a `develop` com `git merge master` quando precisar.
 
 ### Proteger o `master` (uma vez)
 
@@ -37,7 +39,8 @@ Quando há versão nova, a Action:
 2. roda `npm run check`;
 3. troca `## Próxima versão` do `CHANGELOG.md` pelo número, atualiza `package.json` e `package-lock.json` e gera os instaladores: os dois `.dmg` num Mac do GitHub e o `.exe` num Windows do GitHub;
 4. faz o commit `chore: release <versão>`, cria a tag `v<versão>` e envia os dois juntos (`--atomic`: se o `master` mudou no meio, nada é enviado e nada é publicado);
-5. cria a Release com o texto da seção do CHANGELOG, envia os 3 instaladores e **publica** (`scripts/release.mjs`).
+5. cria a Release com o texto da seção do CHANGELOG, envia os 3 instaladores e **publica** (`scripts/release.mjs`);
+6. leva o `master` para a `develop` (avança a `develop` quando ela não tem nada novo; se tiver, faz o commit `chore: merge master into develop after vX.Y.Z`; com conflito, não envia nada e avisa).
 
 Os apps com token veem a versão na próxima verificação (ou em **Verificar agora**).
 
@@ -63,7 +66,7 @@ A Release precisa sair no **seu** nome: os apps só aceitam versões e instalado
 3. **Guardar o token**: dentro do environment `release`, **Environment secrets → Add secret**, nome `RELEASE_TOKEN`, valor = o token. Use o secret **do environment**, não o do repositório.
 4. **Settings → Actions → General**: deixe as Actions ligadas. "Workflow permissions" pode ficar em **Read** (os workflows pedem só leitura; quem publica é o seu token).
 
-Só o job `publish` usa o `RELEASE_TOKEN`. Os jobs de verificação e de build, que rodam `npm ci` com código de terceiros, não o recebem.
+Só os jobs `publish` e `sync-develop` usam o `RELEASE_TOKEN`. Os jobs de verificação e de build, que rodam `npm ci` com código de terceiros, não o recebem; o `sync-develop` só roda `git`. Se um dia a `develop` ganhar um ruleset, coloque **Repository admin** na bypass list, como no `master`, senão a Action não consegue enviar.
 
 **Trocar ou revogar**: gere um token novo e substitua o valor de `RELEASE_TOKEN` no environment. Para cortar na hora, revogue o token em <https://github.com/settings/personal-access-tokens>.
 

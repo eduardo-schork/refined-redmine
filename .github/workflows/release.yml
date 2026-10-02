@@ -123,3 +123,43 @@ jobs:
         run: node scripts/release.mjs --skip-build --allow-dirty
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+
+  # Brings the release commit (version and renamed CHANGELOG) back to develop, so the two branches do not drift.
+  # Only git runs here, no npm: the token is never in the same job as third-party code.
+  sync-develop:
+    needs: [plan, publish]
+    if: needs.plan.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN }}
+      - name: Merge master into develop
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin master
+          # Usual case: develop has nothing beyond what was released, so it just moves forward (no extra commit).
+          if git merge --ff-only origin/master; then
+            git push origin HEAD:develop
+            echo "develop moved forward to v$VERSION." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if git merge --no-ff -m "chore: merge master into develop after v$VERSION" origin/master; then
+            git push origin HEAD:develop
+            echo "master merged into develop after v$VERSION." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          git merge --abort
+          {
+            echo "### develop was not updated"
+            echo "Version v$VERSION was published, but merging master into develop has conflicts (usually CHANGELOG.md)."
+            echo "Run \`git checkout develop && git merge master\`, solve the conflicts and push develop."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::error::Conflicts merging master into develop; see the job summary."
+          exit 1
