@@ -43,6 +43,29 @@ Registro de todas as regras que o app aplica. Cada regra aponta para onde está 
 | **Atribuir a mim**: grava só o responsável = usuário conectado (mesmo caminho da edição de campos: um `PUT` e a tarefa relida para conferir). Escondido quando a tarefa já é do usuário; se o Redmine ignorar o campo, avisa em vez de confirmar. | `AssignToMeButton`, `EditIssueFieldsUseCase` |
 | Cópias: link = URL da tarefa no Redmine configurado; número = `#1234`; título sem espaços nas pontas; referência = `#1234 Título`; Markdown = `[#1234 Título](link)`, com `[` e `]` do título escapados para não quebrar o link.                  | `copyText`                                   |
 
+## Subtarefas e relações
+
+| Regra                                                                                                                                                                                                                  | Onde                            |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| Relação vista do lado da tarefa aberta: o Redmine manda o tipo do ponto de vista de `issue_id`, então "A bloqueia B" aparece em B como "Bloqueada por A".                                                              | `relationFrom`                  |
+| Relações agrupadas por tipo, nesta ordem: bloqueada por, bloqueia, precede, segue, relacionada a, duplica, duplicada por, copiada de, copiada para; tipos desconhecidos no fim. A mesma tarefa não se repete no grupo. | `relationGroups`                |
+| Status, responsável e tipo de subtarefas e relacionadas vêm de uma só listagem (`issue_id=<ids>`, qualquer status). Tarefas que o usuário não pode ver ficam só com o número (e o título, nas subtarefas).             | `linkedIssueIds`, `issuesByIds` |
+| "N de M fechadas": subtarefas com status fechado entre as carregadas.                                                                                                                                                  | `closedSubtaskCount`            |
+| Tarefa fechada aparece com o número riscado.                                                                                                                                                                           | `LinkedIssueRow`                |
+
+## Anexos
+
+| Regra                                                                                                                                                                                                                                      | Onde                                                    |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------- |
+| Tipo pela extensão; o tipo do Redmine (`content_type`) só vale quando a extensão é desconhecida. Tipos: imagem, PDF, texto/código, vídeo, áudio, documento, planilha, apresentação, compactado, outro.                                     | `attachmentKind`                                        |
+| Dentro do app: imagens que o Chromium desenha (PNG, JPG, GIF, WebP, BMP, SVG, ICO, AVIF) até 15 MB e texto até 2 MB (mostra até 200 mil caracteres). HEIC e TIFF vão para o app do sistema.                                                | `canPreview`, `PREVIEW_MAX_BYTES`, `TEXT_PREVIEW_CHARS` |
+| O tipo da imagem vem dos primeiros bytes do arquivo, nunca do nome nem do Redmine; bytes que não são imagem não são mostrados. Texto com byte nulo no começo é tratado como binário e não é mostrado.                                      | `sniffImageType`, `looksBinary`                         |
+| Texto em UTF-8; se não for UTF-8 válido, Windows-1252 (arquivos de ferramentas antigas do Windows).                                                                                                                                        | `decodeText`                                            |
+| App do sistema: imagem, PDF, texto, vídeo, áudio, documento, planilha e apresentação, até 200 MB; **nunca** compactados nem extensões que executam ao abrir (programas, scripts, páginas, SVG, Office com macro). O resto abre no Redmine. | `canOpenInSystem`, `RUNNABLE_EXTENSIONS`                |
+| Nome, tipo e tamanho são lidos do Redmine pelo id antes de mostrar ou abrir, então as regras valem para o arquivo real e não para o que a tela informou.                                                                                   | `AttachmentUseCases`                                    |
+| Nome gravado em disco: sem pastas, sem caracteres reservados, até 120 caracteres mantendo a extensão.                                                                                                                                      | `safeFileName`                                          |
+| Miniaturas: só imagens de até 5 MB carregam ao abrir a aba.                                                                                                                                                                                | `THUMBNAIL_MAX_BYTES`                                   |
+
 ## Horas
 
 | Regra                                                                                                                                                                                                 | Onde                                                       |

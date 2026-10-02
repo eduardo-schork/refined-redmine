@@ -1,3 +1,4 @@
+import type { AttachmentPreview } from '@domain/redmine/attachment-kind'
 import type {
     AppInfo,
     BoardIssues,
@@ -51,6 +52,8 @@ export interface RefinedApi {
         list(filter: IssueFilter, max?: number): Page<Issue>
         get(id: number): IssueDetail
         allowedStatuses(id: number): IssueStatus[]
+        /** Several issues by number, in any status (ones the user cannot see are left out). */
+        byIds(ids: number[]): Issue[]
         changeStatus(id: number, statusId: number): void
         comment(id: number, notes: string): void
         /** Quick search: "#1234" or "1234" finds that issue; text searches the titles. */
@@ -74,6 +77,12 @@ export interface RefinedApi {
         remove(id: number): void
         /** Logs the previous week's entries again one week later; returns how many were created. */
         repeatWeek(previousWeekStart: LocalDate, previousWeekEnd: LocalDate): number
+    }
+    attachments: {
+        /** Image (data URL) or text of an attachment, to show inside the app. */
+        preview(id: number): AttachmentPreview
+        /** Downloads and opens in the system's default app; refused for files that could run code. */
+        open(id: number): void
     }
     timer: {
         status(): TimerState | null
@@ -140,9 +149,10 @@ export interface RefinedApi {
 export const API_METHODS = {
     session: ['get', 'login', 'logout'],
     settings: ['update'],
-    issues: ['list', 'get', 'allowedStatuses', 'changeStatus', 'comment', 'search', 'edit', 'editOptions'],
+    issues: ['list', 'get', 'allowedStatuses', 'byIds', 'changeStatus', 'comment', 'search', 'edit', 'editOptions'],
     reference: ['statuses', 'projects', 'savedQueries', 'priorities', 'timeActivities'],
     time: ['forIssue', 'mine', 'log', 'edit', 'remove', 'repeatWeek'],
+    attachments: ['preview', 'open'],
     timer: ['status', 'start', 'pause', 'resume', 'stop', 'discard'],
     boards: ['issues', 'save', 'remove', 'move'],
     sprints: ['list', 'stats', 'inspectProject'],

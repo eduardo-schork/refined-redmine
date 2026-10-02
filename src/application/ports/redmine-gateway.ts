@@ -1,4 +1,5 @@
 import type {
+    Attachment,
     Issue,
     IssueDetail,
     IssuePriority,
@@ -54,4 +55,7 @@ export interface RedmineGateway {
     updateTimeEntry(id: number, draft: TimeEntryDraft): Promise<void>
     deleteTimeEntry(id: number): Promise<void>
     listTimeEntryActivities(): Promise<TimeEntryActivity[]>
+    getAttachment(id: number): Promise<Attachment>
+    /** The attachment's content from the configured Redmine; refuses files larger than `maxBytes`. */
+    downloadAttachment(id: number, maxBytes: number): Promise<Uint8Array>
 }

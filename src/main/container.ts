@@ -50,6 +50,7 @@ import {
     JsonSettingsRepository,
     JsonTimerRepository
 } from '@infra/persistence/repositories'
+import { TempFileOpener } from '@infra/electron/temp-file-opener'
 import { RedmineHttpClient } from '@infra/redmine/http-client'
 import { HttpRedmineGateway } from '@infra/redmine/http-redmine-gateway'
 import { systemClock, timerScheduler, uuidGenerator } from '@infra/system/system'
@@ -63,6 +64,7 @@ import {
     RepeatWeekUseCase,
     TimeQueries
 } from '@application/use-cases/time'
+import { AttachmentUseCases } from '@application/use-cases/attachments'
 import { electronIdleProbe } from '@infra/electron/idle-probe'
 
 export interface Presentation {
@@ -198,6 +200,8 @@ export function createContainer(presentation: () => Presentation) {
     const deleteEvent = new DeleteCalendarEventUseCase(calendarRepo, clock)
     const permission = new NotificationPermissionService(permissionProbe, notifier, state, systemClock, appCopy)
     const timeQueries = new TimeQueries(gateway)
+    const fileOpener = new TempFileOpener()
+    const attachments = new AttachmentUseCases(gateway, fileOpener)
     const logTime = new LogTimeUseCase(gateway)
     const editTime = new EditTimeEntryUseCase(gateway)
     const deleteTime = new DeleteTimeEntryUseCase(gateway)
@@ -267,6 +271,7 @@ export function createContainer(presentation: () => Presentation) {
             list: (filter, max) => issues.list(filter, max),
             get: (id) => issues.get(id),
             allowedStatuses: (id) => issues.allowedStatuses(id),
+            byIds: (ids) => issues.byIds(ids),
             changeStatus: (id, statusId) => changeStatus.execute(id, statusId),
             comment: (id, notes) => comment.execute(id, notes),
             search: (input) => issues.search(input),
@@ -287,6 +292,10 @@ export function createContainer(presentation: () => Presentation) {
             edit: (id, draft) => editTime.execute(id, draft),
             remove: (id) => deleteTime.execute(id),
             repeatWeek: (from, to) => repeatWeek.execute(from, to)
+        },
+        attachments: {
+            preview: (id) => attachments.preview(id),
+            open: (id) => attachments.open(id)
         },
         timer: {
             status: () => timer.status(),
@@ -345,5 +354,5 @@ export function createContainer(presentation: () => Presentation) {
         }
     }
 
-    return { api, monitor, reminders, updates, localization, feed, timer }
+    return { api, monitor, reminders, updates, localization, feed, timer, fileOpener }
 }

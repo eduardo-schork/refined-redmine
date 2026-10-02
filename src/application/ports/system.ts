@@ -40,6 +40,11 @@ export interface AppEventsPublisher {
     timerChanged(timer: TimerState | null): void
 }
 
+/** Hands a downloaded file to the operating system's default app for its type. */
+export interface FileOpener {
+    open(fileName: string, bytes: Uint8Array): Promise<void>
+}
+
 /** Seconds since the last keyboard or mouse use, from the operating system. */
 export interface IdleProbe {
     idleSeconds(): number

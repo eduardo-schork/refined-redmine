@@ -1,15 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { ExternalLink, Link2, Paperclip, X } from 'lucide-react'
-import type {
-    Attachment,
-    CustomFieldValue,
-    IssueDetail,
-    Journal,
-    JournalDetail,
-    Relation
-} from '@domain/redmine/entities'
+import { ExternalLink, X } from 'lucide-react'
+import type { CustomFieldValue, IssueDetail, Journal, JournalDetail } from '@domain/redmine/entities'
 import { RedmineLinks } from '@domain/redmine/links'
-import { relationFrom } from '@domain/redmine/relations'
 import { useChangeIssueStatus, useCommentOnIssue, useIssue } from '@/hooks/issues'
 import { useStatuses } from '@/hooks/reference'
 import { useSettings } from '@/hooks/session'
@@ -20,15 +12,15 @@ import { Avatar } from '../atoms/Avatar'
 import { Button } from '../atoms/Button'
 import { Select, Textarea } from '../atoms/fields'
 import { IconButton } from '../atoms/IconButton'
-import { Overline, TextLink } from '../atoms/misc'
+import { Overline } from '../atoms/misc'
 import { Dialog } from '../molecules/Dialog'
 import { Markdown } from '../molecules/Markdown'
 import { Alert, Property } from '../molecules/surfaces'
 import { useToast } from '../molecules/Toast'
 import { IssueFieldEditors } from './IssueFieldEditors'
 import { DueChip, PriorityChip, VersionChip } from '../molecules/issue-chips'
+import { IssueDetailTabs } from './IssueDetailTabs'
 import { IssueQuickActions } from './IssueQuickActions'
-import { IssueTimeSection } from './time/IssueTimeSection'
 import { StatusTag } from '../molecules/StatusTag'
 
 type Translate = ReturnType<typeof useI18n>['t']
@@ -105,10 +97,7 @@ function IssueModal({ id, onClose, canGoBack }: { id: number; onClose: () => voi
                 <div className="flex min-h-0 flex-1">
                     <div className="min-w-0 flex-1 overflow-y-auto px-6 py-5">
                         <Description issue={issue} {...markdownLinks} />
-                        <Attachments attachments={issue.attachments} links={links} />
-                        <Subtasks subtasks={issue.children} />
-                        <Relations issueId={id} relations={issue.relations} />
-                        <IssueTimeSection issue={issue} />
+                        <IssueDetailTabs key={issue.id} issue={issue} links={links} onOpenIssue={openIssue} />
                         <History issue={issue} statusName={statusName} {...markdownLinks} />
                         <CommentBox comment={comment} saving={saving} />
                     </div>
@@ -187,72 +176,6 @@ function Description({ issue, links, onIssue, onExternal }: { issue: IssueDetail
         return <p className="text-sm italic text-muted">{t('issue.noDescription')}</p>
     }
     return <Markdown text={issue.description} links={links} onIssue={onIssue} onExternal={onExternal} />
-}
-
-function Attachments({ attachments, links }: { attachments: Attachment[]; links: RedmineLinks }) {
-    const { t, dates } = useI18n()
-    if (attachments.length === 0) return null
-    return (
-        <Block title={t('issue.attachments', { count: attachments.length })}>
-            <ul className="flex flex-col gap-1">
-                {attachments.map((attachment) => (
-                    <li key={attachment.id}>
-                        <button
-                            className="flex items-center gap-1.5 text-sm text-accent hover:underline"
-                            onClick={() => openExternal(links.attachment(attachment.id))}
-                        >
-                            <Paperclip size={13} /> {attachment.filename}
-                            <span className="text-xs text-muted">
-                                · {attachment.author.name} · {dates.date(attachment.created_on)}
-                            </span>
-                        </button>
-                    </li>
-                ))}
-            </ul>
-        </Block>
-    )
-}
-
-function Subtasks({ subtasks }: { subtasks: IssueDetail['children'] }) {
-    const { t } = useI18n()
-    const openIssue = useOpenIssue()
-    if (subtasks.length === 0) return null
-    return (
-        <Block title={t('issue.subtasks', { count: subtasks.length })}>
-            <ul className="flex flex-col gap-1">
-                {subtasks.map((subtask) => (
-                    <li key={subtask.id}>
-                        <TextLink
-                            className="text-sm"
-                            onClick={() => openIssue(subtask.id)}
-                        >{`${subtask.tracker.name} #${subtask.id}: ${subtask.subject}`}</TextLink>
-                    </li>
-                ))}
-            </ul>
-        </Block>
-    )
-}
-
-function Relations({ issueId, relations }: { issueId: number; relations: Relation[] }) {
-    const { t } = useI18n()
-    const openIssue = useOpenIssue()
-    if (relations.length === 0) return null
-    return (
-        <Block title={t('issue.relations')}>
-            <ul className="flex flex-col gap-1">
-                {relations.map((relation) => {
-                    const { type, otherId } = relationFrom(issueId, relation)
-                    return (
-                        <li key={relation.id} className="flex items-center gap-1.5 text-sm">
-                            <Link2 size={13} className="text-muted" />
-                            <span className="text-muted">{t(`issue.relation.${type}`, { defaultValue: type })}</span>
-                            <TextLink onClick={() => openIssue(otherId)}>#{otherId}</TextLink>
-                        </li>
-                    )
-                })}
-            </ul>
-        </Block>
-    )
 }
 
 function CommentBox({ comment, saving }: { comment: ReturnType<typeof useCommentOnIssue>; saving: boolean }) {

@@ -1,7 +1,7 @@
 // Fake Redmine with fictional data, used to take the user manual screenshots without exposing real tasks.
 // Usage: node scripts/demo-redmine.mjs [--seed <profile dir>] [--port 4567]
 // Then: REFINED_REDMINE_USER_DATA=<profile dir> npm run dev
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { join } from 'node:path'
 
@@ -306,6 +306,155 @@ function matchesFilter(item, params) {
     )
 }
 
+/** A one-page PDF with a line of text, with the byte offsets PDF readers need. */
+function tinyPdf(text) {
+    const objects = [
+        '<< /Type /Catalog /Pages 2 0 R >>',
+        '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+        '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>',
+        `<< /Length ${text.length + 40} >>\nstream\nBT /F1 18 Tf 60 760 Td (${text}) Tj ET\nendstream`,
+        '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'
+    ]
+    let pdf = '%PDF-1.4\n'
+    const offsets = objects.map((object, index) => {
+        const offset = pdf.length
+        pdf += `${index + 1} 0 obj\n${object}\nendobj\n`
+        return offset
+    })
+    const xref = pdf.length
+    const entries = offsets.map((offset) => `${String(offset).padStart(10, '0')} 00000 n \n`).join('')
+    pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${entries}`
+    pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`
+    return Buffer.from(pdf, 'latin1')
+}
+
+const cepFlowSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="160" font-family="sans-serif" font-size="14">
+<rect width="480" height="160" fill="#f6f7f9"/>
+<rect x="20" y="55" width="120" height="50" rx="8" fill="#4f7cff"/><text x="80" y="85" fill="#fff" text-anchor="middle">CEP digitado</text>
+<rect x="180" y="55" width="120" height="50" rx="8" fill="#22a06b"/><text x="240" y="85" fill="#fff" text-anchor="middle">API de CEP</text>
+<rect x="340" y="55" width="120" height="50" rx="8" fill="#e2b203"/><text x="400" y="85" text-anchor="middle">Campos</text>
+<path d="M140 80h40M300 80h40" stroke="#555" stroke-width="2"/></svg>`
+
+const checkoutLog = [
+    '2026-09-29 14:02:11 INFO  checkout.address  CEP 01310-100 consultado em 182 ms',
+    '2026-09-29 14:02:11 INFO  checkout.address  Endereço preenchido: Avenida Paulista, Bela Vista',
+    '2026-09-29 14:05:43 WARN  checkout.address  CEP 99999-999 não encontrado na API',
+    '2026-09-29 14:05:43 ERROR checkout.address  Resposta 404 da API de CEP; campo liberado para digitação manual',
+    '2026-09-29 14:07:02 INFO  checkout.submit   Pedido 88231 criado com endereço preenchido automaticamente'
+].join('\n')
+
+const cepResponse = JSON.stringify({
+    cep: '01310-100',
+    logradouro: 'Avenida Paulista',
+    bairro: 'Bela Vista',
+    localidade: 'São Paulo',
+    uf: 'SP',
+    ibge: '3550308'
+})
+
+const demoAttachments = [
+    {
+        id: 1,
+        issueId: 1201,
+        filename: 'checkout-v2.png',
+        content_type: 'image/png',
+        author: people.beatriz,
+        created_on: daysAgo(2),
+        bytes: () => readFileSync(new URL('../docs/images/board.png', import.meta.url))
+    },
+    {
+        id: 2,
+        issueId: 1201,
+        filename: 'fluxo-cep.svg',
+        content_type: 'image/svg+xml',
+        author: people.lucas,
+        created_on: daysAgo(2),
+        bytes: () => Buffer.from(cepFlowSvg)
+    },
+    {
+        id: 3,
+        issueId: 1201,
+        filename: 'checkout-erros.log',
+        content_type: 'text/plain',
+        author: people.marina,
+        created_on: daysAgo(1),
+        bytes: () => Buffer.from(checkoutLog)
+    },
+    {
+        id: 4,
+        issueId: 1201,
+        filename: 'resposta-api-cep.json',
+        content_type: 'application/json',
+        author: people.lucas,
+        created_on: daysAgo(1),
+        bytes: () => Buffer.from(cepResponse)
+    },
+    {
+        id: 5,
+        issueId: 1201,
+        filename: 'especificacao-checkout.pdf',
+        content_type: 'application/pdf',
+        author: people.beatriz,
+        created_on: daysAgo(3),
+        bytes: () => tinyPdf('Especificacao do checkout: preencher endereco pelo CEP')
+    },
+    {
+        id: 6,
+        issueId: 1201,
+        filename: 'backup-enderecos.zip',
+        content_type: 'application/zip',
+        author: people.rafael,
+        created_on: daysAgo(4),
+        bytes: () => Buffer.concat([Buffer.from([0x50, 0x4b, 0x05, 0x06]), Buffer.alloc(18)])
+    }
+]
+
+function attachmentsOf(issueId) {
+    return demoAttachments.filter((attachment) => attachment.issueId === issueId)
+}
+
+function attachmentInfo(attachment) {
+    const { issueId: _issueId, bytes, ...info } = attachment
+    return { ...info, filesize: bytes().length }
+}
+
+/** GET /attachments/download/:id, with the same key check as the API. */
+function serveDownload(request, response, path) {
+    const match = path.match(/^\/attachments\/download\/(\d+)/)
+    const attachment = match && demoAttachments.find((item) => item.id === Number(match[1]))
+    if (request.headers['x-redmine-api-key'] !== DEMO_API_KEY) {
+        response.writeHead(401)
+        response.end()
+        return
+    }
+    if (!attachment) {
+        response.writeHead(404)
+        response.end()
+        return
+    }
+    const bytes = attachment.bytes()
+    response.writeHead(200, { 'Content-Type': attachment.content_type, 'Content-Length': bytes.length })
+    response.end(bytes)
+}
+
+// Relations and subtasks of #1201, seen from both sides (Redmine returns each relation on both issues).
+const relations = [
+    { id: 1, issue_id: 1201, issue_to_id: 1210, relation_type: 'relates' },
+    { id: 2, issue_id: 1204, issue_to_id: 1201, relation_type: 'blocks' },
+    { id: 3, issue_id: 1201, issue_to_id: 1208, relation_type: 'precedes' },
+    { id: 4, issue_id: 1214, issue_to_id: 1201, relation_type: 'relates' }
+]
+const children = { 1201: [1211, 1213, 1216] }
+
+function childIds(id) {
+    return children[id] ?? []
+}
+
+function parentOf(id) {
+    const parentId = Object.keys(children).find((key) => children[key].includes(id))
+    return parentId ? { id: Number(parentId) } : undefined
+}
+
 function publicIssue(item) {
     const { watcherIds: _watchers, journals: _journals, description: _description, ...fields } = item
     return fields
@@ -318,20 +467,13 @@ function issueDetail(item) {
         spent_hours: spentOn(item.id),
         custom_fields: [{ id: 13, name: 'Hotfix', value: '0' }],
         journals: item.journals,
-        attachments:
-            item.id === 1201
-                ? [
-                      {
-                          id: 1,
-                          filename: 'checkout-v2.png',
-                          filesize: 184_320,
-                          author: people.beatriz,
-                          created_on: daysAgo(2)
-                      }
-                  ]
-                : [],
-        relations: item.id === 1201 ? [{ id: 1, issue_id: 1201, issue_to_id: 1210, relation_type: 'relates' }] : [],
-        children: [],
+        attachments: attachmentsOf(item.id).map(attachmentInfo),
+        relations: relations.filter((relation) => [relation.issue_id, relation.issue_to_id].includes(item.id)),
+        children: childIds(item.id).map((id) => {
+            const child = issueById.get(id)
+            return { id, tracker: child.tracker, subject: child.subject }
+        }),
+        parent: parentOf(item.id),
         watchers: item.watcherIds.map((id) => Object.values(people).find((person) => person.id === id)),
         allowed_statuses: statuses
     }
@@ -556,6 +698,9 @@ function route(method, url, body) {
     if (path === '/time_entries.json' && method === 'POST') return createTimeEntry(body.time_entry ?? {})
     if (path === '/time_entries.json') return listTimeEntries(url.searchParams)
     if (path.startsWith('/time_entries/')) return timeEntryRoute(method, path, body)
+    const attachmentMatch = path.match(/^\/attachments\/(\d+)\.json$/)
+    const attachment = attachmentMatch && demoAttachments.find((item) => item.id === Number(attachmentMatch[1]))
+    if (attachment) return { attachment: attachmentInfo(attachment) }
 
     const issueMatch = path.match(/^\/issues\/(\d+)\.json$/)
     const item = issueMatch && issueById.get(Number(issueMatch[1]))
@@ -578,6 +723,10 @@ function readBody(request) {
 function startServer() {
     const server = createServer(async (request, response) => {
         const url = new URL(request.url, `http://localhost:${port}`)
+        if (url.pathname.startsWith('/attachments/download/')) {
+            serveDownload(request, response, url.pathname)
+            return
+        }
         const body = await readBody(request)
         // Like Redmine, an API request with another key is refused (lets the connection screen show the error).
         const isApiCall = url.pathname.endsWith('.json')

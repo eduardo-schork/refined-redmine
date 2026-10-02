@@ -92,6 +92,38 @@ describe('RedmineHttpClient', () => {
     })
 })
 
+describe('RedmineHttpClient.download', () => {
+    it('returns the bytes and refuses redirects, which could carry the key to another host', async () => {
+        const calls: RequestInit[] = []
+        const client = new RedmineHttpClient(async (_url, init) => {
+            calls.push(init)
+            return new Response(new Uint8Array([1, 2, 3]))
+        }, credentials)
+
+        const bytes = await client.download('/attachments/download/7', 10)
+
+        expect([...bytes]).toEqual([1, 2, 3])
+        expect(calls[0].redirect).toBe('error')
+    })
+
+    it('refuses files larger than the limit, by header or by body, without retrying', async () => {
+        let callCount = 0
+        const declared = new RedmineHttpClient(async () => {
+            callCount += 1
+            return new Response('x', { headers: { 'content-length': '999' } })
+        }, credentials)
+        const actual = new RedmineHttpClient(async () => new Response(new Uint8Array(20)), credentials)
+
+        await expect(declared.download('/attachments/download/7', 10)).rejects.toMatchObject({
+            code: 'attachment.tooLarge'
+        })
+        await expect(actual.download('/attachments/download/7', 10)).rejects.toMatchObject({
+            code: 'attachment.tooLarge'
+        })
+        expect(callCount).toBe(1)
+    })
+})
+
 describe('HttpRedmineGateway', () => {
     it('paginates up to the total', async () => {
         const pages = [

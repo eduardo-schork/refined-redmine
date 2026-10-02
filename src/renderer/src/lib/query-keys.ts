@@ -4,6 +4,8 @@ export const qk = {
     projects: ['reference', 'projects'] as const,
     savedQueries: ['reference', 'saved-queries'] as const,
     issue: (id: number) => ['issue', id] as const,
+    /** Under the issue's key, so refreshing the issue also refreshes them. */
+    linkedIssues: (id: number, ids: number[]) => ['issue', id, 'linked', ids.join(',')] as const,
     issueSearch: (input: string) => ['issue-search', input.trim()] as const,
     issueEditOptions: (projectId: number) => ['issue-edit-options', projectId] as const,
     priorities: ['reference', 'priorities'] as const,
@@ -27,5 +29,6 @@ export const qk = {
     time: ['time'] as const,
     issueTime: (issueId: number) => ['time', 'issue', issueId] as const,
     myTime: (from: string, to: string) => ['time', 'mine', from, to] as const,
-    timer: ['timer'] as const
+    timer: ['timer'] as const,
+    attachmentPreview: (id: number) => ['attachment-preview', id] as const
 }

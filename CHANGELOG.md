@@ -2,7 +2,13 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
-## Próxima versão — horas, cronômetro, lista e filtros nos quadros
+## Próxima versão — detalhe da tarefa com abas, relações e anexos
+
+- **Abas no detalhe da tarefa**: Tarefas relacionadas (aberta por padrão), Anexos e Horas ficam em abas abaixo da descrição, uma de cada vez, com a quantidade de cada uma ao lado do nome.
+- **Subtarefas e relações mais completas**: na aba Tarefas relacionadas, cada subtarefa e tarefa relacionada mostra o número, o título, o status e o responsável. As relações ficam agrupadas pelo tipo (bloqueada por, bloqueia, relacionada a…), as subtarefas mostram quantas já foram fechadas e as fechadas aparecem riscadas.
+- **Anexos dentro do app**: na aba Anexos, imagens aparecem em miniatura e abrem numa visualização com setas para passar entre elas; arquivos de texto, log e JSON também abrem no app. PDF, documentos, planilhas e vídeos abrem no app do sistema; arquivos compactados e programas, por segurança, só pelo Redmine.
+
+## 0.7.0 — horas, cronômetro, lista e filtros nos quadros
 
 - **Lançar horas** direto no detalhe da tarefa: data, horas do jeito que preferir (1,5 · 1:30 · 1h30 · 90m), atividade e comentário. A seção Horas mostra o total contra o estimado e todos os lançamentos, com editar e excluir os seus.
 - **Cronômetro**: comece a contar numa tarefa e pare quando terminar; o tempo vai pronto para o lançamento. Ele aparece na barra lateral e na barra de menus, continua com a janela fechada e pausa sozinho quando o computador dorme ou você fica fora por 10 minutos.

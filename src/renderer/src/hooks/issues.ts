@@ -7,6 +7,15 @@ import { qk } from '@/lib/query-keys'
 
 export const useIssue = (id: number) => useQuery({ queryKey: qk.issue(id), queryFn: () => api.issues.get(id) })
 
+/** Subtasks and related issues of `issueId`, by number. */
+export const useLinkedIssues = (issueId: number, ids: number[]) =>
+    useQuery({
+        queryKey: qk.linkedIssues(issueId, ids),
+        enabled: ids.length > 0,
+        queryFn: () => api.issues.byIds(ids),
+        select: (issues) => new Map(issues.map((issue) => [issue.id, issue]))
+    })
+
 export const useIssueTitle = (id?: number) =>
     useQuery({
         queryKey: qk.issueTitle(id ?? 0),

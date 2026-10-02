@@ -4,6 +4,7 @@ import { assertValidDraft, type TimeEntry, type TimeEntryDraft } from '@domain/t
 import { shiftedEntries } from '@domain/time/timesheet'
 import type { MyTimeEntries } from '../dto'
 import type { RedmineGateway } from '../ports/redmine-gateway'
+import { issuesByIds } from './issue-lookup'
 
 const DAYS_IN_WEEK = 7
 
@@ -12,11 +13,9 @@ const newestFirst = (first: TimeEntry, second: TimeEntry) =>
 
 /** Issues of the entries, to show their titles next to the hours (time entries only carry the issue id). */
 async function issuesById(gateway: RedmineGateway, entries: TimeEntry[]): Promise<Record<number, Issue>> {
-    const ids = [...new Set(entries.flatMap((entry) => (entry.issue ? [entry.issue.id] : [])))]
-    if (!ids.length) return {}
-    const rawQuery = new URLSearchParams({ issue_id: ids.join(','), status_id: '*' }).toString()
-    const page = await gateway.listIssues({ rawQuery }, ids.length)
-    return Object.fromEntries(page.items.map((issue) => [issue.id, issue]))
+    const ids = entries.flatMap((entry) => (entry.issue ? [entry.issue.id] : []))
+    const issues = await issuesByIds(gateway, ids)
+    return Object.fromEntries(issues.map((issue) => [issue.id, issue]))
 }
 
 export class TimeQueries {
