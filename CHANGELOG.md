@@ -2,7 +2,7 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
-## Próxima versão — detalhe da tarefa com abas, relações e anexos
+## 0.8.0 — detalhe da tarefa com abas, relações e anexos
 
 - **Abas no detalhe da tarefa**: Tarefas relacionadas (aberta por padrão), Anexos e Horas ficam em abas abaixo da descrição, uma de cada vez, com a quantidade de cada uma ao lado do nome.
 - **Subtarefas e relações mais completas**: na aba Tarefas relacionadas, cada subtarefa e tarefa relacionada mostra o número, o título, o status e o responsável. As relações ficam agrupadas pelo tipo (bloqueada por, bloqueia, relacionada a…), as subtarefas mostram quantas já foram fechadas e as fechadas aparecem riscadas.
