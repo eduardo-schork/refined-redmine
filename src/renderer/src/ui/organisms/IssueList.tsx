@@ -78,8 +78,10 @@ export function IssueList({
     if (!issues.length) return <div className="px-5 py-10 text-center text-sm text-muted">{t('board.list.empty')}</div>
 
     return (
-        <div className="flex-1 overflow-auto px-4 pb-4 pt-3">
-            <div className="min-w-[60rem] overflow-hidden rounded-xl border border-line bg-panel">
+        // The sticky header sticks below the scroller's padding, so the gap above the card is a margin, not padding.
+        <div className="flex-1 overflow-auto px-4 pb-4">
+            {/* overflow-clip, not overflow-hidden: a hidden overflow would keep the sticky header from sticking. */}
+            <div className="mt-3 min-w-[60rem] overflow-clip rounded-xl border border-line bg-panel">
                 <ListHeader sort={sort} onSort={onSort} />
                 {groups.map((group) => (
                     <ListGroup
