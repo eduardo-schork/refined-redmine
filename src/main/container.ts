@@ -29,7 +29,7 @@ import { GetSessionUseCase, LoginUseCase, LogoutUseCase } from '@application/use
 import { UpdateSettingsUseCase } from '@application/use-cases/settings'
 import { BuildSupportReportUseCase } from '@application/use-cases/support'
 import { GetVersionStatsUseCase, InspectSprintProjectUseCase, ListSprintsUseCase } from '@application/use-cases/sprints'
-import type { AppNotification } from '@domain/notification/notification'
+import { issueRoute, type AppNotification } from '@domain/notification/notification'
 import type { AppCopy } from '@domain/notification/permission'
 import { electronLoginItem } from '@infra/electron/login-item'
 import { ElectronSystemNotifier } from '@infra/electron/electron-notifier'
@@ -73,7 +73,12 @@ export interface Presentation {
     quitApp(): void
 }
 
+/** A notification about an issue opens it in the app; the target URL is only for the ones without an issue. */
 function openNotificationTarget(item: AppNotification, presentation: Presentation): void {
+    if (item.issueId) {
+        presentation.showWindow(issueRoute(item.issueId))
+        return
+    }
     if (item.target.type === 'route') {
         presentation.showWindow(item.target.route)
         return

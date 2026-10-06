@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import type { NotificationTarget } from '@domain/notification/notification'
+import type { AppNotification } from '@domain/notification/notification'
 
 export const SETTINGS_TABS = ['general', 'appearance', 'notifications', 'calendar', 'work'] as const
 export type SettingsTab = (typeof SETTINGS_TABS)[number]
@@ -44,16 +44,31 @@ export function parseRoute(path: string): Route | null {
 export const NavContext = createContext<(route: Route) => void>(() => {})
 export const useNavigate = () => useContext(NavContext)
 
-/** Opens a notification target: an internal route navigates in the app; a URL goes to the browser. */
-export function openTarget(
-    target: NotificationTarget,
-    navigate: (route: Route) => void,
+/** The issue of an `/issue?id=1234` route (a click on a system notification), or undefined for other routes. */
+export function parseIssueRoute(path: string): number | undefined {
+    const url = new URL(path, 'app://local')
+    if (url.pathname !== '/issue') return undefined
+    const id = Number(url.searchParams.get('id'))
+    return Number.isInteger(id) && id > 0 ? id : undefined
+}
+
+interface NotificationOpeners {
+    navigate: (route: Route) => void
+    openIssue: (id: number) => void
     openExternal: (url: string) => void
-): void {
+}
+
+/** A notification about an issue opens it in the app; the others go to their route, or to the browser. */
+export function openNotification(notification: AppNotification, openers: NotificationOpeners): void {
+    if (notification.issueId) {
+        openers.openIssue(notification.issueId)
+        return
+    }
+    const { target } = notification
     if (target.type !== 'route') {
-        openExternal(target.url)
+        openers.openExternal(target.url)
         return
     }
     const route = parseRoute(target.route)
-    if (route) navigate(route)
+    if (route) openers.navigate(route)
 }

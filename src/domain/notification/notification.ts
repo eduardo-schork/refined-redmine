@@ -88,3 +88,6 @@ export const shouldSummarize = (count: number) => count > SUMMARY_THRESHOLD
 export const calendarRoute = (date: LocalDate, eventId: string) => `/calendar?date=${date}&event=${eventId}`
 
 export const boardRoute = (boardId: string) => `/board?id=${encodeURIComponent(boardId)}`
+
+/** Opens the issue's detail inside the app. */
+export const issueRoute = (issueId: number) => `/issue?id=${issueId}`

@@ -6,7 +6,7 @@ import { useSprints } from '@/hooks/sprints'
 import { api } from '@/lib/api'
 import { qk } from '@/lib/query-keys'
 import { useI18n } from '@/lib/i18n'
-import { openTarget, useNavigate } from '@/lib/router'
+import { openNotification, useNavigate } from '@/lib/router'
 import { TextLink } from '@/ui/atoms/misc'
 import { RefreshButton } from '@/ui/molecules/RefreshButton'
 import { SectionTitle } from '@/ui/molecules/surfaces'
@@ -40,11 +40,7 @@ export default function HomePage() {
     }
 
     function open(notification: AppNotification) {
-        if (notification.issueId) {
-            openIssue(notification.issueId)
-            return
-        }
-        openTarget(notification.target, navigate, (url) => void api.app.openExternal(url))
+        openNotification(notification, { navigate, openIssue, openExternal: (url) => void api.app.openExternal(url) })
     }
 
     return (

@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { AppNotification } from '@domain/notification/notification'
 import { api, onAppEvent } from '@/lib/api'
 import { qk } from '@/lib/query-keys'
-import { parseRoute, type Route } from '@/lib/router'
+import { parseIssueRoute, parseRoute, type Route } from '@/lib/router'
 
 export const useNotifications = () => useQuery({ queryKey: qk.notifications, queryFn: () => api.notifications.list() })
 export const useMonitorStatus = () => useQuery({ queryKey: qk.monitorStatus, queryFn: () => api.monitor.status() })
@@ -37,7 +37,7 @@ export function useRunMonitorNow() {
 }
 
 /** Keeps the cache in sync with events pushed by the main process. */
-export function useAppEventsSync(onNavigate: (route: Route) => void) {
+export function useAppEventsSync(onNavigate: (route: Route) => void, onOpenIssue: (id: number) => void) {
     const queryClient = useQueryClient()
     useEffect(() => {
         const unsubscribers = [
@@ -47,6 +47,11 @@ export function useAppEventsSync(onNavigate: (route: Route) => void) {
             onAppEvent('update.status', (status) => queryClient.setQueryData(qk.updateStatus, status)),
             onAppEvent('timer.status', (timer) => queryClient.setQueryData(qk.timer, timer)),
             onAppEvent('navigate', (path) => {
+                const issueId = parseIssueRoute(path)
+                if (issueId) {
+                    onOpenIssue(issueId)
+                    return
+                }
                 const route = parseRoute(path)
                 if (route) onNavigate(route)
             })
@@ -54,5 +59,5 @@ export function useAppEventsSync(onNavigate: (route: Route) => void) {
         return () => {
             for (const unsubscribe of unsubscribers) unsubscribe()
         }
-    }, [queryClient, onNavigate])
+    }, [queryClient, onNavigate, onOpenIssue])
 }

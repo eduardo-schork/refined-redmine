@@ -19,7 +19,7 @@ import SprintsPage from '@/pages/SprintsPage'
 import TimePage from '@/pages/TimePage'
 import { ToastProvider } from '@/ui/molecules/Toast'
 import { BoardEditor } from '@/ui/organisms/BoardEditor'
-import { IssueModalProvider } from '@/ui/organisms/IssueModal'
+import { IssueModalProvider, useOpenIssue } from '@/ui/organisms/IssueModal'
 import { NotificationPermissionGate } from '@/ui/organisms/NotificationPermission'
 import { QuickSearch } from '@/ui/organisms/search/QuickSearch'
 import { WhatsNewDialog } from '@/ui/organisms/WhatsNewDialog'
@@ -52,7 +52,6 @@ function AuthenticatedApp() {
     const openSearch = useCallback(() => setSearching(true), [])
     const closeSearch = useCallback(() => setSearching(false), [])
     const issueStyle = useSettings().issueStyle
-    useAppEventsSync(navigate)
     useSearchShortcut(openSearch)
 
     const openEmptyBoardEditor = () => setNewBoard({})
@@ -66,6 +65,7 @@ function AuthenticatedApp() {
         <NavContext.Provider value={navigate}>
             <IssueStyleContext.Provider value={issueStyle}>
                 <IssueModalProvider>
+                    <AppEventsSync onNavigate={navigate} />
                     <NotificationPermissionGate />
                     <WhatsNewDialog />
                     <AppShell
@@ -109,6 +109,13 @@ function AuthenticatedApp() {
             </IssueStyleContext.Provider>
         </NavContext.Provider>
     )
+}
+
+/** Inside the issue modal provider: a click on a system notification about an issue opens it in the modal. */
+function AppEventsSync({ onNavigate }: { onNavigate: (route: Route) => void }) {
+    const openIssue = useOpenIssue()
+    useAppEventsSync(onNavigate, openIssue)
+    return null
 }
 
 /** ⌘K on macOS, Ctrl+K on Windows, from any screen. */
