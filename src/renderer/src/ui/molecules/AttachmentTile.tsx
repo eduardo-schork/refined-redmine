@@ -11,10 +11,7 @@ import {
     Presentation
 } from 'lucide-react'
 import { attachmentKind, type AttachmentKind } from '@domain/redmine/attachment-kind'
-import type { Attachment } from '@domain/redmine/entities'
-import { formatBytes } from '@shared/i18n/format/log'
 import { cn } from '@/lib/cn'
-import { useI18n } from '@/lib/i18n'
 
 const KIND_ICON: Record<AttachmentKind, typeof File> = {
     image: FileImage,
@@ -29,32 +26,34 @@ const KIND_ICON: Record<AttachmentKind, typeof File> = {
     other: File
 }
 
-/** One attachment: thumbnail (images) or the icon of its type, name, size, author and date. */
+/** One file: thumbnail (images) or the icon of its type, name and a line of details (size, author, date). */
 export function AttachmentTile({
-    attachment,
+    filename,
+    contentType,
+    meta,
     thumbnailUrl,
     actionLabel,
     onClick
 }: {
-    attachment: Attachment
+    filename: string
+    contentType?: string
+    meta: string[]
     thumbnailUrl?: string
     /** What a click does, shown as the tooltip ("Preview", "Open in the system app"…). */
     actionLabel: string
     onClick: () => void
 }) {
-    const { dates, locale } = useI18n()
-    const kind = attachmentKind(attachment.filename, attachment.content_type)
-    const meta = [formatBytes(attachment.filesize, locale), attachment.author.name, dates.date(attachment.created_on)]
+    const kind = attachmentKind(filename, contentType)
     return (
         <button
             type="button"
             onClick={onClick}
-            title={`${attachment.filename} · ${actionLabel}`}
+            title={`${filename} · ${actionLabel}`}
             className="group flex min-w-0 cursor-default flex-col overflow-hidden rounded-lg border border-line bg-panel text-left hover:border-accent/60"
         >
             <TileImage thumbnailUrl={thumbnailUrl} fallback={<KindIcon kind={kind} />} />
             <span className="flex min-w-0 flex-col gap-0.5 px-3 py-2">
-                <span className="truncate text-sm group-hover:text-accent">{attachment.filename}</span>
+                <span className="truncate text-sm group-hover:text-accent">{filename}</span>
                 <span className="truncate text-2xs text-muted">{meta.join(' · ')}</span>
             </span>
         </button>

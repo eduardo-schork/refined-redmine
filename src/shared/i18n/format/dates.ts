@@ -106,6 +106,12 @@ export class DateFormatter {
         return this.t('duration.workHours', { value: rounded.toLocaleString(this.locale) })
     }
 
+    /** Hours the way people type them in a field (1.5 → "1,5" in Portuguese); empty without a value. */
+    hoursInput(hours: number | null | undefined): string {
+        if (hours == null) return ''
+        return hours.toLocaleString(this.locale, { maximumFractionDigits: 2, useGrouping: false })
+    }
+
     private shortDayMonth(date: Date): string {
         const label = date.toLocaleDateString(this.locale, { day: '2-digit', month: 'short' })
         return label.replace('.', '')

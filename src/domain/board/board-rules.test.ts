@@ -8,6 +8,7 @@ import {
     canDropOn,
     columnOf,
     columnsFromStatuses,
+    newIssueDefaults,
     targetStatus
 } from './board-rules'
 
@@ -93,4 +94,15 @@ describe('columnChange', () => {
         expect(boardIssueFilter({ ...board, source: { type: 'filter', url: '/issues?status_id=o' } })).toEqual({
             rawQuery: 'status_id=o'
         }))
+})
+
+describe('newIssueDefaults', () => {
+    it("starts in the board's project, and in its sprint when the board follows one", () => {
+        const sprintVersion = { id: 378, project: { id: 10, name: 'Loja Virtual' } }
+        expect(newIssueDefaults(board, sprintVersion)).toEqual({ projectId: 10, fixedVersionId: 378 })
+        expect(newIssueDefaults(board)).toEqual({})
+        const projectBoard: Board = { ...board, source: { type: 'project', projectId: 7, includeSubprojects: true } }
+        expect(newIssueDefaults(projectBoard)).toEqual({ projectId: 7 })
+        expect(newIssueDefaults({ ...board, source: { type: 'mine' } })).toEqual({})
+    })
 })

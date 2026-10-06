@@ -1,8 +1,10 @@
 import { useId, useState, type ReactNode } from 'react'
+import { Plus } from 'lucide-react'
 import type { IssueDetail } from '@domain/redmine/entities'
 import { linkedIssueIds } from '@domain/redmine/linked-issues'
 import type { RedmineLinks } from '@domain/redmine/links'
 import { useI18n } from '@/lib/i18n'
+import { Button } from '../atoms/Button'
 import { Tabs, tabPanelProps, type TabOption } from '../molecules/Tabs'
 import { IssueAttachments } from './attachments/IssueAttachments'
 import { IssueLinks } from './IssueLinks'
@@ -14,11 +16,13 @@ type DetailTab = 'links' | 'attachments' | 'time'
 export function IssueDetailTabs({
     issue,
     links,
-    onOpenIssue
+    onOpenIssue,
+    onNewSubtask
 }: {
     issue: IssueDetail
     links: RedmineLinks
     onOpenIssue: (id: number) => void
+    onNewSubtask: () => void
 }) {
     const { t, dates } = useI18n()
     const tabsId = useId()
@@ -31,8 +35,20 @@ export function IssueDetailTabs({
         { value: 'time', label: t('issue.tabs.time'), badge: spentHours ? dates.hours(spentHours) : undefined }
     ]
     const panels: Record<DetailTab, () => ReactNode> = {
-        links: () =>
-            linkedCount ? <IssueLinks issue={issue} onOpen={onOpenIssue} /> : <Empty>{t('issue.tabs.noLinks')}</Empty>,
+        links: () => (
+            <>
+                <div className="-mt-1 mb-1 flex justify-end">
+                    <Button variant="ghost" className="h-7 px-2 text-xs" onClick={onNewSubtask}>
+                        <Plus size={13} /> {t('issue.newSubtask')}
+                    </Button>
+                </div>
+                {linkedCount ? (
+                    <IssueLinks issue={issue} onOpen={onOpenIssue} />
+                ) : (
+                    <Empty>{t('issue.tabs.noLinks')}</Empty>
+                )}
+            </>
+        ),
         attachments: () =>
             issue.attachments.length ? (
                 <IssueAttachments attachments={issue.attachments} links={links} />

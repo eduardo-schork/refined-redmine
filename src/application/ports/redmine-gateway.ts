@@ -11,7 +11,8 @@ import type {
     SavedQuery,
     Version
 } from '@domain/redmine/entities'
-import type { IssueFieldsChange } from '@domain/redmine/issue-edit'
+import type { IssueFieldsChange, NewIssue } from '@domain/redmine/issue-edit'
+import type { IssueUpload, UploadedFile } from '@domain/redmine/issue-upload'
 import type { IssueFilter } from '@domain/redmine/issue-filter'
 import type { LocalDate } from '@domain/shared/date'
 import type { TimeEntry, TimeEntryActivity, TimeEntryDraft } from '@domain/time/time-entry'
@@ -43,12 +44,18 @@ export interface RedmineGateway {
     getIssueWithJournals(id: number): Promise<IssueDetail>
     allowedStatuses(issueId: number): Promise<IssueStatus[]>
     updateIssue(id: number, update: IssueUpdate): Promise<void>
+    /** `uploads`: files already sent with `uploadFile`, attached to the new issue. */
+    createIssue(issue: NewIssue, uploads?: UploadedFile[]): Promise<Issue>
+    /** Sends a file to Redmine before the issue exists; it is attached by the returned token. */
+    uploadFile(upload: IssueUpload): Promise<UploadedFile>
     listStatuses(): Promise<IssueStatus[]>
     listProjects(): Promise<Project[]>
     listSavedQueries(): Promise<SavedQuery[]>
     listVersions(projectId: number): Promise<Version[]>
     /** Project members (users and groups) — the people issues of the project can be assigned to. */
     listProjectMembers(projectId: number): Promise<Named[]>
+    /** Trackers (issue types) enabled in the project. */
+    listProjectTrackers(projectId: number): Promise<Named[]>
     listPriorities(): Promise<IssuePriority[]>
     listTimeEntries(query: TimeEntryQuery): Promise<TimeEntry[]>
     createTimeEntry(draft: TimeEntryDraft): Promise<TimeEntry>

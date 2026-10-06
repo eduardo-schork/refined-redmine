@@ -2,6 +2,16 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
+## Próxima versão
+
+- **Criar tarefas pelo app**: o botão com lápis ao lado de Buscar, o atalho **⌘N** (Ctrl+N no Windows) e **Nova tarefa** no topo dos quadros abrem um formulário com projeto, tipo, título, descrição, anexos, prioridade, responsável, versão, tarefa pai, datas e estimativa. Num quadro, o projeto e a sprint já vêm preenchidos. A tarefa criada abre em seguida.
+- **Anexos ao criar**: escolha, arraste ou cole uma captura de tela. Cada arquivo aparece como cartão, igual aos da aba Anexos, com miniatura das imagens, e abre para conferir antes de criar.
+- **Nova subtarefa** no detalhe da tarefa (aba Tarefas relacionadas), já com a tarefa pai, o projeto e a versão dela.
+- **Editar mais campos no detalhe**: o lápis ao lado do título e o botão **Editar** da descrição abrem a edição, e a lateral ganhou **Tipo**, **Estimado** e **Tarefa pai**.
+- **Descrição longa recolhida**: descrições grandes aparecem cortadas em 25 linhas, com **Mostrar tudo**, para as abas de tarefas relacionadas, anexos e horas ficarem visíveis logo ao abrir.
+- **Notificações abrem a tarefa no app**: clicar numa notificação sobre uma tarefa, na tela Notificações ou na notificação do sistema, abre o detalhe no próprio app em vez do Redmine no navegador.
+- **Cabeçalho fixo na Lista dos quadros**: ao rolar, os nomes das colunas continuam visíveis e clicáveis para ordenar.
+
 ## 0.8.0 — detalhe da tarefa com abas, relações e anexos
 
 - **Abas no detalhe da tarefa**: Tarefas relacionadas (aberta por padrão), Anexos e Horas ficam em abas abaixo da descrição, uma de cada vez, com a quantidade de cada uma ao lado do nome.

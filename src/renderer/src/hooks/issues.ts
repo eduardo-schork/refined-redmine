@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import type { Issue } from '@domain/redmine/entities'
-import type { IssueFieldsChange } from '@domain/redmine/issue-edit'
+import type { IssueFieldsChange, NewIssue } from '@domain/redmine/issue-edit'
 import { MY_OPEN_QUEUE } from '@domain/redmine/issue-filter'
+import type { IssueUpload } from '@domain/redmine/issue-upload'
 import { api } from '@/lib/api'
 import { qk } from '@/lib/query-keys'
 
@@ -79,9 +80,10 @@ export const useIssueSearch = (input: string) =>
         placeholderData: (previous) => previous
     })
 
-export const useIssueEditOptions = (projectId: number) =>
+export const useIssueEditOptions = (projectId: number, enabled = true) =>
     useQuery({
         queryKey: qk.issueEditOptions(projectId),
+        enabled,
         queryFn: () => api.issues.editOptions(projectId),
         staleTime: 5 * 60_000
     })
@@ -93,6 +95,20 @@ export function useEditIssue(id: number) {
         onSuccess: (result) => {
             queryClient.setQueryData(qk.issue(id), result.issue)
             invalidateIssueViews(queryClient, id)
+        }
+    })
+}
+
+/** A subtask also refreshes its parent, which lists it. */
+export function useCreateIssue() {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: ({ issue, uploads }: { issue: NewIssue; uploads: IssueUpload[] }) =>
+            api.issues.create(issue, uploads),
+        onSuccess: (_created, { issue }) => {
+            void queryClient.invalidateQueries({ queryKey: qk.boardIssuesAll })
+            void queryClient.invalidateQueries({ queryKey: qk.myQueue })
+            if (issue.parentIssueId) void queryClient.invalidateQueries({ queryKey: qk.issue(issue.parentIssueId) })
         }
     })
 }

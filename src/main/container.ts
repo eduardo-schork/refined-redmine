@@ -20,6 +20,7 @@ import {
 import {
     ChangeIssueStatusUseCase,
     CommentOnIssueUseCase,
+    CreateIssueUseCase,
     EditIssueFieldsUseCase,
     IssueQueries,
     ReferenceDataQueries
@@ -29,7 +30,7 @@ import { GetSessionUseCase, LoginUseCase, LogoutUseCase } from '@application/use
 import { UpdateSettingsUseCase } from '@application/use-cases/settings'
 import { BuildSupportReportUseCase } from '@application/use-cases/support'
 import { GetVersionStatsUseCase, InspectSprintProjectUseCase, ListSprintsUseCase } from '@application/use-cases/sprints'
-import type { AppNotification } from '@domain/notification/notification'
+import { issueRoute, type AppNotification } from '@domain/notification/notification'
 import type { AppCopy } from '@domain/notification/permission'
 import { electronLoginItem } from '@infra/electron/login-item'
 import { ElectronSystemNotifier } from '@infra/electron/electron-notifier'
@@ -73,7 +74,12 @@ export interface Presentation {
     quitApp(): void
 }
 
+/** A notification about an issue opens it in the app; the target URL is only for the ones without an issue. */
 function openNotificationTarget(item: AppNotification, presentation: Presentation): void {
+    if (item.issueId) {
+        presentation.showWindow(issueRoute(item.issueId))
+        return
+    }
     if (item.target.type === 'route') {
         presentation.showWindow(item.target.route)
         return
@@ -188,6 +194,7 @@ export function createContainer(presentation: () => Presentation) {
     const changeStatus = new ChangeIssueStatusUseCase(gateway)
     const comment = new CommentOnIssueUseCase(gateway)
     const editIssue = new EditIssueFieldsUseCase(gateway)
+    const createIssue = new CreateIssueUseCase(gateway)
     const versionStats = new GetVersionStatsUseCase(gateway)
     const inspectProject = new InspectSprintProjectUseCase(gateway)
     const boardIssues = new ListBoardIssuesUseCase(gateway, settings, boardFilter)
@@ -276,7 +283,8 @@ export function createContainer(presentation: () => Presentation) {
             comment: (id, notes) => comment.execute(id, notes),
             search: (input) => issues.search(input),
             edit: (id, change) => editIssue.execute(id, change),
-            editOptions: (projectId) => issues.editOptions(projectId)
+            editOptions: (projectId) => issues.editOptions(projectId),
+            create: (issue, uploads) => createIssue.execute(issue, uploads)
         },
         reference: {
             statuses: () => reference.statuses(),

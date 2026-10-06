@@ -28,8 +28,9 @@ import type {
     Project,
     SavedQuery
 } from '@domain/redmine/entities'
-import type { IssueFieldsChange } from '@domain/redmine/issue-edit'
+import type { IssueFieldsChange, NewIssue } from '@domain/redmine/issue-edit'
 import type { IssueFilter } from '@domain/redmine/issue-filter'
+import type { IssueUpload } from '@domain/redmine/issue-upload'
 import type { SettingsPatch } from '@domain/settings/settings'
 import type { SerializedError } from '@domain/shared/errors'
 import type { LocalDate } from '@domain/shared/date'
@@ -59,7 +60,10 @@ export interface RefinedApi {
         /** Quick search: "#1234" or "1234" finds that issue; text searches the titles. */
         search(input: string): Issue[]
         edit(id: number, change: IssueFieldsChange): IssueEditResult
+        /** Trackers, people and open versions of a project, for creating and editing its issues. */
         editOptions(projectId: number): IssueEditOptions
+        /** `uploads`: files attached to the new issue (sent to Redmine first). */
+        create(issue: NewIssue, uploads?: IssueUpload[]): Issue
     }
     reference: {
         statuses(): IssueStatus[]
@@ -149,7 +153,18 @@ export interface RefinedApi {
 export const API_METHODS = {
     session: ['get', 'login', 'logout'],
     settings: ['update'],
-    issues: ['list', 'get', 'allowedStatuses', 'byIds', 'changeStatus', 'comment', 'search', 'edit', 'editOptions'],
+    issues: [
+        'list',
+        'get',
+        'allowedStatuses',
+        'byIds',
+        'changeStatus',
+        'comment',
+        'search',
+        'edit',
+        'editOptions',
+        'create'
+    ],
     reference: ['statuses', 'projects', 'savedQueries', 'priorities', 'timeActivities'],
     time: ['forIssue', 'mine', 'log', 'edit', 'remove', 'repeatWeek'],
     attachments: ['preview', 'open'],

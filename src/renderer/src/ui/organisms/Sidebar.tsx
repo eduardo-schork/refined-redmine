@@ -9,6 +9,7 @@ import {
     Plus,
     ScrollText,
     Search,
+    SquarePen,
     Settings as SettingsIcon
 } from 'lucide-react'
 import type { MonitorStatus } from '@domain/monitor/monitor-status'
@@ -18,12 +19,13 @@ import { useUpdateStatus } from '@/hooks/updates'
 import { useSettings } from '@/hooks/session'
 import { useI18n } from '@/lib/i18n'
 import type { Route } from '@/lib/router'
-import { SEARCH_SHORTCUT } from '@/lib/shortcuts'
+import { NEW_ISSUE_SHORTCUT, SEARCH_SHORTCUT } from '@/lib/shortcuts'
 import { Avatar } from '../atoms/Avatar'
 import { Badge } from '../atoms/Badge'
 import { Kbd } from '../atoms/Kbd'
 import { Overline, StatusDot } from '../atoms/misc'
 import { NavItem } from '../molecules/NavItem'
+import { useNewIssue } from './IssueModal'
 import { TimerWidget } from './time/TimerWidget'
 
 export function Sidebar({
@@ -38,6 +40,7 @@ export function Sidebar({
     onSearch: () => void
 }) {
     const { t } = useI18n()
+    const openNewIssue = useNewIssue()
     const settings = useSettings()
     const unread = unreadCount(useNotifications().data)
     const status = useMonitorStatus().data
@@ -48,14 +51,24 @@ export function Sidebar({
     return (
         <aside className="flex w-60 shrink-0 flex-col border-r border-line bg-panel">
             <div className="drag h-12 shrink-0" />
-            <button
-                onClick={onSearch}
-                className="mx-2 mb-2 flex h-8 cursor-default items-center gap-2 rounded-md border border-line px-2 text-sm text-muted hover:text-fg"
-            >
-                <Search size={14} />
-                <span className="flex-1 text-left">{t('search.button')}</span>
-                <Kbd>{SEARCH_SHORTCUT}</Kbd>
-            </button>
+            <div className="mx-2 mb-2 flex gap-1.5">
+                <button
+                    onClick={onSearch}
+                    className="flex h-8 min-w-0 flex-1 cursor-default items-center gap-2 rounded-md border border-line px-2 text-sm text-muted hover:text-fg"
+                >
+                    <Search size={14} />
+                    <span className="flex-1 text-left">{t('search.button')}</span>
+                    <Kbd>{SEARCH_SHORTCUT}</Kbd>
+                </button>
+                <button
+                    onClick={() => openNewIssue()}
+                    title={`${t('issue.create.title')} (${NEW_ISSUE_SHORTCUT})`}
+                    aria-label={t('issue.create.title')}
+                    className="flex h-8 w-8 shrink-0 cursor-default items-center justify-center rounded-md border border-line text-muted hover:text-fg"
+                >
+                    <SquarePen size={15} />
+                </button>
+            </div>
             <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2">
                 <NavItem
                     active={isActive('home')}

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { KanbanSquare, Pencil, Trash2 } from 'lucide-react'
+import { KanbanSquare, Pencil, Plus, Trash2 } from 'lucide-react'
 import type { Board } from '@domain/board/board'
+import { newIssueDefaults } from '@domain/board/board-rules'
 import { nextSort } from '@domain/board/issue-list'
 import { EMPTY_QUICK_FILTER, matchesQuickFilter, NONE } from '@domain/board/quick-filter'
 import type { Issue } from '@domain/redmine/entities'
@@ -20,7 +21,7 @@ import { Alert, EmptyState } from '@/ui/molecules/surfaces'
 import { BoardEditor } from '@/ui/organisms/BoardEditor'
 import { BoardFilters } from '@/ui/organisms/BoardFilters'
 import { BoardSummary } from '@/ui/organisms/BoardSummary'
-import { useOpenIssue } from '@/ui/organisms/IssueModal'
+import { useNewIssue, useOpenIssue, useScreenIssueDefaults } from '@/ui/organisms/IssueModal'
 import { IssueList } from '@/ui/organisms/IssueList'
 import { KanbanBoard } from '@/ui/organisms/KanbanBoard'
 import { PageLayout } from '@/ui/templates/layouts'
@@ -70,6 +71,7 @@ function BoardView({ board, onDeleted }: { board: Board; onDeleted: () => void }
     const { t, error } = useI18n()
     const boardIssues = useBoardIssues(board.id)
     const remove = useDeleteBoard()
+    const openNewIssue = useNewIssue()
     const [editing, setEditing] = useState(false)
     const [signal, setSignal] = useState<IssueSignal | null>(null)
     const { prefs, update } = useBoardViewPrefs(board.id)
@@ -84,6 +86,7 @@ function BoardView({ board, onDeleted }: { board: Board; onDeleted: () => void }
     const signalCounts = countSignals(filtered, signalOptions)
     const visible = signal ? filtered.filter((issue) => hasSignal(issue, signal, signalOptions)) : filtered
     const data = boardIssues.data
+    useScreenIssueDefaults(newIssueDefaults(board, data?.sprint?.version))
     const source = board.source
     const autoSprintLabel = source.type === 'sprint' && source.auto ? t(`sprint.auto.${source.auto}`) : undefined
 
@@ -118,6 +121,9 @@ function BoardView({ board, onDeleted }: { board: Board; onDeleted: () => void }
             }
             actions={
                 <>
+                    <Button onClick={() => openNewIssue()}>
+                        <Plus size={14} /> {t('issue.create.button')}
+                    </Button>
                     <SegmentedControl value={mode} options={viewOptions} onChange={(next) => update({ mode: next })} />
                     <RefreshButton spinning={boardIssues.isFetching} onClick={() => void boardIssues.refetch()} />
                     <IconButton label={t('board.edit')} icon={<Pencil size={14} />} onClick={() => setEditing(true)} />

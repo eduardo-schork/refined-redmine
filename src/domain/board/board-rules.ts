@@ -1,5 +1,6 @@
 import { AppError } from '../shared/errors'
-import type { IssueStatus } from '../redmine/entities'
+import type { IssueStatus, Version } from '../redmine/entities'
+import type { NewIssueDefaults } from '../redmine/issue-edit'
 import type { IssueFilter } from '../redmine/issue-filter'
 import { parseIssuesUrl } from '../redmine/issues-url'
 import type { Board, BoardColumn, BoardSource } from './board'
@@ -89,4 +90,23 @@ export function columnChange(
     if (!fromColumn || !toColumn) return null
     if (fromColumn.id === toColumn.id) return null
     return { from: fromColumn.name, to: toColumn.name }
+}
+
+/**
+ * A new issue created from a board starts in the board's project, and in its sprint when the board follows one.
+ * `sprintVersion` is the already resolved sprint (fixed or automatic).
+ */
+export function newIssueDefaults(board: Board, sprintVersion?: Pick<Version, 'id' | 'project'>): NewIssueDefaults {
+    const source = board.source
+    switch (source.type) {
+        case 'project':
+        case 'query':
+            return { projectId: source.projectId }
+        case 'sprint':
+            if (!sprintVersion) return {}
+            return { projectId: sprintVersion.project.id, fixedVersionId: sprintVersion.id }
+        case 'mine':
+        case 'filter':
+            return {}
+    }
 }

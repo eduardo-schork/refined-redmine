@@ -153,6 +153,45 @@ describe('HttpRedmineGateway.updateIssue', () => {
         expect(bodies[0]).toEqual({ issue: { assigned_to_id: '', due_date: '', done_ratio: 30 } })
     })
 
+    it('creates an issue with POST, leaving the fields not chosen out of the body', async () => {
+        const requests: { url: string; method?: string; body: unknown }[] = []
+        const client = new RedmineHttpClient(async (url, init) => {
+            requests.push({ url: String(url), method: init.method, body: JSON.parse(String(init.body)) })
+            return json({ issue: { id: 1300, subject: 'Cupom duplicado' } })
+        }, credentials)
+        const created = await new HttpRedmineGateway(client).createIssue({
+            projectId: 10,
+            trackerId: 2,
+            subject: 'Cupom duplicado',
+            fixedVersionId: 378
+        })
+        expect(created.id).toBe(1300)
+        expect(requests[0]).toMatchObject({ method: 'POST', url: expect.stringContaining('/issues.json') })
+        expect(requests[0].body).toEqual({
+            issue: { project_id: 10, tracker_id: 2, subject: 'Cupom duplicado', fixed_version_id: 378 }
+        })
+    })
+
+    it('sends a file as raw bytes and attaches it to the new issue by its token', async () => {
+        const requests: { url: string; contentType: string; body: unknown }[] = []
+        const client = new RedmineHttpClient(async (url, init) => {
+            const headers = init.headers as Record<string, string>
+            requests.push({ url: String(url), contentType: headers['Content-Type'], body: init.body })
+            if (String(url).includes('/uploads.json')) return json({ upload: { id: 7, token: '7.abc' } })
+            return json({ issue: { id: 1301 } })
+        }, credentials)
+        const gateway = new HttpRedmineGateway(client)
+        const bytes = new Uint8Array([137, 80, 78, 71])
+        const uploaded = await gateway.uploadFile({ filename: 'tela.png', contentType: 'image/png', bytes })
+        await gateway.createIssue({ projectId: 10, subject: 'Bug' }, [uploaded])
+
+        expect(requests[0]).toMatchObject({ contentType: 'application/octet-stream', body: bytes })
+        expect(requests[0].url).toContain('/uploads.json?filename=tela.png')
+        expect(JSON.parse(String(requests[1].body)).issue.uploads).toEqual([
+            { token: '7.abc', filename: 'tela.png', content_type: 'image/png' }
+        ])
+    })
+
     it('never sends a pasted key with invalid characters: the network error is scrubbed of it', async () => {
         const client = new RedmineHttpClient(
             async () => {

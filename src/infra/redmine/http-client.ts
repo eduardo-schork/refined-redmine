@@ -16,6 +16,7 @@ interface RequestOptions {
     credentials?: RedmineCredentials
     /** One attempt even for a GET: someone is waiting on screen and can try again (connection screen). */
     noRetry?: boolean
+    timeoutMs?: number
 }
 
 /** What happened in one attempt of a request (for the activity log). */
@@ -39,6 +40,7 @@ interface AttemptRequest<T> {
     apiKey: string
     body: unknown
     attempt: number
+    timeoutMs: number
     reader: ResponseReader<T>
 }
 
@@ -50,6 +52,8 @@ interface ResponseReader<T> {
 }
 
 const TIMEOUT_MS = 30_000
+// A file of a few MB over the VPN takes longer than an API call.
+const UPLOAD_TIMEOUT_MS = 120_000
 const MAX_ATTEMPTS = 3
 const RETRY_BASE_DELAY_MS = 400
 
@@ -124,6 +128,13 @@ function buildUrl(baseUrl: string, path: string, params: Params = {}, rawQuery =
     return url
 }
 
+/** Files go as raw bytes (Redmine's /uploads.json); everything else as JSON. */
+function encodeBody(body: unknown): { contentType: string; payload?: Uint8Array | string } {
+    if (body instanceof Uint8Array) return { contentType: 'application/octet-stream', payload: body }
+    const payload = body === undefined ? undefined : JSON.stringify(body)
+    return { contentType: 'application/json', payload }
+}
+
 function parseBody<T>(text: string): T {
     if (!text) return null as T
     return JSON.parse(text) as T
@@ -172,6 +183,11 @@ export class RedmineHttpClient {
         return this.send(method, path, options, jsonReader<T>())
     }
 
+    /** Sends a file to Redmine (`POST /uploads.json`); the answer has the token that attaches it to an issue. */
+    upload<T>(path: string, bytes: Uint8Array, params: Params): Promise<T> {
+        return this.send('POST', path, { params, body: bytes, timeoutMs: UPLOAD_TIMEOUT_MS }, jsonReader<T>())
+    }
+
     /** A file from Redmine (attachments), as bytes, refusing anything larger than `maxBytes`. */
     download(path: string, maxBytes: number): Promise<Uint8Array> {
         return this.send('GET', path, {}, bytesReader(maxBytes))
@@ -186,7 +202,8 @@ export class RedmineHttpClient {
         let lastError: AppError | undefined
 
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-            const request = { url, method, apiKey: credentials.apiKey, body: options.body, attempt, reader }
+            const timeoutMs = options.timeoutMs ?? TIMEOUT_MS
+            const request = { url, method, apiKey: credentials.apiKey, body: options.body, attempt, timeoutMs, reader }
             const outcome = await this.attempt(request)
             if (outcome.succeeded) return outcome.value
 
@@ -205,17 +222,18 @@ export class RedmineHttpClient {
             const durationMs = Date.now() - startedAt
             this.observe({ method: request.method, url, durationMs, attempt: request.attempt, ...fields })
         }
+        const { contentType, payload } = encodeBody(request.body)
         try {
             const response = await this.fetch(request.url.toString(), {
                 method: request.method,
                 redirect: request.reader.redirect,
                 headers: {
                     Accept: request.reader.accept,
-                    'Content-Type': 'application/json',
+                    'Content-Type': contentType,
                     'X-Redmine-API-Key': request.apiKey
                 },
-                body: request.body === undefined ? undefined : JSON.stringify(request.body),
-                signal: AbortSignal.timeout(TIMEOUT_MS)
+                body: payload,
+                signal: AbortSignal.timeout(request.timeoutMs)
             })
             if (response.ok) {
                 const { value, bytes } = await request.reader.read(response)

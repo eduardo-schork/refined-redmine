@@ -50,7 +50,11 @@ const statuses = [
 const statusById = new Map(statuses.map((status) => [status.id, status]))
 
 const project = { id: 10, name: 'Loja Virtual - Desenvolvimento' }
-const trackers = { dev: { id: 1, name: 'Desenvolvimento' }, bug: { id: 2, name: 'Defeito' } }
+const trackers = {
+    dev: { id: 1, name: 'Desenvolvimento' },
+    bug: { id: 2, name: 'Defeito' },
+    improvement: { id: 3, name: 'Melhoria' }
+}
 const priorities = {
     low: { id: 1, name: 'Baixa' },
     normal: { id: 2, name: 'Normal' },
@@ -129,7 +133,30 @@ const checkoutDescription = [
     '| Campo | Origem |',
     '| --- | --- |',
     '| Rua, bairro | API de CEP |',
-    '| Número | Cliente |'
+    '| Número | Cliente |',
+    '',
+    '### Contexto',
+    'Hoje 38% dos clientes que abandonam o checkout param na etapa de endereço (dados fictícios do painel).',
+    'O cadastro de lojas já consulta o CEP pelo mesmo serviço; a ideia é reaproveitar o cliente HTTP e o cache.',
+    '',
+    '### Regras',
+    '1. O CEP aceita com ou sem hífen; qualquer outro caractere é removido antes da busca.',
+    '2. Com o serviço fora do ar, o formulário continua manual e nada bloqueia o cliente.',
+    '3. Se o cliente já editou a rua, uma nova busca não sobrescreve o que ele digitou.',
+    '4. O complemento nunca é preenchido pela API.',
+    '',
+    '### Fora do escopo',
+    '- Busca de endereço por nome de rua',
+    '- Validação de entrega por região (fica para a 3.79)',
+    '',
+    '### Plano de testes',
+    '- CEP válido de capital, de cidade pequena e de área rural',
+    '- CEP inexistente e CEP com formato inválido',
+    '- Serviço lento (mais de 3 s) e fora do ar',
+    '- Edição manual depois da busca',
+    '',
+    '### Observações',
+    'Os eventos de analytics continuam os mesmos; só o campo `address_source` passa a ser enviado.'
 ].join('\n')
 
 const issues = [
@@ -409,6 +436,32 @@ const demoAttachments = [
     }
 ]
 
+// Files sent to /uploads.json, waiting for the issue that attaches them by token.
+const pendingUploads = new Map()
+
+function storeUpload(params, bytes) {
+    const token = `${pendingUploads.size + 1}.demo${Date.now()}`
+    pendingUploads.set(token, { filename: params.get('filename') ?? 'arquivo', bytes })
+    return { upload: { id: pendingUploads.size, token } }
+}
+
+function attachUploads(issueId, uploads = []) {
+    for (const reference of uploads) {
+        const upload = pendingUploads.get(reference.token)
+        if (!upload) continue
+        pendingUploads.delete(reference.token)
+        demoAttachments.push({
+            id: Math.max(...demoAttachments.map((attachment) => attachment.id)) + 1,
+            issueId,
+            filename: reference.filename ?? upload.filename,
+            content_type: reference.content_type ?? 'application/octet-stream',
+            author: people.marina,
+            created_on: daysAgo(0),
+            bytes: () => upload.bytes
+        })
+    }
+}
+
 function attachmentsOf(issueId) {
     return demoAttachments.filter((attachment) => attachment.issueId === issueId)
 }
@@ -524,11 +577,74 @@ function updateFields(item, fields) {
     return details
 }
 
+function setParent(id, parentId) {
+    for (const key of Object.keys(children)) children[key] = children[key].filter((childId) => childId !== id)
+    if (parentId) children[parentId] = [...(children[parentId] ?? []), id]
+}
+
+function updatePlanningFields(item, fields, change) {
+    if ('estimated_hours' in fields) {
+        change('estimated_hours', item.estimated_hours, fields.estimated_hours)
+        item.estimated_hours = fields.estimated_hours === '' ? null : Number(fields.estimated_hours)
+    }
+    if ('parent_issue_id' in fields) {
+        change('parent_id', parentOf(item.id)?.id ?? null, fields.parent_issue_id || null)
+        setParent(item.id, Number(fields.parent_issue_id) || null)
+    }
+}
+
+function updateTextFields(item, fields, change) {
+    if ('subject' in fields) {
+        change('subject', item.subject, fields.subject)
+        item.subject = fields.subject
+    }
+    if ('description' in fields) {
+        change('description', item.description, fields.description)
+        item.description = fields.description || null
+    }
+    if ('tracker_id' in fields) {
+        const tracker = Object.values(trackers).find((candidate) => candidate.id === Number(fields.tracker_id))
+        change('tracker_id', item.tracker.id, fields.tracker_id)
+        item.tracker = tracker ?? item.tracker
+    }
+}
+
+/** POST /issues.json: like Redmine, the title is required and the tracker defaults to the project's first. */
+function createIssue(fields) {
+    if (!fields.subject?.trim()) return { errors: ['Título não pode ficar em branco'] }
+    const id = Math.max(...issues.map((item) => item.id)) + 1
+    const tracker = Object.keys(trackers).find((key) => trackers[key].id === Number(fields.tracker_id)) ?? 'dev'
+    const priority = Object.keys(priorities).find((key) => priorities[key].id === Number(fields.priority_id))
+    const assignee = Object.keys(people).find((key) => people[key].id === Number(fields.assigned_to_id))
+    const created = issue(id, fields.subject, {
+        tracker,
+        priority: priority ?? 'normal',
+        assignee,
+        author: 'marina',
+        versionId: fields.fixed_version_id ? Number(fields.fixed_version_id) : undefined,
+        due: fields.due_date ?? null,
+        description: fields.description ?? null,
+        updatedDays: 0
+    })
+    created.start_date = fields.start_date ?? null
+    created.estimated_hours = fields.estimated_hours ?? null
+    if (fields.parent_issue_id) setParent(id, Number(fields.parent_issue_id))
+    attachUploads(id, fields.uploads)
+    created.created_on = created.updated_on = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
+    issues.push(created)
+    issueById.set(id, created)
+    return { issue: publicIssue(created) }
+}
+
 function updateIssue(id, body) {
     const item = issueById.get(id)
     const statusId = body.issue?.status_id
     if (statusId) item.status = statusById.get(Number(statusId))
     const details = updateFields(item, body.issue ?? {})
+    const change = (name, oldValue, newValue) =>
+        details.push({ property: 'attr', name, old_value: oldValue, new_value: newValue })
+    updateTextFields(item, body.issue ?? {}, change)
+    updatePlanningFields(item, body.issue ?? {}, change)
     if (details.length) {
         item.journals.push({
             id: item.journals.length + 100,
@@ -693,7 +809,12 @@ function route(method, url, body) {
         }))
         return { issue_priorities: list }
     }
+    if (path === '/uploads.json' && method === 'POST') return storeUpload(url.searchParams, body)
+    if (path === '/issues.json' && method === 'POST') return createIssue(body.issue ?? {})
     if (path === '/issues.json') return listIssues(url.searchParams)
+    if (path === `/projects/${project.id}.json`) {
+        return { project: { ...project, identifier: 'loja', trackers: Object.values(trackers) } }
+    }
     if (path === '/enumerations/time_entry_activities.json') return { time_entry_activities: timeActivities }
     if (path === '/time_entries.json' && method === 'POST') return createTimeEntry(body.time_entry ?? {})
     if (path === '/time_entries.json') return listTimeEntries(url.searchParams)
@@ -712,11 +833,16 @@ function route(method, url, body) {
     return { issue: issueDetail(item) }
 }
 
+/** JSON, or the raw bytes of a file sent to /uploads.json. */
 function readBody(request) {
     return new Promise((resolve) => {
-        let text = ''
-        request.on('data', (chunk) => (text += chunk))
-        request.on('end', () => resolve(text ? JSON.parse(text) : {}))
+        const chunks = []
+        request.on('data', (chunk) => chunks.push(chunk))
+        request.on('end', () => {
+            const bytes = Buffer.concat(chunks)
+            if (request.headers['content-type'] === 'application/octet-stream') return resolve(bytes)
+            resolve(bytes.length ? JSON.parse(bytes.toString('utf8')) : {})
+        })
     })
 }
 

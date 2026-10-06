@@ -1,6 +1,16 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { ExternalLink, X } from 'lucide-react'
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+    type KeyboardEvent,
+    type ReactNode
+} from 'react'
+import { ExternalLink, Pencil, X } from 'lucide-react'
 import type { CustomFieldValue, IssueDetail, Journal, JournalDetail } from '@domain/redmine/entities'
+import { MAX_SUBJECT_LENGTH, subtaskDefaults, type NewIssueDefaults } from '@domain/redmine/issue-edit'
 import { RedmineLinks } from '@domain/redmine/links'
 import { useChangeIssueStatus, useCommentOnIssue, useIssue } from '@/hooks/issues'
 import { useStatuses } from '@/hooks/reference'
@@ -8,22 +18,28 @@ import { useSettings } from '@/hooks/session'
 import { api } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { rememberIssue } from '@/lib/recent-issues'
+import { SUBMIT_SHORTCUT, useModifierShortcut } from '@/lib/shortcuts'
 import { Avatar } from '../atoms/Avatar'
 import { Button } from '../atoms/Button'
-import { Select, Textarea } from '../atoms/fields'
+import { Input, Select, Textarea } from '../atoms/fields'
 import { IconButton } from '../atoms/IconButton'
 import { Overline } from '../atoms/misc'
+import { ClampedContent } from '../molecules/ClampedContent'
 import { Dialog } from '../molecules/Dialog'
 import { Markdown } from '../molecules/Markdown'
 import { Alert, Property } from '../molecules/surfaces'
 import { useToast } from '../molecules/Toast'
-import { IssueFieldEditors } from './IssueFieldEditors'
+import { IssueCreateDialog } from './IssueCreateDialog'
+import { IssueFieldEditors, useSaveField } from './IssueFieldEditors'
 import { DueChip, PriorityChip, VersionChip } from '../molecules/issue-chips'
 import { IssueDetailTabs } from './IssueDetailTabs'
 import { IssueQuickActions } from './IssueQuickActions'
 import { StatusTag } from '../molecules/StatusTag'
 
 type Translate = ReturnType<typeof useI18n>['t']
+
+// Long descriptions are cut here, so the tabs (related issues, attachments, time) show up without scrolling.
+const DESCRIPTION_VISIBLE_LINES = 25
 
 interface MarkdownLinkProps {
     links: RedmineLinks
@@ -35,17 +51,53 @@ interface MarkdownLinkProps {
 const OpenIssueContext = createContext<(id: number) => void>(() => {})
 export const useOpenIssue = () => useContext(OpenIssueContext)
 
+// Any screen can open the "New issue" form; the created issue then opens in the modal. Without defaults, the form
+// starts with the ones of the screen being shown (a board's project and sprint).
+const NewIssueContext = createContext<(defaults?: NewIssueDefaults) => void>(() => {})
+export const useNewIssue = () => useContext(NewIssueContext)
+
+const ScreenDefaultsContext = createContext<(defaults?: NewIssueDefaults) => void>(() => {})
+
+/** Project and sprint for issues created while this screen is shown (⌘N and the sidebar button). */
+export function useScreenIssueDefaults({ projectId, fixedVersionId }: NewIssueDefaults) {
+    const register = useContext(ScreenDefaultsContext)
+    useEffect(() => {
+        register({ projectId, fixedVersionId })
+        return () => register(undefined)
+    }, [register, projectId, fixedVersionId])
+}
+
 export function IssueModalProvider({ children }: { children: ReactNode }) {
     const [stack, setStack] = useState<number[]>([])
+    const [newIssue, setNewIssue] = useState<NewIssueDefaults>()
+    const screenDefaults = useRef<NewIssueDefaults>(undefined)
     const current = stack[stack.length - 1]
-    const pushIssue = (id: number) => setStack((previous) => [...previous, id])
+    const pushIssue = useCallback((id: number) => setStack((previous) => [...previous, id]), [])
     const popIssue = () => setStack((previous) => previous.slice(0, -1))
+    const registerScreenDefaults = useCallback((defaults?: NewIssueDefaults) => {
+        screenDefaults.current = defaults
+    }, [])
+    const openNewIssue = useCallback((defaults?: NewIssueDefaults) => {
+        setNewIssue(defaults ?? screenDefaults.current ?? {})
+    }, [])
+    useModifierShortcut('n', openNewIssue)
     return (
         <OpenIssueContext.Provider value={pushIssue}>
-            {children}
-            {current !== undefined && (
-                <IssueModal key={current} id={current} canGoBack={stack.length > 1} onClose={popIssue} />
-            )}
+            <NewIssueContext.Provider value={openNewIssue}>
+                <ScreenDefaultsContext.Provider value={registerScreenDefaults}>
+                    {children}
+                </ScreenDefaultsContext.Provider>
+                {current !== undefined && (
+                    <IssueModal key={current} id={current} canGoBack={stack.length > 1} onClose={popIssue} />
+                )}
+                {newIssue && (
+                    <IssueCreateDialog
+                        defaults={newIssue}
+                        onClose={() => setNewIssue(undefined)}
+                        onCreated={pushIssue}
+                    />
+                )}
+            </NewIssueContext.Provider>
         </OpenIssueContext.Provider>
     )
 }
@@ -58,6 +110,7 @@ function IssueModal({ id, onClose, canGoBack }: { id: number; onClose: () => voi
     const { t, error } = useI18n()
     const toast = useToast()
     const openIssue = useOpenIssue()
+    const openNewIssue = useNewIssue()
     const settings = useSettings()
     const links = new RedmineLinks(settings.baseUrl)
     const issueQuery = useIssue(id)
@@ -96,8 +149,14 @@ function IssueModal({ id, onClose, canGoBack }: { id: number; onClose: () => voi
             {issue && (
                 <div className="flex min-h-0 flex-1">
                     <div className="min-w-0 flex-1 overflow-y-auto px-6 py-5">
-                        <Description issue={issue} {...markdownLinks} />
-                        <IssueDetailTabs key={issue.id} issue={issue} links={links} onOpenIssue={openIssue} />
+                        <DescriptionSection issue={issue} {...markdownLinks} />
+                        <IssueDetailTabs
+                            key={issue.id}
+                            issue={issue}
+                            links={links}
+                            onOpenIssue={openIssue}
+                            onNewSubtask={() => openNewIssue(subtaskDefaults(issue))}
+                        />
                         <History issue={issue} statusName={statusName} {...markdownLinks} />
                         <CommentBox comment={comment} saving={saving} />
                     </div>
@@ -149,9 +208,11 @@ function IssueHeader({
                         </button>
                     )}
                 </div>
-                <h2 className="mt-0.5 select-text text-xl font-semibold leading-snug">
-                    {issue?.subject ?? placeholderTitle}
-                </h2>
+                {issue ? (
+                    <IssueTitle issue={issue} />
+                ) : (
+                    <h2 className="mt-0.5 text-xl font-semibold leading-snug">{placeholderTitle}</h2>
+                )}
                 {issue && (
                     <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                         <StatusTag status={issue.status} />
@@ -170,12 +231,133 @@ function IssueHeader({
     )
 }
 
+function IssueTitle({ issue }: { issue: IssueDetail }) {
+    const { t } = useI18n()
+    const [editing, setEditing] = useState(false)
+    if (editing) return <TitleEditor issue={issue} onClose={() => setEditing(false)} />
+    return (
+        <div className="mt-0.5 flex items-start gap-1">
+            <h2 className="select-text text-xl font-semibold leading-snug">{issue.subject}</h2>
+            <IconButton
+                size="sm"
+                className="mt-0.5 shrink-0 text-muted"
+                label={t('issue.edit.titleAction')}
+                icon={<Pencil />}
+                onClick={() => setEditing(true)}
+            />
+        </div>
+    )
+}
+
+/** Enter saves, Esc cancels (without closing the issue). */
+function TitleEditor({ issue, onClose }: { issue: IssueDetail; onClose: () => void }) {
+    const { t } = useI18n()
+    const { save, saving } = useSaveField(issue)
+    const [draft, setDraft] = useState(issue.subject)
+    const unchanged = draft.trim() === issue.subject || !draft.trim()
+    const submit = () => {
+        if (unchanged) return
+        save({ subject: draft }, 'subject', draft.trim(), onClose)
+    }
+    const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter') submit()
+        if (event.key !== 'Escape') return
+        event.stopPropagation()
+        onClose()
+    }
+    return (
+        <div className="mt-1 flex items-center gap-2">
+            <Input
+                autoFocus
+                className="h-10 text-lg font-semibold"
+                maxLength={MAX_SUBJECT_LENGTH}
+                value={draft}
+                disabled={saving}
+                onChange={(event) => setDraft(event.target.value)}
+                onKeyDown={handleKeyDown}
+            />
+            <Button onClick={onClose} disabled={saving}>
+                {t('common.cancel')}
+            </Button>
+            <Button variant="primary" onClick={submit} disabled={saving || unchanged}>
+                {t('common.save')}
+            </Button>
+        </div>
+    )
+}
+
+function DescriptionSection({ issue, ...markdownLinks }: { issue: IssueDetail } & MarkdownLinkProps) {
+    const { t } = useI18n()
+    const [editing, setEditing] = useState(false)
+    if (editing) return <DescriptionEditor issue={issue} onClose={() => setEditing(false)} />
+    return (
+        <section>
+            <div className="mb-1.5 flex items-center justify-between">
+                <Overline>{t('issue.description')}</Overline>
+                <Button variant="ghost" className="h-7 px-2 text-xs" onClick={() => setEditing(true)}>
+                    <Pencil size={13} /> {t('common.edit')}
+                </Button>
+            </div>
+            <Description issue={issue} {...markdownLinks} />
+        </section>
+    )
+}
+
 function Description({ issue, links, onIssue, onExternal }: { issue: IssueDetail } & MarkdownLinkProps) {
     const { t } = useI18n()
     if (!issue.description?.trim()) {
         return <p className="text-sm italic text-muted">{t('issue.noDescription')}</p>
     }
-    return <Markdown text={issue.description} links={links} onIssue={onIssue} onExternal={onExternal} />
+    return (
+        <ClampedContent lines={DESCRIPTION_VISIBLE_LINES}>
+            <Markdown text={issue.description} links={links} onIssue={onIssue} onExternal={onExternal} />
+        </ClampedContent>
+    )
+}
+
+/**
+ * The description's Markdown, as Redmine stores it. Esc does not close the issue (the text would be lost);
+ * ⌘/Ctrl + Enter saves.
+ */
+function DescriptionEditor({ issue, onClose }: { issue: IssueDetail; onClose: () => void }) {
+    const { t } = useI18n()
+    const { save, saving } = useSaveField(issue)
+    const original = issue.description ?? ''
+    const [draft, setDraft] = useState(original)
+    const unchanged = draft === original
+    const submit = () => {
+        if (unchanged) return
+        save({ description: draft }, 'description', t('issue.edit.updated'), onClose)
+    }
+    const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+        if (event.key === 'Escape') event.stopPropagation()
+        const withModifier = event.metaKey || event.ctrlKey
+        if (event.key === 'Enter' && withModifier) submit()
+    }
+    return (
+        <section>
+            <Overline className="mb-1.5">{t('issue.description')}</Overline>
+            <Textarea
+                autoFocus
+                className="min-h-96 font-mono text-xs leading-relaxed"
+                value={draft}
+                disabled={saving}
+                onChange={(event) => setDraft(event.target.value)}
+                onKeyDown={handleKeyDown}
+            />
+            <div className="mt-2 flex items-center justify-end gap-2">
+                <span className="mr-auto text-xs text-muted">
+                    {t('issue.edit.descriptionHint', { shortcut: SUBMIT_SHORTCUT })}
+                </span>
+                <Button onClick={onClose} disabled={saving}>
+                    {t('common.cancel')}
+                </Button>
+                <Button variant="primary" onClick={submit} disabled={saving || unchanged}>
+                    {t('common.save')}
+                </Button>
+            </div>
+        </section>
+    )
 }
 
 function CommentBox({ comment, saving }: { comment: ReturnType<typeof useCommentOnIssue>; saving: boolean }) {
@@ -266,11 +448,10 @@ function IssueSidebar({
                 </Select>
             </Property>
             <IssueFieldEditors issue={issue} busy={saving} />
+            <Property label={t('issue.spent')}>{dates.hours(issue.spent_hours)}</Property>
             <Property label={t('issue.author')}>
                 <PersonValue name={issue.author.name} />
             </Property>
-            <Property label={t('issue.estimated')}>{dates.hours(issue.estimated_hours)}</Property>
-            <Property label={t('issue.spent')}>{dates.hours(issue.spent_hours)}</Property>
             {customFields.map((field) => (
                 <Property key={field.id} label={field.name}>
                     {formatCustomFieldValue(field.value, t)}

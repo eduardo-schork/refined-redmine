@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { SettingsView } from '@contracts/api'
 import type { Board } from '@domain/board/board'
 import { resolveLocale } from '@shared/i18n/index'
@@ -8,6 +8,7 @@ import { useApplyAppearance } from '@/lib/appearance'
 import { I18nProvider } from '@/lib/i18n'
 import { IssueStyleContext } from '@/lib/issue-style'
 import { NavContext, type Route } from '@/lib/router'
+import { useModifierShortcut } from '@/lib/shortcuts'
 import BoardPage from '@/pages/BoardPage'
 import CalendarPage from '@/pages/CalendarPage'
 import HomePage from '@/pages/HomePage'
@@ -19,7 +20,7 @@ import SprintsPage from '@/pages/SprintsPage'
 import TimePage from '@/pages/TimePage'
 import { ToastProvider } from '@/ui/molecules/Toast'
 import { BoardEditor } from '@/ui/organisms/BoardEditor'
-import { IssueModalProvider } from '@/ui/organisms/IssueModal'
+import { IssueModalProvider, useOpenIssue } from '@/ui/organisms/IssueModal'
 import { NotificationPermissionGate } from '@/ui/organisms/NotificationPermission'
 import { QuickSearch } from '@/ui/organisms/search/QuickSearch'
 import { WhatsNewDialog } from '@/ui/organisms/WhatsNewDialog'
@@ -52,8 +53,7 @@ function AuthenticatedApp() {
     const openSearch = useCallback(() => setSearching(true), [])
     const closeSearch = useCallback(() => setSearching(false), [])
     const issueStyle = useSettings().issueStyle
-    useAppEventsSync(navigate)
-    useSearchShortcut(openSearch)
+    useModifierShortcut('k', openSearch)
 
     const openEmptyBoardEditor = () => setNewBoard({})
     const closeBoardEditor = () => setNewBoard(undefined)
@@ -66,6 +66,7 @@ function AuthenticatedApp() {
         <NavContext.Provider value={navigate}>
             <IssueStyleContext.Provider value={issueStyle}>
                 <IssueModalProvider>
+                    <AppEventsSync onNavigate={navigate} />
                     <NotificationPermissionGate />
                     <WhatsNewDialog />
                     <AppShell
@@ -111,16 +112,9 @@ function AuthenticatedApp() {
     )
 }
 
-/** ⌘K on macOS, Ctrl+K on Windows, from any screen. */
-function useSearchShortcut(open: () => void) {
-    useEffect(() => {
-        const handleKeyDown = (keyboardEvent: KeyboardEvent) => {
-            const withModifier = keyboardEvent.metaKey || keyboardEvent.ctrlKey
-            if (!withModifier || keyboardEvent.key.toLowerCase() !== 'k') return
-            keyboardEvent.preventDefault()
-            open()
-        }
-        window.addEventListener('keydown', handleKeyDown)
-        return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [open])
+/** Inside the issue modal provider: a click on a system notification about an issue opens it in the modal. */
+function AppEventsSync({ onNavigate }: { onNavigate: (route: Route) => void }) {
+    const openIssue = useOpenIssue()
+    useAppEventsSync(onNavigate, openIssue)
+    return null
 }

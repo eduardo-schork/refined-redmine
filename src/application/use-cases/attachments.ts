@@ -2,15 +2,10 @@ import {
     attachmentKind,
     canOpenInSystem,
     canPreview,
-    decodeText,
-    fileExtension,
-    looksBinary,
     OPEN_MAX_BYTES,
     PREVIEW_MAX_BYTES,
+    previewFromBytes,
     safeFileName,
-    sniffImageType,
-    TEXT_PREVIEW_CHARS,
-    toBase64,
     type AttachmentPreview
 } from '@domain/redmine/attachment-kind'
 import type { Attachment } from '@domain/redmine/entities'
@@ -45,17 +40,17 @@ export class AttachmentUseCases {
 
     private async imagePreview(attachment: Attachment): Promise<AttachmentPreview> {
         const bytes = await this.gateway.downloadAttachment(attachment.id, PREVIEW_MAX_BYTES.image)
-        const mimeType = sniffImageType(bytes)
-        if (!mimeType) throw new AppError('attachment.notPreviewable')
-        return { kind: 'image', dataUrl: `data:${mimeType};base64,${toBase64(bytes)}` }
+        return this.previewOrRefuse(attachment, bytes)
     }
 
     private async textPreview(attachment: Attachment): Promise<AttachmentPreview> {
         const bytes = await this.gateway.downloadAttachment(attachment.id, PREVIEW_MAX_BYTES.text)
-        if (looksBinary(bytes)) throw new AppError('attachment.notPreviewable')
-        const text = decodeText(bytes)
-        const truncated = text.length > TEXT_PREVIEW_CHARS
-        const shown = truncated ? text.slice(0, TEXT_PREVIEW_CHARS) : text
-        return { kind: 'text', text: shown, truncated, extension: fileExtension(attachment.filename) }
+        return this.previewOrRefuse(attachment, bytes)
+    }
+
+    private previewOrRefuse(attachment: Attachment, bytes: Uint8Array): AttachmentPreview {
+        const preview = previewFromBytes(attachment, bytes)
+        if (!preview) throw new AppError('attachment.notPreviewable')
+        return preview
     }
 }

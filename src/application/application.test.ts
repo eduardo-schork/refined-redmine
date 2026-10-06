@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { Board } from '@domain/board/board'
 import { createMineMonitor, defaultEvents, type Monitor } from '@domain/monitor/monitor'
+import type { Version } from '@domain/redmine/entities'
 import { AppError } from '@domain/shared/errors'
 import { MonitorService } from './services/monitor-service'
 import { LoginUseCase } from './use-cases/session'
 import { BoardFilterResolver, DeleteBoardUseCase, MoveIssueToColumnUseCase, SaveBoardUseCase } from './use-cases/boards'
 import { ListSprintsUseCase } from './use-cases/sprints'
-import { EditIssueFieldsUseCase, IssueQueries } from './use-cases/issues'
+import { CreateIssueUseCase, EditIssueFieldsUseCase, IssueQueries } from './use-cases/issues'
 import { ReminderDispatcher, SaveCalendarEventUseCase } from './use-cases/calendar'
 import {
     detail,
@@ -459,5 +460,59 @@ describe('issues', () => {
         const result = await editIssue.execute(10, { doneRatio: 40 })
         expect(gateway.updates).toEqual([{ id: 10, update: { doneRatio: 40 } }])
         expect(result.ignored).toEqual(['doneRatio'])
+    })
+
+    it('the title is saved without surrounding spaces', async () => {
+        const gateway = new FakeGateway()
+        gateway.details.set(10, detail(issue(10)))
+        await new EditIssueFieldsUseCase(gateway).execute(10, { subject: '  Frete grátis  ' })
+        expect(gateway.updates).toEqual([{ id: 10, update: { subject: 'Frete grátis' } }])
+    })
+
+    it('creating validates before calling Redmine and sends the trimmed title', async () => {
+        const gateway = new FakeGateway()
+        const createIssue = new CreateIssueUseCase(gateway)
+
+        await expect(createIssue.execute({ projectId: 10, subject: '  ' })).rejects.toMatchObject({
+            code: 'issue.subjectRequired'
+        })
+        expect(gateway.created).toEqual([])
+
+        const created = await createIssue.execute({ projectId: 10, trackerId: 2, subject: ' Cupom duplicado ' })
+        expect(gateway.created).toEqual([{ projectId: 10, trackerId: 2, subject: 'Cupom duplicado' }])
+        expect(created.id).toBe(5001)
+    })
+
+    it('files go to Redmine first and are attached by token; nothing is sent when one is too large', async () => {
+        const gateway = new FakeGateway()
+        const createIssue = new CreateIssueUseCase(gateway)
+        const tooLarge = { filename: 'video.mp4', bytes: new Uint8Array(21 * 1024 * 1024) }
+        await expect(createIssue.execute({ projectId: 10, subject: 'Bug' }, [tooLarge])).rejects.toMatchObject({
+            code: 'issue.uploadTooLarge'
+        })
+        expect([gateway.sentFiles, gateway.created]).toEqual([[], []])
+
+        const print = { filename: 'C:\\prints\\tela.png', contentType: 'image/png', bytes: new Uint8Array([1, 2]) }
+        await createIssue.execute({ projectId: 10, subject: 'Bug' }, [print])
+        expect(gateway.sentFiles.map((file) => file.filename)).toEqual(['tela.png'])
+        expect(gateway.attachedUploads[0]).toEqual([
+            { token: 'token-1', filename: 'tela.png', contentType: 'image/png' }
+        ])
+    })
+
+    it('edit options bring the project trackers, people by name and only the versions not closed', async () => {
+        const gateway = new FakeGateway()
+        gateway.members = [
+            { id: 2, name: 'Lucas' },
+            { id: 1, name: 'Beatriz' }
+        ]
+        gateway.versions = [
+            { id: 1, name: '3.77', status: 'closed' },
+            { id: 2, name: '3.78', status: 'open' }
+        ] as Version[]
+        const options = await new IssueQueries(gateway).editOptions(10)
+        expect(options.trackers.map((tracker) => tracker.name)).toEqual(['Desenvolvimento', 'Defeito'])
+        expect(options.assignees.map((person) => person.name)).toEqual(['Beatriz', 'Lucas'])
+        expect(options.versions.map((version) => version.name)).toEqual(['3.78'])
     })
 })

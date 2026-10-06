@@ -6,6 +6,7 @@ import {
     decodeText,
     looksBinary,
     PREVIEW_MAX_BYTES,
+    previewFromBytes,
     safeFileName,
     sniffImageType,
     toBase64
@@ -98,5 +99,19 @@ describe('safeFileName', () => {
         const shortened = safeFileName(`${'a'.repeat(300)}.pdf`)
         expect(shortened).toHaveLength(120)
         expect(shortened.endsWith('.pdf')).toBe(true)
+    })
+})
+
+describe('previewFromBytes', () => {
+    it('draws images by their real type, shows text and refuses binaries named as text', () => {
+        const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 1, 2])
+        expect(previewFromBytes({ filename: 'tela.jpg' }, png)).toEqual({
+            kind: 'image',
+            dataUrl: `data:image/png;base64,${toBase64(png)}`
+        })
+        const log = new TextEncoder().encode('erro 500')
+        expect(previewFromBytes({ filename: 'console.log' }, log)).toMatchObject({ kind: 'text', text: 'erro 500' })
+        expect(previewFromBytes({ filename: 'dump.log' }, new Uint8Array([65, 0, 66]))).toBeUndefined()
+        expect(previewFromBytes({ filename: 'manual.pdf' }, log)).toBeUndefined()
     })
 })

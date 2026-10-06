@@ -11,16 +11,18 @@ import {
 } from '@/hooks/notifications'
 import { api } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
-import { openTarget, useNavigate } from '@/lib/router'
+import { openNotification, useNavigate } from '@/lib/router'
 import { cn } from '@/lib/cn'
 import { Button } from '@/ui/atoms/Button'
 import { IconButton } from '@/ui/atoms/IconButton'
+import { useOpenIssue } from '@/ui/organisms/IssueModal'
 import { NotificationList } from '@/ui/organisms/NotificationList'
 import { PageLayout } from '@/ui/templates/layouts'
 
 export default function NotificationsPage() {
     const { t, error } = useI18n()
     const navigate = useNavigate()
+    const openIssue = useOpenIssue()
     const items = useNotifications().data ?? []
     const status = useMonitorStatus().data
     const markRead = useMarkRead()
@@ -32,7 +34,7 @@ export default function NotificationsPage() {
 
     function open(notification: AppNotification) {
         markRead.mutate([notification.id])
-        openTarget(notification.target, navigate, (url) => void api.app.openExternal(url))
+        openNotification(notification, { navigate, openIssue, openExternal: (url) => void api.app.openExternal(url) })
     }
 
     function confirmClear() {

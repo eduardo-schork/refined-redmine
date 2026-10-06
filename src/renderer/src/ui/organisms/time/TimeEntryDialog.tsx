@@ -19,12 +19,6 @@ export interface TimeEntryDialogProps {
     onSaved?: () => void
 }
 
-/** 1.5 → "1,5" in Portuguese: the field shows hours the way people type them. */
-function hoursText(hours: number | undefined, locale: string): string {
-    if (!hours) return ''
-    return hours.toLocaleString(locale, { maximumFractionDigits: 2 })
-}
-
 function DateShortcuts({ onPick }: { onPick: (date: LocalDate) => void }) {
     const { t } = useI18n()
     const today = new Date()
@@ -65,10 +59,10 @@ function useSaveEntry(props: TimeEntryDialogProps) {
 }
 
 function useEntryForm(initial: TimeEntryDialogProps['initial']) {
-    const { locale } = useI18n()
+    const { dates } = useI18n()
     const activities = useTimeActivities().data ?? []
     const [spentOn, setSpentOn] = useState(initial?.spentOn ?? toLocalDate(new Date()))
-    const [typedHours, setTypedHours] = useState(hoursText(initial?.hours, locale))
+    const [typedHours, setTypedHours] = useState(dates.hoursInput(initial?.hours))
     const [chosenActivity, setChosenActivity] = useState<number | undefined>(initial?.activityId)
     const [comments, setComments] = useState(initial?.comments ?? '')
     const hours = parseHours(typedHours)
