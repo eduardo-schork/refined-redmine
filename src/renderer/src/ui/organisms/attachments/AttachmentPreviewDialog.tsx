@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { AppWindow, ChevronLeft, ChevronRight, ExternalLink, X } from 'lucide-react'
 import { canOpenInSystem, type AttachmentPreview } from '@domain/redmine/attachment-kind'
 import type { Attachment } from '@domain/redmine/entities'
@@ -31,16 +31,65 @@ export function AttachmentPreviewDialog({
     const { t, dates, locale } = useI18n()
     const attachment = attachments[index]
     const preview = useAttachmentPreview(attachment.id, true)
-    const hasSeveral = attachments.length > 1
-    const go = (step: number) => onIndexChange((index + step + attachments.length) % attachments.length)
-    useArrowKeys(hasSeveral ? go : undefined)
     const meta = [formatBytes(attachment.filesize, locale), attachment.author.name, dates.date(attachment.created_on)]
+    const actions = (
+        <>
+            {canOpenInSystem(attachment) && (
+                <Button variant="ghost" onClick={() => onOpenInSystem(attachment)}>
+                    <AppWindow size={14} /> {t('attachments.openInSystem')}
+                </Button>
+            )}
+            <Button variant="ghost" onClick={() => onOpenInRedmine(attachment)}>
+                <ExternalLink size={14} /> {t('attachments.openInRedmine')}
+            </Button>
+        </>
+    )
 
     return (
-        <Dialog onClose={onClose} size="xl" bare title={attachment.filename}>
+        <PreviewFrame
+            name={attachment.filename}
+            meta={meta}
+            index={index}
+            total={attachments.length}
+            onIndexChange={onIndexChange}
+            actions={actions}
+            onClose={onClose}
+        >
+            <PreviewBody preview={preview} />
+        </PreviewFrame>
+    )
+}
+
+/** The preview window: name and details, arrows between the files, extra actions and the content. */
+export function PreviewFrame({
+    name,
+    meta,
+    index,
+    total,
+    onIndexChange,
+    actions,
+    onClose,
+    children
+}: {
+    name: string
+    meta: string[]
+    index: number
+    total: number
+    onIndexChange: (index: number) => void
+    actions?: ReactNode
+    onClose: () => void
+    children: ReactNode
+}) {
+    const { t } = useI18n()
+    const hasSeveral = total > 1
+    const go = (step: number) => onIndexChange((index + step + total) % total)
+    useArrowKeys(hasSeveral ? go : undefined)
+
+    return (
+        <Dialog onClose={onClose} size="xl" bare title={name}>
             <div className="flex items-center gap-3 border-b border-line px-5 py-3">
                 <div className="min-w-0 flex-1">
-                    <h2 className="truncate font-semibold">{attachment.filename}</h2>
+                    <h2 className="truncate font-semibold">{name}</h2>
                     <p className="truncate text-xs text-muted">{meta.join(' · ')}</p>
                 </div>
                 {hasSeveral && (
@@ -52,7 +101,7 @@ export function AttachmentPreviewDialog({
                             onClick={() => go(-1)}
                         />
                         <span className="w-14 text-center text-xs tabular-nums text-muted">
-                            {t('attachments.position', { current: index + 1, total: attachments.length })}
+                            {t('attachments.position', { current: index + 1, total })}
                         </span>
                         <IconButton
                             label={t('attachments.next')}
@@ -62,19 +111,10 @@ export function AttachmentPreviewDialog({
                         />
                     </div>
                 )}
-                {canOpenInSystem(attachment) && (
-                    <Button variant="ghost" onClick={() => onOpenInSystem(attachment)}>
-                        <AppWindow size={14} /> {t('attachments.openInSystem')}
-                    </Button>
-                )}
-                <Button variant="ghost" onClick={() => onOpenInRedmine(attachment)}>
-                    <ExternalLink size={14} /> {t('attachments.openInRedmine')}
-                </Button>
+                {actions}
                 <IconButton label={t('common.close')} icon={<X size={16} />} size="sm" onClick={onClose} />
             </div>
-            <div className="min-h-0 flex-1 overflow-auto bg-panel-2">
-                <PreviewBody preview={preview} />
-            </div>
+            <div className="min-h-0 flex-1 overflow-auto bg-panel-2">{children}</div>
         </Dialog>
     )
 }
@@ -86,7 +126,7 @@ function PreviewBody({ preview }: { preview: ReturnType<typeof useAttachmentPrev
     return <PreviewContent preview={preview.data} />
 }
 
-function PreviewContent({ preview }: { preview: AttachmentPreview }) {
+export function PreviewContent({ preview }: { preview: AttachmentPreview }) {
     const { t } = useI18n()
     if (preview.kind === 'image') {
         return (

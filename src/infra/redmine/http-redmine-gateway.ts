@@ -17,6 +17,8 @@ import type {
     SavedQuery,
     Version
 } from '@domain/redmine/entities'
+import type { NewIssue } from '@domain/redmine/issue-edit'
+import type { IssueUpload, UploadedFile } from '@domain/redmine/issue-upload'
 import type { IssueFilter } from '@domain/redmine/issue-filter'
 import type { TimeEntry, TimeEntryActivity, TimeEntryDraft } from '@domain/time/time-entry'
 import type { Params, RedmineHttpClient } from './http-client'
@@ -67,13 +69,39 @@ function issueBody(update: IssueUpdate) {
     return {
         status_id: update.statusId,
         notes: update.notes,
+        subject: update.subject,
+        description: update.description,
+        tracker_id: update.trackerId,
         assigned_to_id: clearable(update.assignedToId),
         fixed_version_id: clearable(update.fixedVersionId),
         priority_id: update.priorityId,
         start_date: clearable(update.startDate),
         due_date: clearable(update.dueDate),
-        done_ratio: update.doneRatio
+        done_ratio: update.doneRatio,
+        estimated_hours: clearable(update.estimatedHours),
+        parent_issue_id: clearable(update.parentIssueId)
     }
+}
+
+function newIssueBody(issue: NewIssue, uploads: UploadedFile[]) {
+    return {
+        project_id: issue.projectId,
+        tracker_id: issue.trackerId,
+        subject: issue.subject,
+        description: issue.description,
+        priority_id: issue.priorityId,
+        assigned_to_id: issue.assignedToId,
+        fixed_version_id: issue.fixedVersionId,
+        start_date: issue.startDate,
+        due_date: issue.dueDate,
+        estimated_hours: issue.estimatedHours,
+        parent_issue_id: issue.parentIssueId,
+        uploads: uploads.length ? uploads.map(uploadReference) : undefined
+    }
+}
+
+function uploadReference(upload: UploadedFile) {
+    return { token: upload.token, filename: upload.filename, content_type: upload.contentType }
 }
 
 /** Redmine omits the collections that were not requested in `include`. */
@@ -177,6 +205,18 @@ export class HttpRedmineGateway implements RedmineGateway {
         await this.http.request('PUT', `/issues/${id}.json`, { body })
     }
 
+    async uploadFile(upload: IssueUpload): Promise<UploadedFile> {
+        const params = { filename: upload.filename }
+        const response = await this.http.upload<{ upload: { token: string } }>('/uploads.json', upload.bytes, params)
+        return { token: response.upload.token, filename: upload.filename, contentType: upload.contentType }
+    }
+
+    async createIssue(issue: NewIssue, uploads: UploadedFile[] = []): Promise<Issue> {
+        const body = { issue: newIssueBody(issue, uploads) }
+        const response = await this.http.request<{ issue: Issue }>('POST', '/issues.json', { body })
+        return response.issue
+    }
+
     async listStatuses(): Promise<IssueStatus[]> {
         const response = await this.http.request<{ issue_statuses: IssueStatus[] }>('GET', '/issue_statuses.json')
         return response.issue_statuses
@@ -201,6 +241,14 @@ export class HttpRedmineGateway implements RedmineGateway {
             if (principal) members.set(principal.id, principal)
         }
         return [...members.values()]
+    }
+
+    async listProjectTrackers(projectId: number): Promise<Named[]> {
+        const path = `/projects/${projectId}.json`
+        const response = await this.http.request<{ project: { trackers?: Named[] } }>('GET', path, {
+            params: { include: 'trackers' }
+        })
+        return response.project.trackers ?? []
     }
 
     async listPriorities(): Promise<IssuePriority[]> {

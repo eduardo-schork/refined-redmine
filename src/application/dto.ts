@@ -47,14 +47,15 @@ export interface IssueEditResult {
     ignored: EditableField[]
 }
 
-/** Choices offered when editing an issue of a project. */
 /** The user's time entries of a period, with the issues they belong to (entries only carry the issue id). */
 export interface MyTimeEntries {
     entries: TimeEntry[]
     issues: Record<number, Issue>
 }
 
+/** Choices offered when creating or editing an issue of a project. */
 export interface IssueEditOptions {
+    trackers: Named[]
     assignees: Named[]
     versions: Version[]
 }

@@ -20,6 +20,7 @@ import {
 import {
     ChangeIssueStatusUseCase,
     CommentOnIssueUseCase,
+    CreateIssueUseCase,
     EditIssueFieldsUseCase,
     IssueQueries,
     ReferenceDataQueries
@@ -193,6 +194,7 @@ export function createContainer(presentation: () => Presentation) {
     const changeStatus = new ChangeIssueStatusUseCase(gateway)
     const comment = new CommentOnIssueUseCase(gateway)
     const editIssue = new EditIssueFieldsUseCase(gateway)
+    const createIssue = new CreateIssueUseCase(gateway)
     const versionStats = new GetVersionStatsUseCase(gateway)
     const inspectProject = new InspectSprintProjectUseCase(gateway)
     const boardIssues = new ListBoardIssuesUseCase(gateway, settings, boardFilter)
@@ -281,7 +283,8 @@ export function createContainer(presentation: () => Presentation) {
             comment: (id, notes) => comment.execute(id, notes),
             search: (input) => issues.search(input),
             edit: (id, change) => editIssue.execute(id, change),
-            editOptions: (projectId) => issues.editOptions(projectId)
+            editOptions: (projectId) => issues.editOptions(projectId),
+            create: (issue, uploads) => createIssue.execute(issue, uploads)
         },
         reference: {
             statuses: () => reference.statuses(),

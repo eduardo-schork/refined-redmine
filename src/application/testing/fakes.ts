@@ -6,6 +6,8 @@ import type { MonitorStatus } from '@domain/monitor/monitor-status'
 import type { AppNotification } from '@domain/notification/notification'
 import type { DeliveryConfirmation, DeliveryRecord, NotifyPermissionInfo } from '@domain/notification/permission'
 import type { Attachment, Issue, IssueDetail, IssueStatus, Page, RedmineUser, Version } from '@domain/redmine/entities'
+import type { NewIssue } from '@domain/redmine/issue-edit'
+import type { IssueUpload, UploadedFile } from '@domain/redmine/issue-upload'
 import type { IssueFilter } from '@domain/redmine/issue-filter'
 import { DEFAULT_SETTINGS, type Settings } from '@domain/settings/settings'
 import { AppError } from '@domain/shared/errors'
@@ -68,6 +70,18 @@ export class FakeGateway implements RedmineGateway {
     async updateIssue(id: number, update: IssueUpdate) {
         this.updates.push({ id, update })
     }
+    created: NewIssue[] = []
+    attachedUploads: UploadedFile[][] = []
+    sentFiles: IssueUpload[] = []
+    async uploadFile(upload: IssueUpload): Promise<UploadedFile> {
+        this.sentFiles.push(upload)
+        return { token: `token-${this.sentFiles.length}`, filename: upload.filename, contentType: upload.contentType }
+    }
+    async createIssue(issue: NewIssue, uploads: UploadedFile[] = []): Promise<Issue> {
+        this.created.push(issue)
+        this.attachedUploads.push(uploads)
+        return { id: 5000 + this.created.length, subject: issue.subject } as Issue
+    }
     async listStatuses() {
         return this.statuses
     }
@@ -83,6 +97,12 @@ export class FakeGateway implements RedmineGateway {
     members: { id: number; name: string }[] = []
     async listProjectMembers() {
         return this.members
+    }
+    async listProjectTrackers() {
+        return [
+            { id: 1, name: 'Desenvolvimento' },
+            { id: 2, name: 'Defeito' }
+        ]
     }
     async listPriorities() {
         return [

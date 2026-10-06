@@ -160,6 +160,26 @@ export function toBase64(bytes: Uint8Array): string {
     return btoa(binary)
 }
 
+/**
+ * What can be shown inside the app from a file's bytes: an image Chromium can draw (type read from the bytes) or
+ * text, cut at TEXT_PREVIEW_CHARS. Undefined for anything else, including binaries named as text.
+ */
+export function previewFromBytes(
+    file: Omit<AttachmentFile, 'filesize'>,
+    bytes: Uint8Array
+): AttachmentPreview | undefined {
+    const kind = attachmentKind(file.filename, file.content_type)
+    if (kind === 'image') {
+        const mimeType = sniffImageType(bytes)
+        return mimeType ? { kind: 'image', dataUrl: `data:${mimeType};base64,${toBase64(bytes)}` } : undefined
+    }
+    if (kind !== 'text' || looksBinary(bytes)) return undefined
+    const text = decodeText(bytes)
+    const truncated = text.length > TEXT_PREVIEW_CHARS
+    const shown = truncated ? text.slice(0, TEXT_PREVIEW_CHARS) : text
+    return { kind: 'text', text: shown, truncated, extension: fileExtension(file.filename) }
+}
+
 const MAX_FILE_NAME = 120
 
 /** A name that is safe to create on disk: no folders, no reserved characters, never empty. */

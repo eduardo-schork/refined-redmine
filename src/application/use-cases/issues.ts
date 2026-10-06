@@ -7,9 +7,16 @@ import type {
     Project,
     SavedQuery
 } from '@domain/redmine/entities'
-import { assertValidChange, ignoredFields, type IssueFieldsChange } from '@domain/redmine/issue-edit'
+import {
+    assertValidChange,
+    assertValidNewIssue,
+    ignoredFields,
+    type IssueFieldsChange,
+    type NewIssue
+} from '@domain/redmine/issue-edit'
 import type { IssueFilter } from '@domain/redmine/issue-filter'
 import { MAX_SEARCH_RESULTS, parseIssueSearch, titleSearchQuery } from '@domain/redmine/issue-search'
+import { assertValidUploads, cleanUpload, type IssueUpload, type UploadedFile } from '@domain/redmine/issue-upload'
 import { AppError } from '@domain/shared/errors'
 import type { IssueEditOptions, IssueEditResult } from '../dto'
 import { issuesByIds } from './issue-lookup'
@@ -56,13 +63,15 @@ export class IssueQueries {
         }
     }
 
-    /** People and versions of the issue's project; the closed versions are kept out. */
+    /** Trackers, people and versions of the issue's project; the closed versions are kept out. */
     async editOptions(projectId: number): Promise<IssueEditOptions> {
-        const [members, versions] = await Promise.all([
+        const [trackers, members, versions] = await Promise.all([
+            this.gateway.listProjectTrackers(projectId),
             this.gateway.listProjectMembers(projectId),
             this.gateway.listVersions(projectId)
         ])
         return {
+            trackers,
             assignees: [...members].sort(byName),
             versions: versions.filter((version) => version.status !== 'closed').sort(byName)
         }
@@ -72,13 +81,33 @@ export class IssueQueries {
 export class EditIssueFieldsUseCase {
     constructor(private readonly gateway: RedmineGateway) {}
 
-    async execute(issueId: number, change: IssueFieldsChange): Promise<IssueEditResult> {
+    async execute(issueId: number, requested: IssueFieldsChange): Promise<IssueEditResult> {
+        const change = withTrimmedSubject(requested)
         const current = await this.gateway.getIssue(issueId)
         assertValidChange(current, change)
         await this.gateway.updateIssue(issueId, change)
         const saved = await this.gateway.getIssue(issueId)
         return { issue: saved, ignored: ignoredFields(change, saved) }
     }
+}
+
+export class CreateIssueUseCase {
+    constructor(private readonly gateway: RedmineGateway) {}
+
+    /** Files go first (Redmine attaches them by token); everything is validated before the first request. */
+    async execute(issue: NewIssue, uploads: IssueUpload[] = []): Promise<Issue> {
+        const cleaned = { ...issue, subject: issue.subject.trim() }
+        assertValidNewIssue(cleaned)
+        assertValidUploads(uploads)
+        const uploaded: UploadedFile[] = []
+        for (const upload of uploads) uploaded.push(await this.gateway.uploadFile(cleanUpload(upload)))
+        return this.gateway.createIssue(cleaned, uploaded)
+    }
+}
+
+function withTrimmedSubject(change: IssueFieldsChange): IssueFieldsChange {
+    if (change.subject === undefined) return change
+    return { ...change, subject: change.subject.trim() }
 }
 
 function byName(first: { name: string }, second: { name: string }): number {

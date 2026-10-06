@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { SettingsView } from '@contracts/api'
 import type { Board } from '@domain/board/board'
 import { resolveLocale } from '@shared/i18n/index'
@@ -8,6 +8,7 @@ import { useApplyAppearance } from '@/lib/appearance'
 import { I18nProvider } from '@/lib/i18n'
 import { IssueStyleContext } from '@/lib/issue-style'
 import { NavContext, type Route } from '@/lib/router'
+import { useModifierShortcut } from '@/lib/shortcuts'
 import BoardPage from '@/pages/BoardPage'
 import CalendarPage from '@/pages/CalendarPage'
 import HomePage from '@/pages/HomePage'
@@ -52,7 +53,7 @@ function AuthenticatedApp() {
     const openSearch = useCallback(() => setSearching(true), [])
     const closeSearch = useCallback(() => setSearching(false), [])
     const issueStyle = useSettings().issueStyle
-    useSearchShortcut(openSearch)
+    useModifierShortcut('k', openSearch)
 
     const openEmptyBoardEditor = () => setNewBoard({})
     const closeBoardEditor = () => setNewBoard(undefined)
@@ -116,18 +117,4 @@ function AppEventsSync({ onNavigate }: { onNavigate: (route: Route) => void }) {
     const openIssue = useOpenIssue()
     useAppEventsSync(onNavigate, openIssue)
     return null
-}
-
-/** ⌘K on macOS, Ctrl+K on Windows, from any screen. */
-function useSearchShortcut(open: () => void) {
-    useEffect(() => {
-        const handleKeyDown = (keyboardEvent: KeyboardEvent) => {
-            const withModifier = keyboardEvent.metaKey || keyboardEvent.ctrlKey
-            if (!withModifier || keyboardEvent.key.toLowerCase() !== 'k') return
-            keyboardEvent.preventDefault()
-            open()
-        }
-        window.addEventListener('keydown', handleKeyDown)
-        return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [open])
 }
