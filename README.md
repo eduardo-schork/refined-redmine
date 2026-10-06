@@ -48,7 +48,8 @@ Como usar cada tela: [manual do usuário](docs/MANUAL.md).
 
 **Detalhes da atividade**
 
-- Clique em qualquer tarefa (kanban, início, sprints) abre um modal com descrição (Markdown), campos, abas de tarefas relacionadas (subtarefas e relações com título, status e responsável), anexos (imagens e texto vistos no próprio app, documentos no app do sistema) e horas, e histórico; permite mudar status, comentar e editar prioridade, responsável, versão, datas e % concluído.
+- Clique em qualquer tarefa (kanban, início, sprints) abre um modal com descrição (Markdown), campos, abas de tarefas relacionadas (subtarefas e relações com título, status e responsável), anexos (imagens e texto vistos no próprio app, documentos no app do sistema) e horas, e histórico; permite mudar status, comentar e editar título, descrição, tipo, prioridade, responsável, versão, datas, % concluído, estimativa e tarefa pai. Descrição longa aparece cortada em 25 linhas, com "Mostrar tudo".
+- **Criar tarefa** pela barra lateral, por `⌘N`/`Ctrl+N` ou pelo quadro (já no projeto e na sprint do quadro), e **Nova subtarefa** no detalhe: projeto, tipo, título, descrição, anexos (escolher, arrastar ou colar, com miniaturas), prioridade, responsável, versão, tarefa pai, datas e estimativa.
 - **Busca rápida** (`⌘K` / `Ctrl+K`): tarefa por `#número` ou título, quadros, telas e tarefas recentes. Links `#1234` abrem no próprio modal. Botão "Abrir no Redmine".
 
 **Kanban**
@@ -58,7 +59,7 @@ Como usar cada tela: [manual do usuário](docs/MANUAL.md).
 - Arrastar um card muda o status no Redmine. Ao começar a arrastar, o app consulta `allowed_statuses` da tarefa e esmaece as colunas que o fluxo de trabalho não permite.
 - Raias por responsável, atualização automática a cada 60 s.
 - **Filtros rápidos** para quadro e lista: busca, responsável, tipo, situação e versão (várias opções de cada).
-- **Lista**: as tarefas do quadro em linhas, como no Redmine, agrupadas por versão, situação, responsável ou tipo e ordenáveis por coluna. Cada quadro lembra a visualização, os filtros e a ordenação.
+- **Lista**: as tarefas do quadro em linhas, como no Redmine, agrupadas por versão, situação, responsável ou tipo e ordenáveis por coluna, com o cabeçalho fixo ao rolar. Cada quadro lembra a visualização, os filtros e a ordenação.
 - Notificações do quadro (opcional): cards que entram, saem ou mudam de coluna, comentários e menções.
 - Cards com prioridade em destaque, etiquetas de versão e prazo, responsável e "parada há N dias"; contadores clicáveis de atrasadas, prioridade alta, paradas e sem responsável.
 - **Resumo do quadro**: indicadores, distribuição por status, tabela por pessoa, por tipo e por prioridade; nos quadros de sprint, datas, ritmo (fechadas × tempo), fechadas na semana e abertas por dia útil.
@@ -76,6 +77,7 @@ Como usar cada tela: [manual do usuário](docs/MANUAL.md).
 - A mesma alteração vista por dois monitores vira uma notificação só ("via …").
 - Janela de horário opcional, som, abrir ao iniciar o sistema, contador na bandeja/dock.
 - Mais de 4 eventos num ciclo viram uma notificação resumida.
+- Clicar numa notificação de tarefa (no app ou no sistema) abre a tarefa no próprio app.
 
 **Log**
 

@@ -89,6 +89,7 @@ Os quadros ficam na barra lateral, em **Quadros**. Cada coluna agrupa um ou mais
 
 - **Arrastar um card para outra coluna muda o status no Redmine.** O app só permite soltar onde a transição é aceita pelo fluxo de trabalho da tarefa.
 - No topo, **Quadro | Lista | Resumo** troca a forma de ver o quadro (veja [Lista](#lista) e [Resumo do quadro](#resumo-do-quadro)).
+- **Nova tarefa**, no topo, cria uma tarefa já no projeto do quadro e, no quadro de uma sprint, já na versão da sprint (veja [Criar uma tarefa](#criar-uma-tarefa)).
 - Os ícones no canto superior direito atualizam, editam e excluem o quadro.
 
 ### Filtros rápidos
@@ -126,6 +127,7 @@ A barra verde embaixo é o percentual concluído.
 **Lista** mostra as tarefas do quadro em linhas, como a lista de tarefas do Redmine: número, tipo, situação, prioridade, título, responsável, versão e previsão (vermelha se venceu, amarela se vence em breve).
 
 - **Agrupar por** (à direita dos filtros): versão (padrão), situação, responsável, tipo ou nenhum. Cada grupo mostra quantas tarefas tem; clique no nome do grupo para recolher ou abrir. Versões seguem a ordem das versões (3.9 antes de 3.10), situações a ordem do Redmine, e o grupo "Sem versão" ou "Sem responsável" fica por último.
+- **Cabeçalho fixo**: ao rolar a lista, os nomes das colunas continuam visíveis no topo, e dá para ordenar sem voltar para cima.
 - **Ordenar**: clique no nome de uma coluna; clique de novo para inverter. A seta mostra a coluna e o sentido. O padrão é por prioridade, da mais urgente para a mais baixa. Tarefas sem responsável, sem versão ou sem previsão ficam no fim em qualquer sentido; empates mostram primeiro a atualizada mais recentemente.
 - Clique em uma linha para abrir o detalhe da tarefa.
 
@@ -183,7 +185,10 @@ O quadro passa a aparecer também em **Configurações → Notificações → Mo
 
 Clicar em uma tarefa, em qualquer tela, abre o detalhe sem sair do app. As tarefas abertas ficam na lista de recentes da [busca rápida](#busca-rápida).
 
+- **Título**: o lápis ao lado do título abre a edição. `Enter` salva e `Esc` cancela.
 - **Descrição**, com formatação (listas, tabelas, negrito, links).
+  - Descrição longa aparece **cortada em 25 linhas**, esmaecendo no fim, para as abas logo abaixo ficarem visíveis sem rolar. **Mostrar tudo** abre o resto; **Mostrar menos** volta.
+  - **Editar**, ao lado de "Descrição", troca o texto por um editor com o Markdown da tarefa, como no Redmine. **Salvar** ou ⌘ + Enter (Ctrl + Enter no Windows) salva; **Cancelar** descarta. O `Esc` não fecha a tarefa enquanto você edita, para o texto não se perder.
 - **Abas abaixo da descrição**: **Tarefas relacionadas** (aberta por padrão), **Anexos** e **Horas**, uma de cada vez. Ao lado do nome, cada aba mostra quantas tarefas ou anexos tem, ou as horas lançadas. As setas do teclado trocam de aba.
 - **Histórico**, abaixo das abas: comentários e mudanças de campos.
 - **Tarefas relacionadas**: as **Subtarefas** e as **Relações**. Cada tarefa aparece em uma linha com o **número** (clique na linha para abrir), o **título**, o **status** e o **responsável**. Passe o mouse no título para ver o tipo. Tarefas fechadas ficam com o número riscado.
@@ -197,16 +202,35 @@ Clicar em uma tarefa, em qualquer tela, abre o detalhe sem sair do app. As taref
   - Os outros botões copiam para a área de transferência o **Link** da tarefa no Redmine, o **Número** (`#1234`), o **Título**, o **#Número e título** (`#1234 Título`, para mensagens e commits) ou um link em **Markdown** (`[#1234 Título](link)`). Um aviso mostra o que foi copiado.
 - **Status**: troque direto pelo seletor; só aparecem os status permitidos para a tarefa.
 - **Adicionar comentário**: aceita Markdown e é publicado no Redmine.
-- **Campos editáveis na lateral**: prioridade, responsável, versão, início, previsão e % concluído. Cada mudança é salva no Redmine na hora e confirmada com um aviso.
+- **Campos editáveis na lateral**: tipo, prioridade, responsável, versão, início, previsão, % concluído, estimado e tarefa pai. Cada mudança é salva no Redmine na hora e confirmada com um aviso.
+  - **Tipo**: os tipos habilitados no projeto da tarefa (Desenvolvimento, Defeito…).
+  - **Estimado** e **Tarefa pai**: salvos ao sair do campo ou com `Enter`; apague para limpar. Texto que não é hora (ou número de tarefa) é recusado com um aviso.
   - **Responsável**: clique no campo para abrir a lista dos membros do projeto; digite para filtrar e **clique no nome** para trocar. Digitar ou usar as setas nunca troca o responsável sozinho, e `Esc` fecha a lista sem mudar nada. "Ninguém" tira o responsável.
   - **Versão**: lista as versões abertas do projeto; "Sem versão" tira a versão.
   - **Datas**: são salvas quando você sai do campo ou aperta `Enter`. Apague a data para limpá-la. O início não pode ser depois da previsão.
   - **% concluído**: de 10 em 10.
   - Se o Redmine não aplicar algum campo (por exemplo, quando o fluxo da tarefa deixa a versão só para leitura), aparece um aviso em vermelho dizendo qual campo não foi salvo.
-- Também na lateral, só para leitura: autor, horas estimadas e gastas, campos personalizados e observadores.
+- Também na lateral, só para leitura: horas gastas, autor, campos personalizados e observadores.
+- **Nova subtarefa**, no canto da aba Tarefas relacionadas, cria uma tarefa filha desta (veja [Criar uma tarefa](#criar-uma-tarefa)).
 - **Abrir no Redmine** abre a tarefa no navegador.
 
 ![Abas do detalhe, com as tarefas relacionadas](images/issue-links.png)
+
+### Criar uma tarefa
+
+![Nova tarefa](images/issue-new.png)
+
+Para criar uma tarefa no Redmine sem sair do app, use o botão com lápis ao lado de **Buscar**, na barra lateral, o atalho **⌘N** (Ctrl+N no Windows) em qualquer tela, ou **Nova tarefa** no topo de um quadro. No detalhe de uma tarefa, **Nova subtarefa** (na aba Tarefas relacionadas) abre o mesmo formulário já com a tarefa pai, o projeto e a versão dela.
+
+- **Projeto** e **Título** são obrigatórios. O projeto já vem preenchido: o do quadro (e, num quadro de sprint, a versão da sprint; vale também para o botão da barra lateral e o ⌘N enquanto o quadro está aberto) ou o projeto das sprints configurado em Configurações → Sprints e Início. Clique no campo e digite para procurar outro projeto.
+- **Tipo** e **Prioridade** começam com o padrão do Redmine. Trocar o projeto limpa tipo, responsável e versão, que dependem do projeto.
+- **Descrição** em Markdown, como no Redmine.
+- **Anexos**: clique em **Escolher arquivos**, arraste arquivos para a área tracejada ou cole uma imagem (⌘V, por exemplo uma captura de tela) em qualquer campo. Cada arquivo aparece como um cartão, igual aos da aba Anexos: miniatura das imagens e ícone do tipo para o resto. Clique numa imagem ou num arquivo de texto para ver maior (as setas passam entre eles); o ✕ tira o arquivo. Até 10 arquivos de até 20 MB cada (o Redmine pode ter um limite menor).
+- **Responsável** funciona como no detalhe: digite para filtrar e clique no nome. **Versão**, **Início** e **Previsão** são opcionais.
+- **Tarefa pai**: o número, com ou sem `#`. Ao sair do campo, o título dela aparece embaixo, para conferir.
+- **Estimado**: as horas previstas, do mesmo jeito que no lançamento de horas (8, 1,5, 1:30, 1h30).
+- A tarefa só é criada pelo botão **Criar tarefa** (o `Enter` no título não cria, para evitar criar por engano). Depois de criada, ela abre no detalhe.
+- Se o Redmine exigir algum campo que o formulário não tem (um campo personalizado obrigatório do tipo, por exemplo), aparece a mensagem do Redmine; nesse caso, crie pelo Redmine.
 
 ### Anexos
 
@@ -373,7 +397,7 @@ Regras importantes:
 - Na primeira verificação (ou ao ligar um monitor) o app só "tira uma foto": nada do passado é notificado.
 - Quando muitas novidades chegam de uma vez, o sistema mostra uma notificação resumida.
 
-Na tela: **Não lidas** filtra, **Verificar agora** força uma verificação, e os ícones marcam tudo como lido e limpam o histórico. Clicar em um item abre a tarefa (ou a lista, quando o aviso fala de várias). O número de não lidas também aparece na barra lateral e no ícone da bandeja.
+Na tela: **Não lidas** filtra, **Verificar agora** força uma verificação, e os ícones marcam tudo como lido e limpam o histórico. Clicar em um item **abre a tarefa no próprio app** (ou a lista, quando o aviso fala de várias). O mesmo vale para a notificação do sistema: o clique traz o app para a frente já com a tarefa aberta. O número de não lidas também aparece na barra lateral e no ícone da bandeja.
 
 ### Criar e editar monitores
 
@@ -472,6 +496,8 @@ A prévia ao lado de cada item muda na hora, e a escolha vale em todo o app.
 | `⌘K` / `Ctrl+K`     | Abrir a busca rápida       |
 | `↑` / `↓` e `Enter` | Escolher e abrir, na busca |
 | `Esc`               | Fechar a busca             |
+| `⌘N` / `Ctrl+N`     | Nova tarefa                |
+| `⌘↵` / `Ctrl+Enter` | Salvar a descrição editada |
 
 ### Atalhos da Agenda
 
