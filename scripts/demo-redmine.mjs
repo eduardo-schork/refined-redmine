@@ -89,6 +89,26 @@ const versions = [
 ]
 const versionById = new Map(versions.map((item) => [item.id, item]))
 
+const demoModules = ['Checkout', 'Catálogo', 'Pagamentos', 'Conta do cliente']
+const demoRequesters = ['Comercial', 'Marina / Lucas', 'Suporte']
+
+/**
+ * Like the company's Redmine: Modulo and Solicitante in every tracker, Categoria only in Desenvolvimento, Cliente
+ * rarely filled and a checkbox. Values come from the id, so they stay the same on every start.
+ */
+function demoCustomFields(id, trackerKey) {
+    const fields = [
+        { id: 2, name: 'Modulo', value: demoModules[id % demoModules.length] },
+        { id: 3, name: 'Cliente', value: id % 5 === 0 ? 'Cliente Exemplo' : '' },
+        { id: 4, name: 'Solicitante', value: demoRequesters[id % demoRequesters.length] },
+        { id: 5, name: 'Revisão de código', value: '0' }
+    ]
+    if (trackerKey === 'dev') fields.push({ id: 270, name: 'Categoria', value: id % 3 ? 'Funcionalidade' : 'Bug' })
+    return fields
+}
+
+const requiredCustomFields = { dev: [2, 4, 270], bug: [2, 4], improvement: [2, 4] }
+
 function issue(id, subject, fields) {
     const {
         tracker = 'dev',
@@ -117,6 +137,7 @@ function issue(id, subject, fields) {
         updated_on: daysAgo(updatedDays, fields.hour ?? 10),
         closed_on: status === 5 ? daysAgo(updatedDays) : null,
         description: fields.description ?? null,
+        custom_fields: fields.customFields ?? demoCustomFields(id, tracker),
         watcherIds: fields.watchers ?? [],
         journals: fields.journals ?? []
     }
@@ -136,6 +157,8 @@ const checkoutDescription = [
     '| Número | Cliente |',
     '',
     '### Contexto',
+    '![Layout do checkout](checkout-v2.png)',
+    '',
     'Hoje 38% dos clientes que abandonam o checkout param na etapa de endereço (dados fictícios do painel).',
     'O cadastro de lojas já consulta o CEP pelo mesmo serviço; a ideia é reaproveitar o cliente HTTP e o cache.',
     '',
@@ -188,7 +211,7 @@ const issues = [
             {
                 id: 3,
                 user: people.beatriz,
-                notes: '@marina.costa o layout do formulário já está no Figma, página *Checkout v2*.',
+                notes: '@marina.costa o layout do formulário já está no Figma, página *Checkout v2*. O fluxo ficou assim:\n\n![](fluxo-cep.svg)\n\nE o vídeo do erro: ![](reproducao-erro-cep.webm)',
                 created_on: daysAgo(1),
                 details: []
             }
@@ -433,6 +456,15 @@ const demoAttachments = [
         author: people.rafael,
         created_on: daysAgo(4),
         bytes: () => Buffer.concat([Buffer.from([0x50, 0x4b, 0x05, 0x06]), Buffer.alloc(18)])
+    },
+    {
+        id: 7,
+        issueId: 1201,
+        filename: 'reproducao-erro-cep.webm',
+        content_type: 'video/webm',
+        author: people.beatriz,
+        created_on: daysAgo(1),
+        bytes: () => readFileSync(new URL('./demo-assets/reproducao-erro-cep.webm', import.meta.url))
     }
 ]
 
@@ -518,7 +550,6 @@ function issueDetail(item) {
         ...publicIssue(item),
         description: item.description,
         spent_hours: spentOn(item.id),
-        custom_fields: [{ id: 13, name: 'Hotfix', value: '0' }],
         journals: item.journals,
         attachments: attachmentsOf(item.id).map(attachmentInfo),
         relations: relations.filter((relation) => [relation.issue_id, relation.issue_to_id].includes(item.id)),
@@ -611,9 +642,10 @@ function updateTextFields(item, fields, change) {
 
 /** POST /issues.json: like Redmine, the title is required and the tracker defaults to the project's first. */
 function createIssue(fields) {
-    if (!fields.subject?.trim()) return { errors: ['Título não pode ficar em branco'] }
-    const id = Math.max(...issues.map((item) => item.id)) + 1
     const tracker = Object.keys(trackers).find((key) => trackers[key].id === Number(fields.tracker_id)) ?? 'dev'
+    const errors = createErrors(fields, tracker)
+    if (errors.length) return { errors }
+    const id = Math.max(...issues.map((item) => item.id)) + 1
     const priority = Object.keys(priorities).find((key) => priorities[key].id === Number(fields.priority_id))
     const assignee = Object.keys(people).find((key) => people[key].id === Number(fields.assigned_to_id))
     const created = issue(id, fields.subject, {
@@ -624,6 +656,7 @@ function createIssue(fields) {
         versionId: fields.fixed_version_id ? Number(fields.fixed_version_id) : undefined,
         due: fields.due_date ?? null,
         description: fields.description ?? null,
+        customFields: newCustomFields(tracker, fields.custom_fields),
         updatedDays: 0
     })
     created.start_date = fields.start_date ?? null
@@ -634,6 +667,25 @@ function createIssue(fields) {
     issues.push(created)
     issueById.set(id, created)
     return { issue: publicIssue(created) }
+}
+
+function createErrors(fields, tracker) {
+    const errors = []
+    if (!fields.subject?.trim()) errors.push('Título não pode ficar em branco')
+    const sent = new Map((fields.custom_fields ?? []).map((field) => [field.id, String(field.value ?? '').trim()]))
+    const names = new Map(demoCustomFields(0, tracker).map((field) => [field.id, field.name]))
+    for (const fieldId of requiredCustomFields[tracker]) {
+        if (!sent.get(fieldId)) errors.push(`${names.get(fieldId)} não pode ficar em branco`)
+    }
+    return errors
+}
+
+/** The tracker's fields with what was sent; the others, like Redmine, are ignored. */
+function newCustomFields(tracker, sent = []) {
+    return demoCustomFields(0, tracker).map((field) => {
+        const value = sent.find((entry) => entry.id === field.id)?.value
+        return { ...field, value: value ?? (field.id === 5 ? '0' : '') }
+    })
 }
 
 function updateIssue(id, body) {
