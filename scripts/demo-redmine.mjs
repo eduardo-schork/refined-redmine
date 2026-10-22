@@ -94,8 +94,8 @@ const demoModules = ['Checkout', 'Catálogo', 'Pagamentos', 'Conta do cliente']
 const demoRequesters = ['Comercial', 'Marina / Lucas', 'Suporte']
 
 /**
- * Like the company's Redmine: Modulo and Solicitante in every tracker, Categoria only in Desenvolvimento, Cliente
- * rarely filled and a checkbox. Values come from the id, so they stay the same on every start.
+ * Fictional custom fields, like a typical Redmine: Modulo and Solicitante required in every tracker, Categoria only in
+ * Desenvolvimento, Cliente rarely filled and a checkbox. Values come from the id, so they stay the same on every start.
  */
 function demoCustomFields(id, trackerKey) {
     const fields = [
@@ -104,11 +104,11 @@ function demoCustomFields(id, trackerKey) {
         { id: 4, name: 'Solicitante', value: demoRequesters[id % demoRequesters.length] },
         { id: 5, name: 'Revisão de código', value: '0' }
     ]
-    if (trackerKey === 'dev') fields.push({ id: 270, name: 'Categoria', value: id % 3 ? 'Funcionalidade' : 'Bug' })
+    if (trackerKey === 'dev') fields.push({ id: 6, name: 'Categoria', value: id % 3 ? 'Funcionalidade' : 'Bug' })
     return fields
 }
 
-const requiredCustomFields = { dev: [2, 4, 270], bug: [2, 4], improvement: [2, 4], qa: [2, 4] }
+const requiredCustomFields = { dev: [2, 4, 6], bug: [2, 4], improvement: [2, 4], qa: [2, 4] }
 
 function issue(id, subject, fields) {
     const {
