@@ -82,6 +82,62 @@ Registro de todas as regras que o app aplica. Cada regra aponta para onde está 
 | Semana de "Minhas horas" começa no dia configurado na Agenda; linhas por tarefa, da que tem mais horas para a que tem menos.                                                                          | `weekDays`, `buildTimesheet`                               |
 | "Repetir semana passada": os lançamentos com tarefa da semana anterior, de novo 7 dias depois (mesma tarefa, horas, atividade e comentário), um por um; não verifica se já foram repetidos.           | `RepeatWeekUseCase`, `shiftedEntries`                      |
 
+## Abas
+
+| Regra                                                                                                                                                                                                    | Onde                                        |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| Cada tela tem uma aba só, e cada quadro tem a sua. Abrir uma tela já aberta traz a aba para a frente; a data da agenda ou a seção das configurações trocam dentro da mesma aba. Aba nova vai para o fim. | `openTab`, `tabKey`                         |
+| "Quadros" sem quadro escolhido é o primeiro quadro, para não abrir duas abas do mesmo quadro.                                                                                                            | `withBoard`                                 |
+| Fechar a aba da frente mostra a seguinte; se era a última, a anterior. Fechar todas deixa a área vazia com um aviso.                                                                                     | `closeTab`                                  |
+| Ctrl+Tab / Ctrl+Shift+Tab andam em círculo; ⌘/Ctrl+1…8 vão para a aba da posição e 9 para a última, como nos navegadores.                                                                                | `stepTab`, `tabAt`, `useTabShortcuts`       |
+| Quadro excluído perde a aba; se ela estava na frente, aparece a primeira.                                                                                                                                | `keepTabs`                                  |
+| Aba escondida continua montada (guarda filtros, rolagem e formulários), mas não responde ao teclado: os atalhos da Agenda só valem com a aba dela na frente.                                             | `TabPanel`, `useIsActiveTab`                |
+| Ao iniciar, as abas da última vez voltam (configurável); a agenda volta em hoje, não na data em que estava. Sem abas (configurável), cada navegação troca a única tela, como antes.                      | `loadTabs`, `routePath`, `useWorkspaceTabs` |
+
+| Duplicar abre outra aba da mesma tela (`<tela>#2`…); o menu continua trazendo a primeira. ⌘/Ctrl-clique ou clique do meio no menu abrem sempre uma aba nova. | `openNewTab`, `NavItem` |
+| Arrastar uma aba sobre outra a coloca no lugar dela; "Fechar as outras" deixa só a escolhida. Abas reabertas guardam a posição da aba da frente. | `moveTab`, `closeOtherTabs`, `saveTabs` |
+
+## Trâmites (automações)
+
+| Regra                                                                                                                                                                                                                                                                                                                                                      | Onde                                                 |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Um botão por regra, na ordem configurada, só nas tarefas dos tipos e situações escolhidos (nenhum = todos). "Novo trâmite" aparece sempre (na própria tarefa, com horas e tarefas ligadas).                                                                                                                                                                | `rulesFor`, `NEW_TRAMITE_RULE`, `HandoffButtons`     |
+| Regra salva com nome obrigatório; modelos vazios de "enviar" voltam ao padrão (`* Trâmite de {{tipoAtividadeComentario}}: {{noteSelecionado}}`); fechamento incompleto é descartado; até 30 regras.                                                                                                                                                        | `cleanRule`, `assertValidRules`                      |
+| Notas citadas viram `#<tarefa>#note-<N>`, N = posição do registro no histórico do Redmine (contando os sem nota). Ordem: tarefa, depois nota. Com duas ou mais, usa o modelo de várias notas e repete a linha com `{{noteSelecionado}}`. `{{tipoAtividadeComentario}}` = tipo desta tarefa em minúsculas. Marcar ou desmarcar nota reescreve o comentário. | `noteNumber`, `renderHandoffComment`, `fillTemplate` |
+| Tarefas vizinhas: pai, subtarefas e o outro lado das relações, em largura, até 4 níveis quando há tipos a encontrar (destino e fechamento) ou 2 sem eles; para no nível em que todos os tipos apareceram ou após 60 leituras; as que o usuário não vê são puladas.                                                                                         | `findNearbyIssues`, `neighbourIds`                   |
+| Destino: tarefas vizinhas do tipo de destino, mais próximas primeiro; com uma só, ela é escolhida. Dá para informar outra pelo número.                                                                                                                                                                                                                     | `targetCandidates`, `useTarget`                      |
+| Notas a citar: desta tarefa, das subtarefas e das irmãs de tipos cobertos pela regra (não do tipo de destino).                                                                                                                                                                                                                                             | `noteSources`                                        |
+| Fechamento: para cada tipo → situação, as tarefas conhecidas desse tipo; marcadas por padrão esta tarefa e as com notas citadas, senão a mais próxima. Uma tarefa marcada em dois passos muda só no primeiro.                                                                                                                                              | `defaultClosingChecks`, `useClosing`                 |
+| Comentário, situação, responsável, versão e anexos vão num único `PUT`, só com os campos que mudam; a tarefa é relida e o que o Redmine ignorou vira aviso. Sem comentário, anexo ou mudança, nada é enviado.                                                                                                                                              | `CommentAndChangeUseCase`                            |
+| Horas: vazio não lança; texto que não é hora ou hora extra maior que as horas impede enviar. O lançamento vai com a data de hoje, na tarefa de origem, com o comentário "<regra> → #destino" (ou a primeira linha do trâmite). A parte extra vai também para o banco.                                                                                      | `useHandoffHours`, `useTimeSteps`                    |
+| O envio é uma sequência de passos com chave; repetir pula os concluídos (nunca comenta duas vezes) e mudar uma escolha refaz o passo afetado. Fecha sozinho só quando tudo deu certo sem aviso.                                                                                                                                                            | `useSteps`, `StepsFooter`                            |
+
+## Alterar em massa
+
+| Regra                                                                                                                                                                                           | Onde                                             |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Árvore: a tarefa, a pai e as relacionadas numa listagem, e as subtarefas nível a nível (até 3, `parent_id=a,b,c`); cada tarefa aparece uma vez.                                                 | `loadIssueTree`, `treeRoots`, `buildIssueTree`   |
+| Marcar/desmarcar uma tarefa faz o mesmo com as subtarefas; começa marcada a tarefa aberta com as subtarefas.                                                                                    | `toggleSubtree`, `subtreeIds`                    |
+| "Manter" não envia o campo; "Ninguém"/"Sem versão" limpam. Cada tarefa recebe só o que difere dela; sem diferença, não há requisição. Depois a tarefa é relida e o que não foi aplicado vira ⚠. | `bulkDiff`, `unappliedFields`, `BulkEditUseCase` |
+
+## Horas extras
+
+| Regra                                                                                                                                                                           | Onde                                            |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Ficam só no app (`overtime.json`): dia, horas (mais que 0 e até 24), tarefa opcional e descrição.                                                                               | `assertValidOvertime`, `OvertimeUseCases`       |
+| Cada mês está no banco ou pago; saldo em banco = soma dos meses não pagos; "saldo no fim do mês" acumula só os não pagos até ali.                                               | `bankBalance`, `overtimeMonths`, `setMonthPaid` |
+| Ao lançar horas (ou num trâmite), "hora extra" é a parte das horas que foi extra: não pode passar das horas; o Redmine recebe as horas inteiras e o banco recebe a parte extra. | `useOvertimeInput`, `useTimeSteps`              |
+
+## Tempo do time
+
+| Regra                                                                                                                                                                   | Onde                                                |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Times ficam nas configurações do app: nome obrigatório, de 1 a 60 pessoas, escolhidas entre os membros de projetos. "Meu tempo" é o usuário sozinho, sempre disponível. | `assertValidTeam`, `cleanTeams`, `TeamEditorDialog` |
+| Uma listagem de lançamentos por pessoa (`user_id`) no período; o Redmine só devolve o que o papel do usuário permite ver.                                               | `TimeQueries.team`                                  |
+| Períodos com semana começando na segunda; "esta semana" e "este mês" param hoje; período escolhido até 62 dias.                                                         | `periodRange`, `daysOf`                             |
+| Média por pessoa conta todos os membros (inclusive quem não lançou); por dia útil divide por segunda a sexta do período (feriados não são conhecidos).                  | `teamSheet`                                         |
+| Detalhe por tarefa ou atividade, das com mais horas para as com menos; clicar em pessoa, dia ou célula filtra.                                                          | `groupEntries`, `focusedEntries`                    |
+
 ## Busca rápida
 
 | Regra                                                                                                                                               | Onde                        |

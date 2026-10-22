@@ -4,6 +4,12 @@ Versões do Refined Redmine. A versão instalada aparece em **Configurações �
 
 ## Próxima versão
 
+- **Trâmites**: botões no detalhe da tarefa, configurados em Configurações → Automações. "Enviar para QA" (por exemplo) acha a tarefa de Qualidade ligada, cita as notas escolhidas num comentário, muda situação e responsável dela, lança as horas e pode fechar as tarefas de desenvolvimento. O **Novo trâmite** faz comentário, situação, responsável, versão e horas da própria tarefa de uma vez. Cada nota do histórico ganhou o botão "Enviar este trâmite".
+- **Alterar em massa**: situação, responsável e versão da tarefa, da pai, das relacionadas e das subtarefas de uma vez, por exemplo para levar uma história e as tarefas dela para a sprint.
+- **Horas extras**: banco de horas extras no app, com saldo, meses no banco ou pagos e gráfico do ano. Ao lançar horas, informe quanto foi hora extra.
+- **Tempo do time**: horas por pessoa e por dia de um time montado com pessoas dos projetos, com médias e o detalhe por tarefa ou atividade.
+- **Mais nas abas**: arraste para reordenar, duplique uma aba, feche as outras e abra em aba nova com ⌘-clique ou clique do meio no menu.
+- **Abas**: cada tela e cada quadro abrem numa aba no topo, como no navegador. As abas de trás guardam filtros, rolagem e formulários; Ctrl+Tab passa entre elas e ⌘1…9 vai direto para uma. As abas voltam ao abrir o app, e dá para desligá-las em Configurações → Geral → Abas.
 - **Campos personalizados ao criar tarefa**: o formulário mostra os campos do tipo escolhido (Modulo, Solicitante, Categoria, Cliente…), com os valores já usados no projeto como sugestão e `*` nos que todas as tarefas recentes do tipo preenchem. Corrige a criação no Redmine da empresa, que recusava por falta desses campos. Numa **Nova subtarefa**, eles vêm com os valores da tarefa pai.
 - **Vídeos e áudios tocam no app**: na aba Anexos, MP4, MOV, WebM, MP3, M4A e outros formatos comuns abrem num player dentro do app, sem ir para o app do sistema.
 - **Imagens no meio da descrição e dos comentários**: o print anexado e citado no texto aparece como miniatura no lugar, em vez de um link que abria uma página quebrada do Redmine; clique para ver maior.
