@@ -48,8 +48,8 @@ Como usar cada tela: [manual do usuário](docs/MANUAL.md).
 
 **Detalhes da atividade**
 
-- Clique em qualquer tarefa (kanban, início, sprints) abre um modal com descrição (Markdown), campos, abas de tarefas relacionadas (subtarefas e relações com título, status e responsável), anexos (imagens e texto vistos no próprio app, documentos no app do sistema) e horas, e histórico; permite mudar status, comentar e editar título, descrição, tipo, prioridade, responsável, versão, datas, % concluído, estimativa e tarefa pai. Descrição longa aparece cortada em 25 linhas, com "Mostrar tudo".
-- **Criar tarefa** pela barra lateral, por `⌘N`/`Ctrl+N` ou pelo quadro (já no projeto e na sprint do quadro), e **Nova subtarefa** no detalhe: projeto, tipo, título, descrição, anexos (escolher, arrastar ou colar, com miniaturas), prioridade, responsável, versão, tarefa pai, datas e estimativa.
+- Clique em qualquer tarefa (kanban, início, sprints) abre um modal com descrição (Markdown), campos, abas de tarefas relacionadas (subtarefas e relações com título, status e responsável), anexos (imagens, texto, vídeo e áudio vistos no próprio app, documentos no app do sistema; imagens citadas na descrição e nos comentários aparecem como miniatura) e horas, e histórico; permite mudar status, comentar e editar título, descrição, tipo, prioridade, responsável, versão, datas, % concluído, estimativa e tarefa pai. Descrição longa aparece cortada em 25 linhas, com "Mostrar tudo".
+- **Criar tarefa** pela barra lateral, por `⌘N`/`Ctrl+N` ou pelo quadro (já no projeto e na sprint do quadro), e **Nova subtarefa** no detalhe: projeto, tipo, título, descrição, campos personalizados do tipo (com sugestões; a subtarefa herda da pai), anexos (escolher, arrastar ou colar, com miniaturas), prioridade, responsável, versão, tarefa pai, datas e estimativa.
 - **Busca rápida** (`⌘K` / `Ctrl+K`): tarefa por `#número` ou título, quadros, telas e tarefas recentes. Links `#1234` abrem no próprio modal. Botão "Abrir no Redmine".
 
 **Kanban**

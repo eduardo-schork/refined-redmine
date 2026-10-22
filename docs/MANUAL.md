@@ -225,12 +225,13 @@ Para criar uma tarefa no Redmine sem sair do app, use o botão com lápis ao lad
 - **Projeto** e **Título** são obrigatórios. O projeto já vem preenchido: o do quadro (e, num quadro de sprint, a versão da sprint; vale também para o botão da barra lateral e o ⌘N enquanto o quadro está aberto) ou o projeto das sprints configurado em Configurações → Sprints e Início. Clique no campo e digite para procurar outro projeto.
 - **Tipo** e **Prioridade** começam com o padrão do Redmine. Trocar o projeto limpa tipo, responsável e versão, que dependem do projeto.
 - **Descrição** em Markdown, como no Redmine.
+- **Campos personalizados do tipo** (no Redmine da empresa: Modulo, Solicitante, Categoria, Cliente…) aparecem abaixo da descrição, com os valores já usados no projeto como sugestão ao digitar. Os marcados com `*` estão preenchidos em todas as tarefas recentes desse tipo e são tratados como obrigatórios. A lista vem das tarefas recentes do projeto, então um valor novo de uma lista do Redmine pode ser recusado; nesse caso aparece a mensagem do Redmine. Numa **Nova subtarefa**, eles já vêm com os valores da tarefa pai.
 - **Anexos**: clique em **Escolher arquivos**, arraste arquivos para a área tracejada ou cole uma imagem (⌘V, por exemplo uma captura de tela) em qualquer campo. Cada arquivo aparece como um cartão, igual aos da aba Anexos: miniatura das imagens e ícone do tipo para o resto. Clique numa imagem ou num arquivo de texto para ver maior (as setas passam entre eles); o ✕ tira o arquivo. Até 10 arquivos de até 20 MB cada (o Redmine pode ter um limite menor).
 - **Responsável** funciona como no detalhe: digite para filtrar e clique no nome. **Versão**, **Início** e **Previsão** são opcionais.
 - **Tarefa pai**: o número, com ou sem `#`. Ao sair do campo, o título dela aparece embaixo, para conferir.
 - **Estimado**: as horas previstas, do mesmo jeito que no lançamento de horas (8, 1,5, 1:30, 1h30).
 - A tarefa só é criada pelo botão **Criar tarefa** (o `Enter` no título não cria, para evitar criar por engano). Depois de criada, ela abre no detalhe.
-- Se o Redmine exigir algum campo que o formulário não tem (um campo personalizado obrigatório do tipo, por exemplo), aparece a mensagem do Redmine; nesse caso, crie pelo Redmine.
+- Se faltar algum campo obrigatório, aparece a mensagem do Redmine (ex.: "Categoria não pode ficar em branco") e nada é criado: preencha e clique de novo.
 
 ### Anexos
 
@@ -241,12 +242,17 @@ A aba **Anexos** mostra cada arquivo da tarefa como um cartão com o nome, o tam
 Ao clicar num anexo:
 
 - **Imagens** (PNG, JPG, GIF, WebP, SVG…) e **arquivos de texto** (`.txt`, `.log`, `.json`, `.csv`, `.md`, `.sql`, código…) abrem **dentro do app**. JSON aparece já indentado. Arquivos de texto muito grandes mostram só o começo.
-- **PDF, documentos, planilhas, apresentações, vídeos e áudios** abrem no **app do sistema** (Preview, Word, Excel…).
+- **Vídeos e áudios** (MP4, MOV, WebM, MP3, M4A…) até 100 MB **tocam dentro do app**. Se o formato ou o codec não tocar, a visualização avisa; use **Abrir no app do sistema**.
+- **PDF, documentos, planilhas e apresentações**, e vídeos MKV/AVI, abrem no **app do sistema** (Preview, Word, Excel…).
 - **Arquivos compactados** (`.zip`, `.rar`…), **programas** e outros tipos abrem **no Redmine**, no navegador.
 
 ![Visualizar anexo](images/attachment-preview.png)
 
 Na visualização, as setas (`←` `→` ou os botões) passam pelos outros anexos que dá para ver no app, e os botões no topo abrem o arquivo no app do sistema ou no Redmine. `Esc` fecha.
+
+**Imagens no meio do texto**: quando a descrição ou um comentário tem uma imagem anexada à tarefa (o print colado no Redmine), ela aparece como uma miniatura pequena no lugar, para não ocupar a tela; clique para ver maior, com as setas para os outros anexos. Um vídeo citado no texto aparece como etiqueta com o nome e toca ao clicar.
+
+![Imagem na descrição](images/issue-inline-image.png)
 
 Por segurança, o app nunca entrega ao sistema arquivos que podem executar algo ao abrir: programas (`.exe`, `.app`, `.dmg`…), scripts (`.bat`, `.js`, `.sh`, `.ps1`…), páginas (`.html`, `.svg`) e documentos do Office com macro (`.docm`, `.xlsm`, `.pptm`). Esses abrem no Redmine; os de texto ainda dá para ver dentro do app.
 

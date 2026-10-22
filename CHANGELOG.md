@@ -2,6 +2,12 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
+## Próxima versão
+
+- **Campos personalizados ao criar tarefa**: o formulário mostra os campos do tipo escolhido (Modulo, Solicitante, Categoria, Cliente…), com os valores já usados no projeto como sugestão e `*` nos que todas as tarefas recentes do tipo preenchem. Corrige a criação no Redmine da empresa, que recusava por falta desses campos. Numa **Nova subtarefa**, eles vêm com os valores da tarefa pai.
+- **Vídeos e áudios tocam no app**: na aba Anexos, MP4, MOV, WebM, MP3, M4A e outros formatos comuns abrem num player dentro do app, sem ir para o app do sistema.
+- **Imagens no meio da descrição e dos comentários**: o print anexado e citado no texto aparece como miniatura no lugar, em vez de um link que abria uma página quebrada do Redmine; clique para ver maior.
+
 ## 0.9.0
 
 - **Criar tarefas pelo app**: o botão com lápis ao lado de Buscar, o atalho **⌘N** (Ctrl+N no Windows) e **Nova tarefa** no topo dos quadros abrem um formulário com projeto, tipo, título, descrição, anexos, prioridade, responsável, versão, tarefa pai, datas e estimativa. Num quadro, o projeto e a sprint já vêm preenchidos. A tarefa criada abre em seguida.
