@@ -6,10 +6,12 @@ export const qk = {
     issue: (id: number) => ['issue', id] as const,
     /** Under the issue's key, so refreshing the issue also refreshes them. */
     linkedIssues: (id: number, ids: number[]) => ['issue', id, 'linked', ids.join(',')] as const,
+    issueTree: (id: number) => ['issue', id, 'tree'] as const,
     issueSearch: (input: string) => ['issue-search', input.trim()] as const,
     issueEditOptions: (projectId: number) => ['issue-edit-options', projectId] as const,
     issueCustomFields: (projectId: number) => ['issue-custom-fields', projectId] as const,
     priorities: ['reference', 'priorities'] as const,
+    trackers: ['reference', 'trackers'] as const,
     issueTitle: (id: number) => ['issue-title', id] as const,
     allowed: (id: number, updatedOn: string) => ['allowed', id, updatedOn] as const,
     myQueue: ['issues', 'my-queue'] as const,
@@ -31,5 +33,8 @@ export const qk = {
     issueTime: (issueId: number) => ['time', 'issue', issueId] as const,
     myTime: (from: string, to: string) => ['time', 'mine', from, to] as const,
     timer: ['timer'] as const,
+    overtime: ['overtime'] as const,
+    teamTime: (memberIds: number[], from: string, to: string) =>
+        ['time', 'team', memberIds.join(','), from, to] as const,
     attachmentPreview: (id: number) => ['attachment-preview', id] as const
 }

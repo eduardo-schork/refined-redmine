@@ -3,6 +3,7 @@ import type {
     IssueDetail,
     IssuePriority,
     IssueStatus,
+    Named,
     Page,
     Project,
     SavedQuery
@@ -158,6 +159,10 @@ export class ReferenceDataQueries {
             const priorities = await this.gateway.listPriorities()
             return priorities.filter((priority) => priority.active !== false)
         })
+    }
+
+    trackers(): Promise<Named[]> {
+        return this.cached('trackers', () => this.gateway.listTrackers())
     }
 
     /** Kinds of work for time entries (Development, Meeting…); inactive ones are not offered. */

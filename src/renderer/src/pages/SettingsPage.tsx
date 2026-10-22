@@ -1,9 +1,10 @@
 import { useState, type ReactNode } from 'react'
-import { Bell, Briefcase, CalendarDays, Palette, UserRound } from 'lucide-react'
+import { Bell, Briefcase, CalendarDays, Palette, UserRound, Workflow } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
 import type { SettingsTab } from '@/lib/router'
 import { NavItem } from '@/ui/molecules/NavItem'
 import { AppearanceSection } from '@/ui/organisms/settings/AppearanceSection'
+import { HandoffRulesSection } from '@/ui/organisms/settings/HandoffRulesSection'
 import { IssueStyleSection } from '@/ui/organisms/settings/IssueStyleSection'
 import { MonitorsSection } from '@/ui/organisms/settings/MonitorsSection'
 import { UpdatesSection } from '@/ui/organisms/settings/UpdatesSection'
@@ -13,6 +14,7 @@ import {
     CalendarSection,
     HomeSection,
     LanguageSection,
+    WorkspaceSection,
     MonitoringSection,
     ScheduleSection,
     SprintsSection
@@ -24,7 +26,8 @@ const TAB_ICONS: Record<SettingsTab, ReactNode> = {
     appearance: <Palette size={15} />,
     notifications: <Bell size={15} />,
     calendar: <CalendarDays size={15} />,
-    work: <Briefcase size={15} />
+    work: <Briefcase size={15} />,
+    automations: <Workflow size={15} />
 }
 
 const TAB_SECTIONS: Record<SettingsTab, () => ReactNode> = {
@@ -32,6 +35,7 @@ const TAB_SECTIONS: Record<SettingsTab, () => ReactNode> = {
         <>
             <AccountSection />
             <LanguageSection />
+            <WorkspaceSection />
             <AboutSection />
             <UpdatesSection />
         </>
@@ -55,10 +59,11 @@ const TAB_SECTIONS: Record<SettingsTab, () => ReactNode> = {
             <SprintsSection />
             <HomeSection />
         </>
-    )
+    ),
+    automations: () => <HandoffRulesSection />
 }
 
-const TAB_ORDER: SettingsTab[] = ['general', 'appearance', 'notifications', 'calendar', 'work']
+const TAB_ORDER: SettingsTab[] = ['general', 'appearance', 'notifications', 'calendar', 'work', 'automations']
 
 export default function SettingsPage({ tab = 'general' }: { tab?: SettingsTab }) {
     const { t } = useI18n()

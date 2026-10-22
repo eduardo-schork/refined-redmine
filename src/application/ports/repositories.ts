@@ -1,3 +1,4 @@
+import type { OvertimeBank } from '@domain/time/overtime'
 import type { CalendarChange, CalendarEvent } from '@domain/calendar/calendar-event'
 import type { QuerySnapshot } from '@domain/monitor/query-diff'
 import type { AppNotification } from '@domain/notification/notification'
@@ -54,4 +55,10 @@ export interface CalendarRepository {
     wasFired(key: string): boolean
     markFired(keys: string[], atIso: string): void
     pruneFired(olderThanIso: string): void
+}
+
+/** The overtime bank, kept only in the app. */
+export interface OvertimeRepository {
+    load(): OvertimeBank
+    save(bank: OvertimeBank): OvertimeBank
 }

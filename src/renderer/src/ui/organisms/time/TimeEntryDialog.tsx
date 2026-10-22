@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react'
 import { addDays, toLocalDate, type LocalDate } from '@domain/shared/date'
 import { defaultActivityId, parseHours, type TimeEntryActivity, type TimeEntryDraft } from '@domain/time/time-entry'
+import { useAddOvertime } from '@/hooks/overtime'
 import { useEditTime, useLogTime, useTimeActivities } from '@/hooks/time'
 import { useI18n } from '@/lib/i18n'
 import { lastActivityId, rememberActivity } from '@/lib/last-activity'
@@ -43,9 +44,15 @@ function useSaveEntry(props: TimeEntryDialogProps) {
     const toast = useToast()
     const log = useLogTime()
     const edit = useEditTime()
-    const save = (draft: TimeEntryDraft) => {
+    const addOvertime = useAddOvertime()
+    /** `overtime`: the part of the hours worked as overtime, also kept in the app's overtime bank. */
+    const save = (draft: TimeEntryDraft, overtime?: number) => {
         const done = () => {
             rememberActivity(draft.activityId)
+            if (overtime) {
+                const entry = { day: draft.spentOn, hours: overtime, issueId: draft.issueId, note: draft.comments }
+                addOvertime.mutate(entry, { onError: (bankError) => toast(error(bankError), 'error') })
+            }
             const message = props.entryId ? 'time.updated' : 'time.logged'
             toast(t(message, { hours: dates.hours(draft.hours), id: draft.issueId }))
             props.onSaved?.()
@@ -58,6 +65,14 @@ function useSaveEntry(props: TimeEntryDialogProps) {
     return { save, saving: log.isPending || edit.isPending }
 }
 
+/** The part of the hours that was overtime: optional, never more than the hours. */
+function useOvertimeInput(hours: number | null) {
+    const [typedOvertime, setTypedOvertime] = useState('')
+    const overtime = typedOvertime.trim() ? parseHours(typedOvertime) : 0
+    const overtimeValid = overtime !== null && (hours === null || overtime <= hours)
+    return { typedOvertime, setTypedOvertime, overtime, overtimeValid }
+}
+
 function useEntryForm(initial: TimeEntryDialogProps['initial']) {
     const { dates } = useI18n()
     const activities = useTimeActivities().data ?? []
@@ -67,8 +82,10 @@ function useEntryForm(initial: TimeEntryDialogProps['initial']) {
     const [comments, setComments] = useState(initial?.comments ?? '')
     const hours = parseHours(typedHours)
     const activityId = chosenActivity ?? defaultActivityId(activities, lastActivityId())
-    const complete = hours !== null && hours > 0 && comments.trim().length > 0
+    const overtimeInput = useOvertimeInput(hours)
+    const complete = hours !== null && hours > 0 && comments.trim().length > 0 && overtimeInput.overtimeValid
     return {
+        ...overtimeInput,
         activities,
         spentOn,
         setSpentOn,
@@ -148,7 +165,7 @@ export function TimeEntryDialog(props: TimeEntryDialogProps) {
         event.preventDefault()
         if (!canSave || form.hours === null) return
         const { spentOn, hours, activityId, comments } = form
-        save({ issueId: issue.id, spentOn, hours, activityId, comments })
+        save({ issueId: issue.id, spentOn, hours, activityId, comments }, form.overtime ?? 0)
     }
 
     const title = entryId ? t('time.editTitle', { id: issue.id }) : t('time.logTitle', { id: issue.id })
@@ -169,6 +186,20 @@ export function TimeEntryDialog(props: TimeEntryDialogProps) {
                     <HoursField typed={form.typedHours} hours={form.hours} onChange={form.setTypedHours} />
                 </div>
                 <ActivityField activities={form.activities} value={form.activityId} onChange={form.setChosenActivity} />
+                {!entryId && (
+                    <Field
+                        label={t('overtime.ofTheseHours')}
+                        hint={form.overtimeValid ? t('overtime.ofTheseHoursHint') : t('overtime.tooMuch')}
+                    >
+                        <Input
+                            className="w-32"
+                            inputMode="decimal"
+                            placeholder="0"
+                            value={form.typedOvertime}
+                            onChange={(event) => form.setTypedOvertime(event.target.value)}
+                        />
+                    </Field>
+                )}
                 <Field label={t('time.comment')}>
                     <Textarea
                         required

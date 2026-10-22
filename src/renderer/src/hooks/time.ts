@@ -16,6 +16,15 @@ export const useIssueTime = (issueId: number) =>
 export const useMyTime = (from: LocalDate, to: LocalDate) =>
     useQuery({ queryKey: qk.myTime(from, to), queryFn: () => api.time.mine(from, to) })
 
+/** One listing per person: kept for a minute so switching periods back and forth does not repeat them. */
+export const useTeamTime = (memberIds: number[], from: LocalDate, to: LocalDate) =>
+    useQuery({
+        queryKey: qk.teamTime(memberIds, from, to),
+        queryFn: () => api.time.team(memberIds, from, to),
+        enabled: memberIds.length > 0,
+        staleTime: 60_000
+    })
+
 /** A logged hour changes the entries, the "spent" of the issue and the home tile. */
 function invalidateTimeViews(queryClient: QueryClient, issueId?: number) {
     void queryClient.invalidateQueries({ queryKey: qk.time })

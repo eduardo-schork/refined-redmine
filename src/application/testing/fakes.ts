@@ -104,6 +104,9 @@ export class FakeGateway implements RedmineGateway {
             { id: 2, name: 'Defeito' }
         ]
     }
+    async listTrackers() {
+        return this.listProjectTrackers()
+    }
     async listPriorities() {
         return [
             { id: 2, name: 'Normal', is_default: true },

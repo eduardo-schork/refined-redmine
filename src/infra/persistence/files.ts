@@ -1,3 +1,4 @@
+import type { OvertimeBank } from '@domain/time/overtime'
 import type { CalendarEvent } from '@domain/calendar/calendar-event'
 import type { QuerySnapshot } from '@domain/monitor/query-diff'
 import type { AppNotification, NotificationKind } from '@domain/notification/notification'
@@ -43,4 +44,9 @@ export interface CalendarFile {
     version: 1
     events: CalendarEvent[]
     fired: Record<string, string>
+}
+
+/** overtime.json: the overtime bank (entries + months paid out). */
+export interface OvertimeFile extends OvertimeBank {
+    version: 1
 }

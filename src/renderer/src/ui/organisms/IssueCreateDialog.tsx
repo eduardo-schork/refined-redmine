@@ -339,10 +339,10 @@ function pickedFile(upload: IssueUpload): PickedFile {
 }
 
 /**
- * Files to attach, read when added (so creating is a single step). Files too large to send and files over the
+ * Files to attach, read when added (so sending is a single step). Files too large to send and files over the
  * limit are refused with a message.
  */
-function useChosenFiles() {
+export function useChosenFiles() {
     const { t } = useI18n()
     const toast = useToast()
     const [chosen, setChosen] = useState<{ upload: IssueUpload; tile: PickedFile }[]>([])

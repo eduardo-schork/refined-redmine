@@ -11,6 +11,7 @@ import { useMonitorName } from '@/hooks/monitor-name'
 import { useLogout, useSettings, useUpdateSettings } from '@/hooks/session'
 import { api } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
+import { TAB_NUMBER_MODIFIER } from '@/lib/shortcuts'
 import { formatSupportReport } from '@/lib/support-report'
 import { Button } from '../../atoms/Button'
 import { Input, Select } from '../../atoms/fields'
@@ -78,6 +79,28 @@ export function LanguageSection() {
                     <option value="en-US">{t('settings.languageEn')}</option>
                 </Select>
             </Field>
+        </Card>
+    )
+}
+
+export function WorkspaceSection() {
+    const { t } = useI18n()
+    const workspace = useSettings().workspace
+    const save = useSave()
+    return (
+        <Card title={t('settings.workspace')} description={t('settings.workspaceHint', { key: TAB_NUMBER_MODIFIER })}>
+            <ToggleField
+                checked={workspace.tabs}
+                onChange={(tabs) => save({ workspace: { ...workspace, tabs } })}
+                label={t('settings.workspaceTabs')}
+            />
+            {workspace.tabs && (
+                <ToggleField
+                    checked={workspace.restoreTabs}
+                    onChange={(restoreTabs) => save({ workspace: { ...workspace, restoreTabs } })}
+                    label={t('settings.workspaceRestore')}
+                />
+            )}
         </Card>
     )
 }

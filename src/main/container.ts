@@ -1,3 +1,6 @@
+import { CommentAndChangeUseCase, findNearbyIssues } from '@application/use-cases/handoff'
+import { OvertimeUseCases } from '@application/use-cases/overtime'
+import { BulkEditUseCase, loadIssueTree } from '@application/use-cases/issue-tree'
 import { app, net, shell } from 'electron'
 import { release, type as osType } from 'node:os'
 import { join } from 'node:path'
@@ -42,10 +45,11 @@ import { DesktopInstaller } from '@infra/electron/installer'
 import { SafeStorageUpdateTokenStore } from '@infra/electron/update-token-store'
 import { GithubReleaseSource } from '@infra/github/github-releases'
 import { ActivityLogFile } from '@infra/persistence/activity-log-file'
-import type { CalendarFile, ConfigFile, StateFile } from '@infra/persistence/files'
+import type { CalendarFile, ConfigFile, OvertimeFile, StateFile } from '@infra/persistence/files'
 import { JsonFile } from '@infra/persistence/json-file'
 import {
     JsonCalendarRepository,
+    JsonOvertimeRepository,
     JsonMonitorStateRepository,
     JsonNotificationRepository,
     JsonSettingsRepository,
@@ -105,6 +109,11 @@ export function createContainer(presentation: () => Presentation) {
     const state = new JsonMonitorStateRepository(stateFile)
     const notificationsRepo = new JsonNotificationRepository(stateFile)
     const calendarRepo = new JsonCalendarRepository(calendarFile)
+    const overtimeFile = new JsonFile<OvertimeFile>(join(userDataDir, 'overtime.json'), () => ({
+        version: 1,
+        entries: [],
+        paidMonths: []
+    }))
 
     const activityLog = new ActivityLogFile(join(userDataDir, 'logs', 'activity.log'), systemClock)
 
@@ -194,6 +203,9 @@ export function createContainer(presentation: () => Presentation) {
     const changeStatus = new ChangeIssueStatusUseCase(gateway)
     const comment = new CommentOnIssueUseCase(gateway)
     const editIssue = new EditIssueFieldsUseCase(gateway)
+    const bulkEdit = new BulkEditUseCase(gateway)
+    const commentAndChange = new CommentAndChangeUseCase(gateway)
+    const overtime = new OvertimeUseCases(new JsonOvertimeRepository(overtimeFile), ids)
     const createIssue = new CreateIssueUseCase(gateway)
     const versionStats = new GetVersionStatsUseCase(gateway)
     const inspectProject = new InspectSprintProjectUseCase(gateway)
@@ -283,6 +295,10 @@ export function createContainer(presentation: () => Presentation) {
             comment: (id, notes) => comment.execute(id, notes),
             search: (input) => issues.search(input),
             edit: (id, change) => editIssue.execute(id, change),
+            tree: (id) => loadIssueTree(gateway, id),
+            bulkEdit: (id, change) => bulkEdit.execute(id, change),
+            nearby: (id, trackerIds) => findNearbyIssues(gateway, id, trackerIds),
+            commentAndChange: (id, change, uploads) => commentAndChange.execute(id, change, uploads),
             editOptions: (projectId) => issues.editOptions(projectId),
             customFields: (projectId) => issues.customFields(projectId),
             create: (issue, uploads) => createIssue.execute(issue, uploads)
@@ -292,15 +308,23 @@ export function createContainer(presentation: () => Presentation) {
             projects: () => reference.projects(),
             savedQueries: () => reference.savedQueries(),
             priorities: () => reference.priorities(),
+            trackers: () => reference.trackers(),
             timeActivities: () => reference.timeActivities()
         },
         time: {
             forIssue: (issueId) => timeQueries.forIssue(issueId),
             mine: (from, to) => timeQueries.mine(from, to),
+            team: (memberIds, from, to) => timeQueries.team(memberIds, from, to),
             log: (draft) => logTime.execute(draft),
             edit: (id, draft) => editTime.execute(id, draft),
             remove: (id) => deleteTime.execute(id),
             repeatWeek: (from, to) => repeatWeek.execute(from, to)
+        },
+        overtime: {
+            list: () => overtime.list(),
+            add: (draft) => overtime.add(draft),
+            remove: (id) => overtime.remove(id),
+            setPaid: (month, paid) => overtime.setPaid(month, paid)
         },
         attachments: {
             preview: (id) => attachments.preview(id),

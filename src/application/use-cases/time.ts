@@ -1,3 +1,4 @@
+import { MAX_TEAM_MEMBERS } from '@domain/time/team'
 import type { Issue } from '@domain/redmine/entities'
 import type { LocalDate } from '@domain/shared/date'
 import { assertValidDraft, type TimeEntry, type TimeEntryDraft } from '@domain/time/time-entry'
@@ -24,6 +25,14 @@ export class TimeQueries {
     async forIssue(issueId: number): Promise<TimeEntry[]> {
         const entries = await this.gateway.listTimeEntries({ issueId })
         return entries.sort(newestFirst)
+    }
+
+    /** Entries of several people (a team), one listing per person, with the issues they belong to. */
+    async team(memberIds: number[], from: LocalDate, to: LocalDate): Promise<MyTimeEntries> {
+        const people = [...new Set(memberIds)].slice(0, MAX_TEAM_MEMBERS)
+        const perPerson = await Promise.all(people.map((userId) => this.gateway.listTimeEntries({ userId, from, to })))
+        const entries = perPerson.flat().sort(newestFirst)
+        return { entries, issues: await issuesById(this.gateway, entries) }
     }
 
     /** The signed-in user's entries between two dates, with the issues they belong to. */

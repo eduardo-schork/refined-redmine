@@ -156,6 +156,14 @@ select {
     -webkit-app-region: no-drag;
 }
 
+/* Tab strips scroll sideways without a visible scrollbar. */
+.no-scrollbar {
+    scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
 ::-webkit-scrollbar {
     width: 10px;
     height: 10px;

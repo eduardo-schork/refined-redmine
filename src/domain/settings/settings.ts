@@ -1,3 +1,5 @@
+import type { HandoffRule } from '../automation/handoff'
+import type { Team } from '../time/team'
 import type { Board } from '../board/board'
 import { DEFAULT_CALENDAR_PREFERENCES, type CalendarPreferences } from '../calendar/calendar-event'
 import { createMineMonitor, defaultEvents, withMineMonitor, type MineScopes, type Monitor } from '../monitor/monitor'
@@ -31,8 +33,20 @@ export interface Settings {
     openAtLogin: boolean
     sound: boolean
     updates: UpdatePreferences
+    workspace: WorkspacePreferences
+    /** Teams for "Team time", made of project members. */
+    teams: Team[]
+    /** "Trâmite" buttons of the issue detail, in button order. */
+    handoffRules: HandoffRule[]
     /** Last version whose "What's new" was shown. */
     lastSeenVersion?: string
+}
+
+/** How screens open: in tabs (one per screen or board) or one at a time. */
+export interface WorkspacePreferences {
+    tabs: boolean
+    /** Reopen the tabs of the last session when the app starts. */
+    restoreTabs: boolean
 }
 
 export interface UpdatePreferences {
@@ -76,7 +90,10 @@ export const DEFAULT_SETTINGS: Settings = {
     calendar: DEFAULT_CALENDAR_PREFERENCES,
     openAtLogin: false,
     sound: true,
-    updates: DEFAULT_UPDATE_PREFERENCES
+    updates: DEFAULT_UPDATE_PREFERENCES,
+    workspace: { tabs: true, restoreTabs: true },
+    teams: [],
+    handoffRules: []
 }
 
 type LegacyAlertOn = 'any' | 'increase' | 'decrease'
@@ -146,6 +163,7 @@ export function withDefaults(loaded: Partial<Settings> & LegacySettings): Settin
         dashboard: { ...defaults.dashboard, ...loaded.dashboard },
         issueStyle: withIssueStyleDefaults(loaded.issueStyle),
         updates: withUpdateDefaults(loaded.updates),
+        workspace: { ...defaults.workspace, ...loaded.workspace },
         calendar: { ...defaults.calendar, ...loaded.calendar, layers: calendarLayers }
     }
 }

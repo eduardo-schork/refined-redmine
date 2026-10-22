@@ -1,3 +1,4 @@
+import type { BulkChange, IssueNoteChange } from '@domain/redmine/issue-tree'
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import type { Issue } from '@domain/redmine/entities'
 import type { IssueFieldsChange, NewIssue } from '@domain/redmine/issue-edit'
@@ -6,7 +7,8 @@ import type { IssueUpload } from '@domain/redmine/issue-upload'
 import { api } from '@/lib/api'
 import { qk } from '@/lib/query-keys'
 
-export const useIssue = (id: number) => useQuery({ queryKey: qk.issue(id), queryFn: () => api.issues.get(id) })
+export const useIssue = (id: number, enabled = true) =>
+    useQuery({ queryKey: qk.issue(id), queryFn: () => api.issues.get(id), enabled })
 
 /** Subtasks and related issues of `issueId`, by number. */
 export const useLinkedIssues = (issueId: number, ids: number[]) =>
@@ -119,5 +121,34 @@ export function useCreateIssue() {
             void queryClient.invalidateQueries({ queryKey: qk.myQueue })
             if (issue.parentIssueId) void queryClient.invalidateQueries({ queryKey: qk.issue(issue.parentIssueId) })
         }
+    })
+}
+
+/** Read when the bulk edit opens; not kept, because the point is to change it. */
+export const useIssueTree = (id: number, enabled = true) =>
+    useQuery({ queryKey: qk.issueTree(id), queryFn: () => api.issues.tree(id), gcTime: 0, enabled })
+
+export function useBulkEdit() {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: ({ id, change }: { id: number; change: BulkChange }) => api.issues.bulkEdit(id, change),
+        onSuccess: (_result, { id }) => invalidateIssueViews(queryClient, id)
+    })
+}
+
+/** Issues around this one with their journals: targets and cited notes of a handoff. */
+export const useNearbyIssues = (id: number, trackerIds: number[]) =>
+    useQuery({
+        queryKey: ['issue', id, 'nearby', trackerIds.join(',')],
+        queryFn: () => api.issues.nearby(id, trackerIds),
+        gcTime: 0
+    })
+
+export function useCommentAndChange() {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: ({ id, change, uploads }: { id: number; change: IssueNoteChange; uploads: IssueUpload[] }) =>
+            api.issues.commentAndChange(id, change, uploads),
+        onSuccess: (_result, { id }) => invalidateIssueViews(queryClient, id)
     })
 }
