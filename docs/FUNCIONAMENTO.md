@@ -157,12 +157,12 @@ Pasta: macOS `~/Library/Application Support/Refined Redmine/` · Windows `%APPDA
 
 ## 8. Atualizações
 
-- **Fonte**: GitHub Releases de `eduardo-schork/refined-redmine` (privado), lidas com o token de cada usuário (`GithubReleaseSource`, `net.fetch`).
+- **Fonte**: GitHub Releases de `eduardo-schork/refined-redmine` (público), lidas sem token (`GithubReleaseSource`, `net.fetch`). Sem token o GitHub permite 60 consultas por hora por endereço de rede; ao passar disso (403/429 com `x-ratelimit-remaining: 0`) aparece `update.rateLimited`. Um token opcional do usuário eleva o limite e é enviado como `Authorization` só para `api.github.com`.
   - `GET api.github.com/repos/…/releases/latest`; um 404 é conferido em `GET /repos/…` para separar "sem versão publicada" de "sem acesso".
-  - Download: `GET` no endereço de API do arquivo com `Accept: application/octet-stream` → redirecionamento para um endereço assinado de armazenamento. O redirecionamento é seguido à mão (`net.request`, `redirect: 'manual'`) para o token não ir junto (o armazenamento recusa duas credenciais). O arquivo é gravado como `<nome>.part` na pasta Downloads e renomeado ao terminar; tamanho diferente do esperado descarta o arquivo.
+  - Download: `GET` no endereço de API do arquivo com `Accept: application/octet-stream` → redirecionamento para um endereço assinado de armazenamento. O redirecionamento é seguido à mão (`net.request`, `redirect: 'manual'`) para um token, quando houver, não ir junto (o armazenamento recusa duas credenciais). O arquivo é gravado como `<nome>.part` na pasta Downloads e renomeado ao terminar; tamanho diferente do esperado descarta o arquivo, e o SHA-256 calculado durante o download precisa bater com o `digest` que o GitHub informa para o arquivo (sem `digest`, em Releases antigas, vale só o tamanho).
   - Requisições ao GitHub aparecem no Log; do endereço assinado só o caminho é registrado (a query tem credenciais temporárias).
-- **Estado** (`UpdateService`, só em memória): `disabled` (sem token) → `checking` → `upToDate` | `available` → `downloading` → `ready`; `error` com o código. Mudanças vão para a janela pelo evento `update.status`.
-- **Token**: `config.json` → `githubTokenEnc`, criptografado com `safeStorage` (sem criptografia disponível, não é salvo). Fica no processo principal; a interface só envia um token digitado para `testToken`/`setToken`.
+- **Estado** (`UpdateService`, só em memória): `idle` → `checking` → `upToDate` | `available` → `downloading` → `ready`; `error` com o código. Mudanças vão para a janela pelo evento `update.status`.
+- **Token (opcional)**: `config.json` → `githubTokenEnc`, criptografado com `safeStorage` (sem criptografia disponível, não é salvo). Fica no processo principal; a interface só envia um token digitado para `testToken`/`setToken`.
 - **Instalar** (`DesktopInstaller`): Windows roda o instalador NSIS com `/S --updated --force-run` e fecha o app; macOS abre o `.dmg` e fecha o app em 1,5 s.
 - **O que há de novo**: o `CHANGELOG.md` é embutido na interface no build (`?raw`); `settings.lastSeenVersion` guarda a última versão mostrada.
 - **Publicação**: automática pelo GitHub Actions (`.github/workflows/release.yml`) a cada push no `master` com `feat:`/`fix:`; o job `publish` usa o secret `RELEASE_TOKEN` do environment `release` (só no `master`), e os jobs de build não recebem token. Plano B: `npm run release` (`scripts/release.mjs`) com `GITHUB_TOKEN`. Ver [RELEASE.md](RELEASE.md).
@@ -210,7 +210,7 @@ Pasta: macOS `~/Library/Application Support/Refined Redmine/` · Windows `%APPDA
 
 - `state.json`, `calendar.json` e o log **não são criptografados**: têm títulos de tarefas, trechos de comentários, nomes e compromissos. Qualquer processo com acesso à conta do usuário consegue ler.
 - Em dev (assinatura ad-hoc), o item do Keychain fica associado ao "Electron" genérico; no app instalado, à assinatura do app.
-- Com um Redmine em `http://`, a chave trafega sem TLS (o da empresa é `https`).
+- Com um Redmine em `http://`, a chave trafega sem TLS.
 - Os handlers IPC não verificam a origem da chamada (só a janela do app carrega o preload) nem o formato dos argumentos em tempo de execução.
 - A CSP é a mesma em dev e produção e libera `ws:` para qualquer endereço (usado só pelo recarregamento do dev).
 - O `activity.log` guarda os parâmetros das requisições, inclusive o texto digitado na busca rápida.

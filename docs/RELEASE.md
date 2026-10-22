@@ -1,6 +1,6 @@
 # Publicar uma versão
 
-As versões são publicadas como **Releases** do repositório privado `eduardo-schork/refined-redmine`. Os apps que têm um token do GitHub com acesso ao repositório encontram a versão nova sozinhos (30 s depois de abrir e depois no intervalo escolhido em Configurações → Geral → Atualizações). A publicação é automática pelo GitHub Actions a cada push no `master` com commit `feat:` ou `fix:`.
+As versões são publicadas como **Releases** do repositório público `eduardo-schork/refined-redmine`. Os apps encontram a versão nova sozinhos, sem token (30 s depois de abrir e depois no intervalo escolhido em Configurações → Geral → Atualizações). A publicação é automática pelo GitHub Actions a cada push no `master` com commit `feat:` ou `fix:`.
 
 ## Branches
 
