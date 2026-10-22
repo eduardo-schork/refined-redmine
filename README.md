@@ -41,7 +41,7 @@ Como usar cada tela: [manual do usuário](docs/MANUAL.md).
 
 **Sprints**
 
-- As versões de um projeto viram sprints. Convenção: `X.Y` = sprint (ex.: 3.78); `X.Y.Z` = correção na branch da qualidade/staging (ex.: 3.77.1); o resto são agrupadores (backlog, site…).
+- As versões de um projeto viram sprints. Convenção: `X.Y` = sprint (ex.: 3.78); `X.Y.Z` = correção na branch da qualidade/staging (ex.: 3.77.1); o resto são agrupadores (backlog…).
 - Datas lidas dos campos personalizados da versão (detectados pelo nome: "Prazo dos devs", "Publicação").
 - Fase calculada: em desenvolvimento (prazo dos devs mais próximo), em homologação (prazo vencido, publicação futura), publicação atrasada, planejada, em produção (última publicada), correção.
 - Lista de tarefas por status e "Criar quadro desta versão".
