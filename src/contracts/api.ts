@@ -1,4 +1,5 @@
 import type { AttachmentPreview } from '@domain/redmine/attachment-kind'
+import type { ProjectCustomFields } from '@domain/redmine/custom-fields'
 import type {
     AppInfo,
     BoardIssues,
@@ -62,6 +63,8 @@ export interface RefinedApi {
         edit(id: number, change: IssueFieldsChange): IssueEditResult
         /** Trackers, people and open versions of a project, for creating and editing its issues. */
         editOptions(projectId: number): IssueEditOptions
+        /** Custom fields of each tracker of a project, with values already used, learned from its recent issues. */
+        customFields(projectId: number): ProjectCustomFields
         /** `uploads`: files attached to the new issue (sent to Redmine first). */
         create(issue: NewIssue, uploads?: IssueUpload[]): Issue
     }
@@ -163,6 +166,7 @@ export const API_METHODS = {
         'search',
         'edit',
         'editOptions',
+        'customFields',
         'create'
     ],
     reference: ['statuses', 'projects', 'savedQueries', 'priorities', 'timeActivities'],

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ImageIcon } from 'lucide-react'
@@ -12,18 +13,21 @@ const linkIssueReferences = (text: string) =>
 
 /**
  * Redmine text (Markdown). Raw HTML is ignored. Issue links call `onIssue`, the others open in the browser.
- * Images become links because attachments require a Redmine session.
+ * `renderImage` draws the images it knows (the issue's attachments); the others become links, because
+ * Redmine files require a session.
  */
 export function Markdown({
     text,
     links,
     onIssue,
-    onExternal
+    onExternal,
+    renderImage
 }: {
     text: string
     links: RedmineLinks
     onIssue: (id: number) => void
     onExternal: (url: string) => void
+    renderImage?: (source: string, alt: string) => ReactNode
 }) {
     const { t } = useI18n()
     const linked = linkIssueReferences(text)
@@ -51,18 +55,19 @@ export function Markdown({
                             {children}
                         </a>
                     ),
-                    img: ({ src, alt }) => (
-                        <a
-                            href={links.resolve(String(src ?? '')).url}
-                            className="inline-flex items-center gap-1"
-                            onClick={(event) => {
-                                event.preventDefault()
-                                follow(String(src ?? ''))
-                            }}
-                        >
-                            <ImageIcon size={13} /> {alt || t('issue.image')}
-                        </a>
-                    )
+                    img: ({ src, alt }) =>
+                        renderImage?.(String(src ?? ''), alt ?? '') ?? (
+                            <a
+                                href={links.resolve(String(src ?? '')).url}
+                                className="inline-flex items-center gap-1"
+                                onClick={(event) => {
+                                    event.preventDefault()
+                                    follow(String(src ?? ''))
+                                }}
+                            >
+                                <ImageIcon size={13} /> {alt || t('issue.image')}
+                            </a>
+                        )
                 }}
             >
                 {linked}

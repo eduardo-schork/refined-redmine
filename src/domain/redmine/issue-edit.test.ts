@@ -56,7 +56,12 @@ describe('assertValidNewIssue', () => {
 describe('subtaskDefaults', () => {
     it("starts in the parent's project and version, under the parent", () => {
         const parent = { id: 1201, project: { id: 10, name: 'Loja' }, fixed_version: { id: 378, name: '3.78' } }
-        expect(subtaskDefaults(parent)).toEqual({ projectId: 10, fixedVersionId: 378, parentIssueId: 1201 })
+        expect(subtaskDefaults(parent)).toEqual({
+            projectId: 10,
+            fixedVersionId: 378,
+            parentIssueId: 1201,
+            customFields: []
+        })
         expect(subtaskDefaults({ ...parent, fixed_version: undefined }).fixedVersionId).toBeUndefined()
     })
 })

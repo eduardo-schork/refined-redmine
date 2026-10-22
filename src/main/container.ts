@@ -284,6 +284,7 @@ export function createContainer(presentation: () => Presentation) {
             search: (input) => issues.search(input),
             edit: (id, change) => editIssue.execute(id, change),
             editOptions: (projectId) => issues.editOptions(projectId),
+            customFields: (projectId) => issues.customFields(projectId),
             create: (issue, uploads) => createIssue.execute(issue, uploads)
         },
         reference: {

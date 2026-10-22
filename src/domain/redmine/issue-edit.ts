@@ -1,5 +1,6 @@
 import { AppError } from '../shared/errors'
 import type { LocalDate } from '../shared/date'
+import { inheritedCustomFields, type CustomFieldEntry } from './custom-fields'
 import type { IssueDetail } from './entities'
 
 /** Fields editable from the issue screen. null clears the field; a missing key leaves it as it is. */
@@ -32,14 +33,24 @@ export interface NewIssue {
     dueDate?: LocalDate
     estimatedHours?: number
     parentIssueId?: number
+    customFields?: CustomFieldEntry[]
 }
 
 /** What a screen already knows about the issue being created (a board's project and sprint, a parent issue). */
-export type NewIssueDefaults = Partial<Pick<NewIssue, 'projectId' | 'fixedVersionId' | 'parentIssueId'>>
+export type NewIssueDefaults = Partial<
+    Pick<NewIssue, 'projectId' | 'fixedVersionId' | 'parentIssueId' | 'customFields'>
+>
 
-/** A subtask starts in the parent's project and version. */
-export function subtaskDefaults(parent: Pick<IssueDetail, 'id' | 'project' | 'fixed_version'>): NewIssueDefaults {
-    return { projectId: parent.project.id, fixedVersionId: parent.fixed_version?.id, parentIssueId: parent.id }
+/** A subtask starts in the parent's project and version, with the parent's custom field values (module, requester…). */
+export function subtaskDefaults(
+    parent: Pick<IssueDetail, 'id' | 'project' | 'fixed_version' | 'custom_fields'>
+): NewIssueDefaults {
+    return {
+        projectId: parent.project.id,
+        fixedVersionId: parent.fixed_version?.id,
+        parentIssueId: parent.id,
+        customFields: inheritedCustomFields(parent.custom_fields)
+    }
 }
 
 export const DONE_RATIO_STEPS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]

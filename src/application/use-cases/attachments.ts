@@ -1,14 +1,12 @@
 import {
-    attachmentKind,
     canOpenInSystem,
     canPreview,
     OPEN_MAX_BYTES,
-    PREVIEW_MAX_BYTES,
     previewFromBytes,
+    previewMaxBytes,
     safeFileName,
     type AttachmentPreview
 } from '@domain/redmine/attachment-kind'
-import type { Attachment } from '@domain/redmine/entities'
 import { AppError } from '@domain/shared/errors'
 import type { RedmineGateway } from '../ports/redmine-gateway'
 import type { FileOpener } from '../ports/system'
@@ -26,9 +24,11 @@ export class AttachmentUseCases {
     async preview(id: number): Promise<AttachmentPreview> {
         const attachment = await this.gateway.getAttachment(id)
         if (!canPreview(attachment)) throw new AppError('attachment.notPreviewable')
-        const kind = attachmentKind(attachment.filename, attachment.content_type)
-        if (kind === 'image') return this.imagePreview(attachment)
-        return this.textPreview(attachment)
+        const maxBytes = previewMaxBytes(attachment.filename, attachment.content_type)
+        const bytes = await this.gateway.downloadAttachment(id, maxBytes)
+        const preview = previewFromBytes(attachment, bytes)
+        if (!preview) throw new AppError('attachment.notPreviewable')
+        return preview
     }
 
     async open(id: number): Promise<void> {
@@ -36,21 +36,5 @@ export class AttachmentUseCases {
         if (!canOpenInSystem(attachment)) throw new AppError('attachment.blockedType')
         const bytes = await this.gateway.downloadAttachment(id, OPEN_MAX_BYTES)
         await this.opener.open(safeFileName(attachment.filename), bytes)
-    }
-
-    private async imagePreview(attachment: Attachment): Promise<AttachmentPreview> {
-        const bytes = await this.gateway.downloadAttachment(attachment.id, PREVIEW_MAX_BYTES.image)
-        return this.previewOrRefuse(attachment, bytes)
-    }
-
-    private async textPreview(attachment: Attachment): Promise<AttachmentPreview> {
-        const bytes = await this.gateway.downloadAttachment(attachment.id, PREVIEW_MAX_BYTES.text)
-        return this.previewOrRefuse(attachment, bytes)
-    }
-
-    private previewOrRefuse(attachment: Attachment, bytes: Uint8Array): AttachmentPreview {
-        const preview = previewFromBytes(attachment, bytes)
-        if (!preview) throw new AppError('attachment.notPreviewable')
-        return preview
     }
 }

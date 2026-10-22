@@ -552,6 +552,7 @@ export const enUS: Resources = {
         keys: '↑↓ navigate · Enter open · Esc close'
     },
     attachments: {
+        cannotPlay: 'The app cannot play this file (format or codec). Open it in the system app.',
         preview: 'Preview',
         openInSystem: 'Open in the system app',
         openInRedmine: 'Open in Redmine',
@@ -681,6 +682,7 @@ export const enUS: Resources = {
             dropMore: 'or drop more here',
             attachedOnCreate: 'Attached when the issue is created',
             removeFile: 'Remove {{name}}',
+            requiredField: 'Required in Redmine',
             parentNotFound: 'Issue not found or not visible to you.'
         },
         newSubtask: 'New subtask',

@@ -27,6 +27,7 @@ import { Overline } from '../atoms/misc'
 import { ClampedContent } from '../molecules/ClampedContent'
 import { Dialog } from '../molecules/Dialog'
 import { Markdown } from '../molecules/Markdown'
+import { inlineAttachmentRenderer } from './attachments/InlineAttachment'
 import { Alert, Property } from '../molecules/surfaces'
 import { useToast } from '../molecules/Toast'
 import { IssueCreateDialog } from './IssueCreateDialog'
@@ -45,6 +46,7 @@ interface MarkdownLinkProps {
     links: RedmineLinks
     onIssue: (id: number) => void
     onExternal: (url: string) => void
+    renderImage?: (source: string, alt: string) => ReactNode
 }
 
 // Any screen can open the modal with openIssue(id); opened issues form a stack so "← back" returns to the previous one.
@@ -123,7 +125,12 @@ function IssueModal({ id, onClose, canGoBack }: { id: number; onClose: () => voi
     }, [issue])
     const statusName = new Map((statuses.data ?? []).map((status) => [status.id, status.name]))
     const saving = changeStatus.isPending || comment.isPending
-    const markdownLinks: MarkdownLinkProps = { links, onIssue: openIssue, onExternal: openExternal }
+    const markdownLinks: MarkdownLinkProps = {
+        links,
+        onIssue: openIssue,
+        onExternal: openExternal,
+        renderImage: issue ? inlineAttachmentRenderer(issue.attachments, links) : undefined
+    }
 
     const handleStatusChange = (statusId: number) => {
         changeStatus.mutate(statusId, {
@@ -303,14 +310,14 @@ function DescriptionSection({ issue, ...markdownLinks }: { issue: IssueDetail } 
     )
 }
 
-function Description({ issue, links, onIssue, onExternal }: { issue: IssueDetail } & MarkdownLinkProps) {
+function Description({ issue, ...markdownLinks }: { issue: IssueDetail } & MarkdownLinkProps) {
     const { t } = useI18n()
     if (!issue.description?.trim()) {
         return <p className="text-sm italic text-muted">{t('issue.noDescription')}</p>
     }
     return (
         <ClampedContent lines={DESCRIPTION_VISIBLE_LINES}>
-            <Markdown text={issue.description} links={links} onIssue={onIssue} onExternal={onExternal} />
+            <Markdown text={issue.description} {...markdownLinks} />
         </ClampedContent>
     )
 }
@@ -537,9 +544,7 @@ function History({
 function JournalItem({
     journal,
     statusName,
-    links,
-    onIssue,
-    onExternal
+    ...markdownLinks
 }: { journal: Journal; statusName: Map<number, string> } & MarkdownLinkProps) {
     const { t, dates } = useI18n()
     return (
@@ -562,7 +567,7 @@ function JournalItem({
                 )}
                 {journal.notes?.trim() && (
                     <div className="mt-1.5 rounded-lg border border-line bg-panel px-3 py-2">
-                        <Markdown text={journal.notes} links={links} onIssue={onIssue} onExternal={onExternal} />
+                        <Markdown text={journal.notes} {...markdownLinks} />
                     </div>
                 )}
             </div>

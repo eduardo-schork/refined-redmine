@@ -8,6 +8,7 @@ export const qk = {
     linkedIssues: (id: number, ids: number[]) => ['issue', id, 'linked', ids.join(',')] as const,
     issueSearch: (input: string) => ['issue-search', input.trim()] as const,
     issueEditOptions: (projectId: number) => ['issue-edit-options', projectId] as const,
+    issueCustomFields: (projectId: number) => ['issue-custom-fields', projectId] as const,
     priorities: ['reference', 'priorities'] as const,
     issueTitle: (id: number) => ['issue-title', id] as const,
     allowed: (id: number, updatedOn: string) => ['allowed', id, updatedOn] as const,

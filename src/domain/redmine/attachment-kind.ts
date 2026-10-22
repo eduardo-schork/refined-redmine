@@ -1,14 +1,19 @@
+import { isHttpUrl } from './links'
+
 export type AttachmentKind =
     'image' | 'pdf' | 'text' | 'video' | 'audio' | 'document' | 'spreadsheet' | 'presentation' | 'archive' | 'other'
 
 /** What the main process sends to show an attachment inside the app. */
 export type AttachmentPreview =
-    { kind: 'image'; dataUrl: string } | { kind: 'text'; text: string; truncated: boolean; extension: string }
+    | { kind: 'image'; dataUrl: string }
+    | { kind: 'text'; text: string; truncated: boolean; extension: string }
+    | { kind: 'video'; mimeType: string; bytes: Uint8Array }
+    | { kind: 'audio'; mimeType: string; bytes: Uint8Array }
 
 const MB = 1024 * 1024
 
 /** Larger files are not downloaded for the preview; they can still be opened in the system app or in Redmine. */
-export const PREVIEW_MAX_BYTES = { image: 15 * MB, text: 2 * MB }
+export const PREVIEW_MAX_BYTES = { image: 15 * MB, text: 2 * MB, media: 100 * MB }
 /** Images up to this size load their thumbnail as soon as the Attachments tab opens. */
 export const THUMBNAIL_MAX_BYTES = 5 * MB
 export const OPEN_MAX_BYTES = 200 * MB
@@ -49,6 +54,24 @@ const KIND_BY_CONTENT_TYPE: [RegExp, AttachmentKind][] = [
 
 /** Formats Chromium shows in an <img>; HEIC and TIFF are images but need the system app. */
 const BROWSER_IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'ico', 'avif'])
+
+/**
+ * Formats Chromium plays in <video>/<audio>. MOV and M4V share MP4's container; a codec Chromium lacks (HEVC, for
+ * instance) fails in the player, which then offers the system app. MKV and AVI go straight to the system app.
+ */
+const BROWSER_MEDIA_TYPES: Record<string, string> = {
+    mp4: 'video/mp4',
+    m4v: 'video/mp4',
+    mov: 'video/mp4',
+    webm: 'video/webm',
+    mp3: 'audio/mpeg',
+    wav: 'audio/wav',
+    ogg: 'audio/ogg',
+    opus: 'audio/ogg',
+    m4a: 'audio/mp4',
+    aac: 'audio/aac',
+    flac: 'audio/flac'
+}
 
 /** Kinds handed to the system's default app; archives may carry programs, so they stay in Redmine. */
 const OPENABLE_KINDS = new Set<AttachmentKind>([
@@ -92,15 +115,27 @@ interface AttachmentFile {
     content_type?: string
 }
 
-/** Shown inside the app: images Chromium can draw and text files, up to the preview size. */
+const isMedia = (kind: AttachmentKind): kind is 'video' | 'audio' => kind === 'video' || kind === 'audio'
+
+/** Shown inside the app: images Chromium can draw, text files and playable media, up to the preview size. */
 export function canPreview(attachment: AttachmentFile): boolean {
     const kind = attachmentKind(attachment.filename, attachment.content_type)
+    const extension = fileExtension(attachment.filename)
     if (kind === 'image') {
-        const drawable = BROWSER_IMAGE_EXTENSIONS.has(fileExtension(attachment.filename))
+        const drawable = BROWSER_IMAGE_EXTENSIONS.has(extension)
         return drawable && attachment.filesize <= PREVIEW_MAX_BYTES.image
     }
     if (kind === 'text') return attachment.filesize <= PREVIEW_MAX_BYTES.text
+    if (isMedia(kind)) return extension in BROWSER_MEDIA_TYPES && attachment.filesize <= PREVIEW_MAX_BYTES.media
     return false
+}
+
+/** How much is downloaded to show the attachment inside the app. */
+export function previewMaxBytes(filename: string, contentType = ''): number {
+    const kind = attachmentKind(filename, contentType)
+    if (kind === 'image') return PREVIEW_MAX_BYTES.image
+    if (isMedia(kind)) return PREVIEW_MAX_BYTES.media
+    return PREVIEW_MAX_BYTES.text
 }
 
 export function canOpenInSystem(attachment: AttachmentFile): boolean {
@@ -161,14 +196,17 @@ export function toBase64(bytes: Uint8Array): string {
 }
 
 /**
- * What can be shown inside the app from a file's bytes: an image Chromium can draw (type read from the bytes) or
- * text, cut at TEXT_PREVIEW_CHARS. Undefined for anything else, including binaries named as text.
+ * What can be shown inside the app from a file's bytes: an image Chromium can draw (type read from the bytes),
+ * playable media (the player refuses what it cannot decode) or text, cut at TEXT_PREVIEW_CHARS. Undefined for
+ * anything else, including binaries named as text.
  */
 export function previewFromBytes(
     file: Omit<AttachmentFile, 'filesize'>,
     bytes: Uint8Array
 ): AttachmentPreview | undefined {
     const kind = attachmentKind(file.filename, file.content_type)
+    const mediaType = BROWSER_MEDIA_TYPES[fileExtension(file.filename)]
+    if (isMedia(kind)) return mediaType ? { kind, mimeType: mediaType, bytes } : undefined
     if (kind === 'image') {
         const mimeType = sniffImageType(bytes)
         return mimeType ? { kind: 'image', dataUrl: `data:${mimeType};base64,${toBase64(bytes)}` } : undefined
@@ -192,4 +230,32 @@ export function safeFileName(filename: string): string {
     const extension = fileExtension(cleaned)
     const suffix = extension ? `.${extension}` : ''
     return cleaned.slice(0, MAX_FILE_NAME - suffix.length) + suffix
+}
+
+const ATTACHMENT_URL = /\/attachments\/(?:download\/|thumbnail\/)?(\d+)(?:[/?#]|$)/
+
+function decodedFileName(source: string): string {
+    const lastSegment = source.split(/[?#]/)[0].split('/').pop() ?? ''
+    try {
+        return decodeURIComponent(lastSegment)
+    } catch {
+        return lastSegment
+    }
+}
+
+/**
+ * The attachment an image in Redmine text points to. Like Redmine, a relative source such as
+ * `![](print.png)` is the issue's attachment with that name (ignoring case, the newest when repeated);
+ * links to `/attachments/123` are matched by id. Undefined for anything else (an image on another site).
+ */
+export function findInlineAttachment<File extends { id: number; filename: string }>(
+    source: string,
+    attachments: File[]
+): File | undefined {
+    const byId = source.match(ATTACHMENT_URL)
+    if (byId) return attachments.find((attachment) => attachment.id === Number(byId[1]))
+    if (isHttpUrl(source)) return undefined
+    const name = decodedFileName(source).toLowerCase()
+    const sameName = attachments.filter((attachment) => attachment.filename.toLowerCase() === name)
+    return sameName.at(-1)
 }

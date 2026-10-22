@@ -7,6 +7,7 @@ import {
     looksBinary,
     PREVIEW_MAX_BYTES,
     previewFromBytes,
+    findInlineAttachment,
     safeFileName,
     sniffImageType,
     toBase64
@@ -41,6 +42,13 @@ describe('canPreview', () => {
         expect(canPreview(file('a.json'))).toBe(true)
         expect(canPreview(file('a.pdf'))).toBe(false)
         expect(canPreview(file('a.txt', PREVIEW_MAX_BYTES.text + 1))).toBe(false)
+    })
+    it('plays the video and audio formats Chromium knows, within the limit', () => {
+        expect(canPreview(file('tela.mp4'))).toBe(true)
+        expect(canPreview(file('tela.MOV'))).toBe(true)
+        expect(canPreview(file('nota.m4a'))).toBe(true)
+        expect(canPreview(file('tela.mkv'))).toBe(false)
+        expect(canPreview(file('tela.webm', PREVIEW_MAX_BYTES.media + 1))).toBe(false)
     })
 })
 
@@ -113,5 +121,41 @@ describe('previewFromBytes', () => {
         expect(previewFromBytes({ filename: 'console.log' }, log)).toMatchObject({ kind: 'text', text: 'erro 500' })
         expect(previewFromBytes({ filename: 'dump.log' }, new Uint8Array([65, 0, 66]))).toBeUndefined()
         expect(previewFromBytes({ filename: 'manual.pdf' }, log)).toBeUndefined()
+    })
+})
+
+describe('previewFromBytes with media', () => {
+    it('hands the bytes to the player with the container type', () => {
+        const bytes = new Uint8Array([1, 2, 3])
+        expect(previewFromBytes({ filename: 'tela.mov' }, bytes)).toEqual({
+            kind: 'video',
+            mimeType: 'video/mp4',
+            bytes
+        })
+        expect(previewFromBytes({ filename: 'nota.mp3' }, bytes)).toMatchObject({
+            kind: 'audio',
+            mimeType: 'audio/mpeg'
+        })
+        expect(previewFromBytes({ filename: 'tela.avi' }, bytes)).toBeUndefined()
+    })
+})
+
+describe('findInlineAttachment', () => {
+    const attachments = [
+        { id: 1, filename: 'Print.png' },
+        { id: 2, filename: 'tela inicial.png' },
+        { id: 3, filename: 'print.png' }
+    ]
+    it('a relative source is the attachment with that name, the newest when repeated', () => {
+        expect(findInlineAttachment('print.png', attachments)?.id).toBe(3)
+        expect(findInlineAttachment('tela%20inicial.png', attachments)?.id).toBe(2)
+        expect(findInlineAttachment('outra.png', attachments)).toBeUndefined()
+    })
+    it('Redmine attachment links are matched by id', () => {
+        expect(findInlineAttachment('https://redmine.example/attachments/download/2/x.png', attachments)?.id).toBe(2)
+        expect(findInlineAttachment('/attachments/1', attachments)?.id).toBe(1)
+    })
+    it('images on other sites are left alone', () => {
+        expect(findInlineAttachment('https://example.com/print.png', attachments)).toBeUndefined()
     })
 })

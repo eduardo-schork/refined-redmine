@@ -88,6 +88,15 @@ export const useIssueEditOptions = (projectId: number, enabled = true) =>
         staleTime: 5 * 60_000
     })
 
+/** Learned from the project's last 100 issues; not read again while cached. */
+export const useIssueCustomFields = (projectId: number, enabled = true) =>
+    useQuery({
+        queryKey: qk.issueCustomFields(projectId),
+        enabled,
+        queryFn: () => api.issues.customFields(projectId),
+        staleTime: Infinity
+    })
+
 export function useEditIssue(id: number) {
     const queryClient = useQueryClient()
     return useMutation({

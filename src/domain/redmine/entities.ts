@@ -32,6 +32,7 @@ export interface Issue {
     created_on: string
     updated_on: string
     closed_on?: string | null
+    custom_fields?: CustomFieldValue[]
 }
 
 export interface JournalDetail {
@@ -76,7 +77,6 @@ export interface Relation {
 export interface IssueDetail extends Issue {
     description?: string | null
     spent_hours?: number
-    custom_fields?: CustomFieldValue[]
     journals: Journal[]
     attachments: Attachment[]
     relations: Relation[]

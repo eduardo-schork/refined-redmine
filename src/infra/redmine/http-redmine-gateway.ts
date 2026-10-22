@@ -96,6 +96,7 @@ function newIssueBody(issue: NewIssue, uploads: UploadedFile[]) {
         due_date: issue.dueDate,
         estimated_hours: issue.estimatedHours,
         parent_issue_id: issue.parentIssueId,
+        custom_fields: issue.customFields?.length ? issue.customFields : undefined,
         uploads: uploads.length ? uploads.map(uploadReference) : undefined
     }
 }

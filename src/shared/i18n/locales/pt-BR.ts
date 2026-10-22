@@ -556,6 +556,7 @@ export const ptBR = {
         keys: '↑↓ navegar · Enter abrir · Esc fechar'
     },
     attachments: {
+        cannotPlay: 'O app não consegue reproduzir este arquivo (formato ou codec). Abra no app do sistema.',
         preview: 'Ver aqui',
         openInSystem: 'Abrir no app do sistema',
         openInRedmine: 'Abrir no Redmine',
@@ -686,6 +687,7 @@ export const ptBR = {
             dropMore: 'ou arraste mais aqui',
             attachedOnCreate: 'Vai anexado ao criar a tarefa',
             removeFile: 'Tirar {{name}}',
+            requiredField: 'Obrigatório no Redmine',
             parentNotFound: 'Tarefa não encontrada ou sem acesso.'
         },
         newSubtask: 'Nova subtarefa',
