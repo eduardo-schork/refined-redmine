@@ -24,8 +24,8 @@ export interface UpdateDeps {
 }
 
 /**
- * Update check against the published releases: only users who saved their own GitHub token (with access to
- * the private repository) get it. Without a token the app works normally, it just never hears about new versions.
+ * Update check against the releases published on the app's public repository. No token is needed; a personal one
+ * only raises GitHub's limit of unauthenticated checks (60 per hour per network address).
  */
 export class UpdateService {
     private status: UpdateStatus
@@ -33,7 +33,7 @@ export class UpdateService {
 
     constructor(private readonly deps: UpdateDeps) {
         const hasToken = deps.tokens.get() !== null
-        this.status = { phase: hasToken ? 'idle' : 'disabled', currentVersion: deps.currentVersion, hasToken }
+        this.status = { phase: 'idle', currentVersion: deps.currentVersion, hasToken }
     }
 
     getStatus(): UpdateStatus {
@@ -58,7 +58,6 @@ export class UpdateService {
 
     async check(): Promise<UpdateStatus> {
         const token = this.deps.tokens.get()
-        if (!token) return this.update({ phase: 'disabled', hasToken: false, latest: undefined, error: undefined })
         const busy = this.status.phase === 'checking' || this.status.phase === 'downloading'
         if (busy) return this.status
 
@@ -95,7 +94,7 @@ export class UpdateService {
     async download(): Promise<UpdateStatus> {
         const token = this.deps.tokens.get()
         const release = this.status.latest
-        if (!token || !release || this.status.phase !== 'available') return this.status
+        if (!release || this.status.phase !== 'available') return this.status
 
         const asset = installerFor(release, this.deps.platform, this.deps.arch)
         if (!asset) {

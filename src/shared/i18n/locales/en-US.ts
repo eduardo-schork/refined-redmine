@@ -65,7 +65,11 @@ export const enUS: Resources = {
         'monitor.nameRequired': 'Give the monitor a name.',
         'monitor.sourceRequired': 'Choose where the monitor issues come from.',
         'update.unauthorized': 'GitHub refused the token (invalid or expired).',
-        'update.notFound': 'This token has no access to the app repository on GitHub.',
+        'update.notFound':
+            "The app's repository is not reachable on GitHub (still private? Then only with a token that has access).",
+        'update.rateLimited': 'GitHub limited the checks from this network for now. Try later or save a GitHub token.',
+        'update.checksum':
+            'The downloaded installer does not match the one published on GitHub and was discarded. Try downloading again.',
         'update.noInstaller': 'Version {{version}} has no installer for this computer.',
         'update.http': 'HTTP error {{status}} from GitHub.',
         'update.untrusted':
@@ -1263,11 +1267,11 @@ export const enUS: Resources = {
     },
     updates: {
         title: 'Updates',
-        hint: 'The app looks for new versions in the GitHub Releases, with your own token. Without a token it works normally, it just does not tell you about new versions.',
+        hint: 'The app looks for new versions in the public GitHub Releases, with no account or token needed.',
         current: 'Installed version: {{version}}',
-        token: 'GitHub token',
+        token: 'GitHub token (optional)',
         tokenHint:
-            'Preferably a fine-grained token (github_pat_…) for this repository only, with Contents: read-only. If the repository is not listed when creating it, use a classic token with the repo scope. Stored encrypted on this computer.',
+            'Only needed if GitHub limits the checks (60 per hour per network, e.g. a busy office). A fine-grained token with no permissions is enough. Stored encrypted on this computer.',
         tokenSaved: 'Token saved',
         tokenPlaceholder: 'github_pat_… or ghp_…',
         createToken: 'Create a token on GitHub',
@@ -1276,7 +1280,7 @@ export const enUS: Resources = {
         testNoRelease: 'Access ok. No version published yet.',
         save: 'Save token',
         remove: 'Remove token',
-        confirmRemove: 'Remove the token? The app stops looking for new versions.',
+        confirmRemove: 'Remove the token? The app keeps looking for new versions without it.',
         autoCheck: 'Look for new versions automatically',
         autoCheckHint: 'When the app opens (after 30 s) and then {{interval}}.',
         interval: 'Check',
@@ -1289,7 +1293,6 @@ export const enUS: Resources = {
         },
         checkNow: 'Check now',
         phase: {
-            disabled: 'Updates off: no GitHub token.',
             idle: 'Not checked yet.',
             checking: 'Checking…',
             upToDate: 'You are on the latest version.',

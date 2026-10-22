@@ -29,6 +29,8 @@ export type ErrorCode =
     | 'filter.invalidUrl'
     | 'monitor.nameRequired'
     | 'monitor.sourceRequired'
+    | 'update.rateLimited'
+    | 'update.checksum'
     | 'update.unauthorized'
     | 'update.notFound'
     | 'update.noInstaller'

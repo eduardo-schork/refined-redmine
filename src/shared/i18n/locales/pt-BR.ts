@@ -67,7 +67,12 @@ export const ptBR = {
         'monitor.nameRequired': 'Dê um nome ao monitor.',
         'monitor.sourceRequired': 'Escolha de onde vêm as tarefas do monitor.',
         'update.unauthorized': 'O GitHub recusou o token (inválido ou expirado).',
-        'update.notFound': 'Este token não tem acesso ao repositório do app no GitHub.',
+        'update.notFound':
+            'O repositório do app não está acessível no GitHub (ainda privado? Então só com um token com acesso).',
+        'update.rateLimited':
+            'O GitHub limitou as consultas desta rede por agora. Tente mais tarde ou salve um token do GitHub.',
+        'update.checksum':
+            'O instalador baixado não confere com o publicado no GitHub e foi descartado. Tente baixar de novo.',
         'update.noInstaller': 'A versão {{version}} não tem instalador para este computador.',
         'update.http': 'Erro HTTP {{status}} do GitHub.',
         'update.untrusted':
@@ -1269,11 +1274,11 @@ export const ptBR = {
     },
     updates: {
         title: 'Atualizações',
-        hint: 'O app procura versões novas nas Releases do GitHub, com o seu próprio token. Sem token, ele funciona normalmente e só não avisa quando sai versão nova.',
+        hint: 'O app procura versões novas nas Releases públicas do GitHub, sem precisar de conta nem token.',
         current: 'Versão instalada: {{version}}',
-        token: 'Token do GitHub',
+        token: 'Token do GitHub (opcional)',
         tokenHint:
-            'De preferência um token fine-grained (github_pat_…) só deste repositório, com Contents: somente leitura. Se o repositório não aparecer na criação, use um token clássico com o escopo repo. Fica criptografado neste computador.',
+            'Só é preciso se o GitHub limitar as consultas (60 por hora por rede, por exemplo num escritório com muita gente). Um token fine-grained sem nenhuma permissão basta. Fica criptografado neste computador.',
         tokenSaved: 'Token salvo',
         tokenPlaceholder: 'github_pat_… ou ghp_…',
         createToken: 'Criar token no GitHub',
@@ -1282,7 +1287,7 @@ export const ptBR = {
         testNoRelease: 'Acesso ok. Nenhuma versão publicada ainda.',
         save: 'Salvar token',
         remove: 'Remover token',
-        confirmRemove: 'Remover o token? O app deixa de procurar versões novas.',
+        confirmRemove: 'Remover o token? O app continua procurando versões novas, sem ele.',
         autoCheck: 'Procurar versões novas automaticamente',
         autoCheckHint: 'Ao abrir o app (depois de 30 s) e depois {{interval}}.',
         interval: 'Procurar',
@@ -1295,7 +1300,6 @@ export const ptBR = {
         },
         checkNow: 'Verificar agora',
         phase: {
-            disabled: 'Atualizações desativadas: sem token do GitHub.',
             idle: 'Ainda não verificado.',
             checking: 'Verificando…',
             upToDate: 'Você está na versão mais recente.',
