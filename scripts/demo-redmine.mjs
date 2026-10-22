@@ -53,7 +53,8 @@ const project = { id: 10, name: 'Loja Virtual - Desenvolvimento' }
 const trackers = {
     dev: { id: 1, name: 'Desenvolvimento' },
     bug: { id: 2, name: 'Defeito' },
-    improvement: { id: 3, name: 'Melhoria' }
+    improvement: { id: 3, name: 'Melhoria' },
+    qa: { id: 4, name: 'Qualidade' }
 }
 const priorities = {
     low: { id: 1, name: 'Baixa' },
@@ -107,7 +108,7 @@ function demoCustomFields(id, trackerKey) {
     return fields
 }
 
-const requiredCustomFields = { dev: [2, 4, 270], bug: [2, 4], improvement: [2, 4] }
+const requiredCustomFields = { dev: [2, 4, 270], bug: [2, 4], improvement: [2, 4], qa: [2, 4] }
 
 function issue(id, subject, fields) {
     const {
@@ -286,7 +287,8 @@ const issues = [
         updatedDays: 3
     }),
     issue(1215, 'Lista de desejos compartilhável', { status: 1, assignee: 'lucas', versionId: 379, author: 'marina' }),
-    issue(1216, 'Revisar textos da página de trocas', { status: 3, assignee: 'rafael', versionId: 3771, done: 100 })
+    issue(1216, 'Revisar textos da página de trocas', { status: 3, assignee: 'rafael', versionId: 3771, done: 100 }),
+    issue(1220, 'QA: endereço automático pelo CEP no checkout', { tracker: 'qa', status: 1, assignee: 'beatriz', versionId: 378 })
 ]
 const issueById = new Map(issues.map((item) => [item.id, item]))
 
@@ -336,6 +338,8 @@ function matchesFieldFilters(item, params) {
 function matchesFilter(item, params) {
     const issueIds = params.get('issue_id')
     if (issueIds) return issueIds.split(',').map(Number).includes(item.id)
+    const parentIds = params.get('parent_id')
+    if (parentIds) return parentIds.split(',').map(Number).includes(parentOf(item.id)?.id)
     const queryId = params.get('query_id')
     if (queryId) return queryFilters[queryId]?.(item) ?? false
     if (params.getAll('f[]').length) return matchesFieldFilters(item, params)
@@ -527,7 +531,8 @@ const relations = [
     { id: 1, issue_id: 1201, issue_to_id: 1210, relation_type: 'relates' },
     { id: 2, issue_id: 1204, issue_to_id: 1201, relation_type: 'blocks' },
     { id: 3, issue_id: 1201, issue_to_id: 1208, relation_type: 'precedes' },
-    { id: 4, issue_id: 1214, issue_to_id: 1201, relation_type: 'relates' }
+    { id: 4, issue_id: 1214, issue_to_id: 1201, relation_type: 'relates' },
+    { id: 5, issue_id: 1220, issue_to_id: 1201, relation_type: 'relates' }
 ]
 const children = { 1201: [1211, 1213, 1216] }
 
@@ -542,7 +547,7 @@ function parentOf(id) {
 
 function publicIssue(item) {
     const { watcherIds: _watchers, journals: _journals, description: _description, ...fields } = item
-    return fields
+    return { ...fields, parent: parentOf(item.id) }
 }
 
 function issueDetail(item) {
@@ -717,6 +722,7 @@ function updateIssue(id, body) {
         }
         item.journals.push(journal)
     }
+    attachUploads(id, body.issue?.uploads)
     item.updated_on = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
 }
 
@@ -782,7 +788,13 @@ const timeEntries = [
     timeEntry(1201, -1, 2, 9, 'Ajustes do layout do formulário'),
     timeEntry(1206, -1, 1.5, 11, 'Testes do filtro'),
     timeEntry(1201, 0, 1, 10, 'Daily e revisão'),
-    timeEntry(1201, -2, 3, 9, 'Integração com a API de CEP', people.lucas)
+    timeEntry(1201, -2, 3, 9, 'Integração com a API de CEP', people.lucas),
+    timeEntry(1210, -1, 5, 9, 'Webhook do Pix', people.lucas),
+    timeEntry(1209, 0, 2, 9, 'Compressão das imagens', people.lucas),
+    timeEntry(1213, -1, 4, 11, 'Cenários de frete grátis', people.beatriz),
+    timeEntry(1210, -2, 3.5, 9, 'Tela de pagamento', people.beatriz),
+    timeEntry(1211, -1, 2, 9, 'Formulário da newsletter', people.rafael),
+    timeEntry(1216, 0, 1, 10, 'Revisão de textos com o time', people.rafael)
 ]
 
 const spentOn = (issueId) =>
@@ -846,6 +858,7 @@ function route(method, url, body) {
     if (path === '/__demo/change') return simulateChange(url.searchParams)
     if (path === '/my/account.json') return { user: me }
     if (path === '/issue_statuses.json') return { issue_statuses: statuses }
+    if (path === '/trackers.json') return { trackers: Object.values(trackers) }
     if (path === '/projects.json') return { projects: [{ ...project, identifier: 'loja' }], total_count: 1 }
     if (path === '/queries.json') return { queries: savedQueries, total_count: savedQueries.length }
     if (path === `/projects/${project.id}/versions.json`) return { versions }
@@ -953,7 +966,26 @@ function demoConfig() {
             { id: 'q-bugs', name: 'Defeitos abertos da loja', queryId: 71, alertOn: 'increase', enabled: true }
         ],
         sprints: { sprintPattern: '^\\d+\\.\\d+$', hotfixPattern: '^\\d+\\.\\d+\\.\\d+$', projectId: project.id },
-        dashboard: { staleDays: 5 }
+        dashboard: { staleDays: 5 },
+        teams: [{ id: 't-loja', name: 'Time da loja', members: Object.values(people) }],
+        handoffRules: [
+            {
+                id: 'r-qa',
+                name: 'Enviar para QA',
+                mode: 'other',
+                trackerIds: [trackers.dev.id],
+                statusIds: [],
+                targetTrackerId: trackers.qa.id,
+                statusId: 2,
+                assigneeId: people.beatriz.id,
+                assigneeName: people.beatriz.name,
+                template: '* Trâmite de {{tipoAtividadeComentario}}: {{noteSelecionado}}',
+                multiTemplate: '* Trâmites de {{tipoAtividadeComentario}}:\n  - {{noteSelecionado}}',
+                logTime: true,
+                bulk: false,
+                closingSteps: [{ trackerId: trackers.dev.id, statusId: 110 }]
+            }
+        ]
     }
 }
 
