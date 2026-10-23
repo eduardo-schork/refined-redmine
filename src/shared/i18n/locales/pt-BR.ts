@@ -1037,20 +1037,57 @@ export const ptBR = {
         confirmClear: 'Limpar todo o histórico de notificações?',
         nothingPending: 'Nada pendente.',
         empty: 'Nenhuma notificação ainda. O monitor verifica o Redmine periodicamente enquanto o app está aberto (inclusive na bandeja).',
-        errorIn: 'Monitor “{{query}}”: {{message}}'
+        errorIn: 'Monitor “{{query}}”: {{message}}',
+        filter: {
+            all: 'Todas',
+            mentions: 'Menções',
+            comments: 'Comentários',
+            status: 'Status',
+            issues: 'Novas e atribuídas',
+            unqueued: 'Saíram da fila',
+            queries: 'Consultas',
+            reminders: 'Lembretes'
+        },
+        filters: 'Filtrar por tipo',
+        allMonitors: 'Todos os monitores',
+        today: 'Hoje',
+        yesterday: 'Ontem',
+        commented: 'comentou',
+        mentioned: 'mencionou você',
+        markRead: 'Marcar como lida',
+        markUnread: 'Marcar como não lida',
+        remove: 'Remover',
+        emptyTitle: 'Nenhuma notificação ainda',
+        caughtUpTitle: 'Tudo em dia',
+        noMatchTitle: 'Nada por aqui',
+        noMatch: 'Nenhuma notificação com esses filtros.',
+        showAll: 'Mostrar todas',
+        keys: {
+            move: 'navegar',
+            open: 'abrir',
+            read: 'lida/não lida',
+            remove: 'remover'
+        }
     },
     settings: {
         issueStyle: {
-            title: 'Cores das tarefas',
-            hint: 'O app escolhe a cor de cada status e o nível de cada prioridade pelo nome. Troque só os que não combinarem.',
+            title: 'Status, prioridades e tipos',
+            hint: 'O app escolhe a família de cada status, o nível de cada prioridade e a cor de cada tipo pelo nome. Troque só os que não combinarem.',
             reset: 'Voltar ao automático',
             statuses: 'Cor dos status',
-            priorities: 'Nível das prioridades',
-            prioritiesHint: 'Urgente e Alta ganham destaque nos cards e entram no contador de prioridade alta.',
+            statusesHint:
+                'Clique numa família (as cores seguem o conjunto escolhido acima) ou no + para usar qualquer cor só neste status.',
+            priorities: 'Prioridades',
+            prioritiesHint:
+                'O nível define a seta e o contador de prioridade alta (Urgente e Alta); Normal fica sem destaque. No + escolha qualquer cor para a prioridade.',
+            customColor: 'Outra cor',
+            resetOne: 'Voltar ao automático ({{value}})',
+            trackers: 'Cor dos tipos',
+            trackersHint: 'Aparece como um ponto ao lado do tipo nos cards e listas.',
             automatic: 'Automático: {{value}}',
             dueSoon: 'Destacar previsão a partir de (dias antes)',
             dueSoonHint:
-                'A previsão fica amarela nos cards quando faltam até esse número de dias. 0 = só no dia e vencidas.',
+                'A previsão ganha destaque nos cards quando faltam até esse número de dias. 0 = só no dia e vencidas.',
             tones: {
                 new: 'Nova',
                 progress: 'Em andamento',
@@ -1061,10 +1098,10 @@ export const ptBR = {
                 rejected: 'Rejeitada / cancelada'
             },
             levels: {
-                urgent: 'Urgente · vermelho',
-                high: 'Alta · amarelo',
-                normal: 'Normal · sem destaque',
-                low: 'Baixa · cinza'
+                urgent: 'Urgente',
+                high: 'Alta',
+                normal: 'Normal',
+                low: 'Baixa'
             }
         },
         tab: {
@@ -1106,6 +1143,10 @@ export const ptBR = {
             'Cada tela e cada quadro abrem numa aba, como no navegador. Ctrl+Tab passa para a próxima e {{key}}1…9 vai direto para uma.',
         workspaceTabs: 'Abrir as telas em abas',
         workspaceRestore: 'Reabrir as abas ao iniciar o app',
+        diagnostics: 'Diagnóstico',
+        diagnosticsHint: 'Ferramentas para investigar problemas: o log lista as requisições e os ciclos do monitor.',
+        showLog: 'Mostrar o Log na barra lateral',
+        openLog: 'Abrir log',
         openAtLogin: 'Abrir ao iniciar o computador',
         reminderHistory: 'Guardar lembretes da agenda no histórico',
         reminderHistoryHint: 'A notificação do sistema aparece de qualquer forma.',
@@ -1133,9 +1174,77 @@ export const ptBR = {
         home: 'Início',
         staleDays: 'Considerar tarefa parada após (dias sem movimentação)'
     },
+    issueColors: {
+        title: 'Cores',
+        hint: 'Cores dos status, prioridades, previsões e mensagens do app. As mudanças valem na hora.',
+        restoreAll: 'Restaurar cores',
+        restoreOne: 'Voltar à cor do conjunto',
+        preset: 'Conjunto de cores',
+        presetHint:
+            'Define todas as cores, nos temas claro e escuro. As cores que você trocar abaixo continuam valendo.',
+        presets: {
+            default: 'Padrão',
+            vivid: 'Vívido',
+            soft: 'Suave',
+            colorblind: 'Para daltônicos'
+        },
+        cardAccentLabel: 'Faixa lateral dos cards',
+        cardAccentHint: 'O que a faixa colorida à esquerda de cada card mostra.',
+        cardAccent: {
+            priority: 'Prioridade',
+            status: 'Status',
+            tracker: 'Tipo',
+            none: 'Nada'
+        },
+        cardTint: 'Fundo do card colorido',
+        cardTintHint: 'Pinta de leve o fundo do card com a cor da faixa.',
+        group: {
+            status: 'Status',
+            priority: 'Prioridades',
+            due: 'Previsão',
+            semantic: 'Mensagens do app'
+        },
+        color: {
+            'st-new': 'Nova',
+            'st-progress': 'Em andamento',
+            'st-review': 'Em aprovação / revisão',
+            'st-testing': 'Em teste',
+            'st-blocked': 'Em pausa / bloqueada',
+            'st-done': 'Concluída',
+            'st-rejected': 'Rejeitada / cancelada',
+            'pr-urgent': 'Urgente',
+            'pr-high': 'Alta',
+            'pr-low': 'Baixa',
+            'due-overdue': 'Vencida',
+            'due-today': 'Vence hoje',
+            'due-soon': 'Vence em breve',
+            ok: 'Sucesso',
+            warn: 'Atenção',
+            danger: 'Erro'
+        },
+        sample: {
+            project: 'Projeto exemplo',
+            person: 'Ana Exemplo',
+            priority: {
+                urgent: 'Urgente',
+                high: 'Alta',
+                low: 'Baixa'
+            },
+            tracker: {
+                bug: 'Defeito',
+                feature: 'Funcionalidade',
+                support: 'Suporte'
+            },
+            subject: {
+                first: 'Erro ao salvar o cadastro',
+                second: 'Exportar relatório em PDF',
+                third: 'Dúvida sobre permissões'
+            }
+        }
+    },
     appearance: {
         title: 'Aparência',
-        hint: 'Tema, cores e tamanho da interface. As mudanças valem na hora.',
+        hint: 'Tema, paletas, cor de destaque e tamanho da interface. As mudanças valem na hora.',
         reset: 'Restaurar padrão',
         theme: 'Tema',
         mode: {
@@ -1155,6 +1264,7 @@ export const ptBR = {
         accent: 'Cor de destaque',
         accentHint: 'Botões, links, seleção, dia de hoje e contadores. No tema escuro fica um pouco mais clara.',
         accentPreset: {
+            refined: 'Azul Refined',
             redmine: 'Vermelho Redmine',
             blue: 'Azul',
             teal: 'Verde-azulado',

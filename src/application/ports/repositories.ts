@@ -23,6 +23,8 @@ export interface NotificationRepository {
     list(): AppNotification[]
     add(items: AppNotification[]): void
     markRead(ids: string[] | 'all'): AppNotification[]
+    markUnread(ids: string[]): AppNotification[]
+    remove(ids: string[]): AppNotification[]
     clear(): void
 }
 

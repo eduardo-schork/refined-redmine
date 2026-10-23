@@ -11,6 +11,7 @@ import { useMonitorName } from '@/hooks/monitor-name'
 import { useLogout, useSettings, useUpdateSettings } from '@/hooks/session'
 import { api } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
+import { useNavigate } from '@/lib/router'
 import { TAB_NUMBER_MODIFIER } from '@/lib/shortcuts'
 import { formatSupportReport } from '@/lib/support-report'
 import { Button } from '../../atoms/Button'
@@ -101,6 +102,26 @@ export function WorkspaceSection() {
                     label={t('settings.workspaceRestore')}
                 />
             )}
+        </Card>
+    )
+}
+
+export function DiagnosticsSection() {
+    const { t } = useI18n()
+    const settings = useSettings()
+    const save = useSave()
+    const navigate = useNavigate()
+    return (
+        <Card
+            title={t('settings.diagnostics')}
+            description={t('settings.diagnosticsHint')}
+            actions={<Button onClick={() => navigate({ page: 'log' })}>{t('settings.openLog')}</Button>}
+        >
+            <ToggleField
+                checked={settings.showLog}
+                onChange={(showLog) => save({ showLog })}
+                label={t('settings.showLog')}
+            />
         </Card>
     )
 }

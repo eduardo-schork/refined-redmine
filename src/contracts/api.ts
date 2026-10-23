@@ -142,6 +142,8 @@ export interface RefinedApi {
     notifications: {
         list(): AppNotification[]
         markRead(ids: string[] | 'all'): AppNotification[]
+        markUnread(ids: string[]): AppNotification[]
+        remove(ids: string[]): AppNotification[]
         clear(): AppNotification[]
         test(): NotifyProbeResult
         /** The user's answer to "did the test notification appear?". */
@@ -203,7 +205,17 @@ export const API_METHODS = {
     boards: ['issues', 'save', 'remove', 'move'],
     sprints: ['list', 'stats', 'inspectProject'],
     calendar: ['list', 'save', 'remove'],
-    notifications: ['list', 'markRead', 'clear', 'test', 'confirm', 'permission', 'openSettings'],
+    notifications: [
+        'list',
+        'markRead',
+        'markUnread',
+        'remove',
+        'clear',
+        'test',
+        'confirm',
+        'permission',
+        'openSettings'
+    ],
     monitor: ['status', 'runNow'],
     log: ['list', 'clear'],
     updates: ['status', 'check', 'setToken', 'testToken', 'download', 'install'],

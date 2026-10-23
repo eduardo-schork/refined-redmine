@@ -127,13 +127,13 @@ const isOnColumn = (sampleX, sampleY) =>
 const WHITE = [255, 255, 255, 255]
 const BLACK = [0, 0, 0, 255]
 
-// App icon: rounded red background, darker towards the bottom, with white columns.
+// App icon: rounded #0085ff background, darker towards the bottom, with white columns.
 const appShade = (sampleX, sampleY) => {
     if (!isInsideRoundedRect(sampleX, sampleY, 0.06, 0.06, 0.88, 0.88, 0.2)) return null
     if (isOnColumn(sampleX, sampleY)) return WHITE
-    const red = Math.round(206 - 30 * sampleY)
-    const greenAndBlue = Math.round(52 - 12 * sampleY)
-    return [red, greenAndBlue, greenAndBlue, 255]
+    const green = Math.round(141 - 30 * sampleY)
+    const blue = Math.round(255 - 36 * sampleY)
+    return [0, green, blue, 255]
 }
 
 // Tray icon: template image (black + alpha) so macOS can invert it in dark mode.

@@ -5,6 +5,7 @@ import type { SettingsTab } from '@/lib/router'
 import { NavItem } from '@/ui/molecules/NavItem'
 import { AppearanceSection } from '@/ui/organisms/settings/AppearanceSection'
 import { HandoffRulesSection } from '@/ui/organisms/settings/HandoffRulesSection'
+import { IssueColorsSection } from '@/ui/organisms/settings/IssueColorsSection'
 import { IssueStyleSection } from '@/ui/organisms/settings/IssueStyleSection'
 import { MonitorsSection } from '@/ui/organisms/settings/MonitorsSection'
 import { UpdatesSection } from '@/ui/organisms/settings/UpdatesSection'
@@ -12,6 +13,7 @@ import {
     AboutSection,
     AccountSection,
     CalendarSection,
+    DiagnosticsSection,
     HomeSection,
     LanguageSection,
     WorkspaceSection,
@@ -38,11 +40,13 @@ const TAB_SECTIONS: Record<SettingsTab, () => ReactNode> = {
             <WorkspaceSection />
             <AboutSection />
             <UpdatesSection />
+            <DiagnosticsSection />
         </>
     ),
     appearance: () => (
         <>
             <AppearanceSection />
+            <IssueColorsSection />
             <IssueStyleSection />
         </>
     ),

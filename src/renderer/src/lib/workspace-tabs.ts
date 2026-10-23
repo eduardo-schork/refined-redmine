@@ -5,6 +5,8 @@ import { parseRoute, type Route } from './router'
 export interface WorkspaceTab {
     key: string
     route: Route
+    /** Issues open in this tab's modal, oldest first: the last one is shown and "← back" returns to the previous. */
+    issues?: number[]
 }
 
 export interface WorkspaceTabs {
@@ -29,7 +31,7 @@ export function openTab(state: WorkspaceTabs, route: Route): WorkspaceTabs {
     const screen = tabKey(route)
     const open = state.tabs.find((tab) => tabKey(tab.route) === screen)
     if (!open) return openNewTab(state, route)
-    const tabs = state.tabs.map((tab) => (tab === open ? { key: tab.key, route } : tab))
+    const tabs = state.tabs.map((tab) => (tab === open ? { ...tab, route } : tab))
     return { tabs, activeKey: open.key }
 }
 
@@ -106,6 +108,21 @@ export function keepTabs(state: WorkspaceTabs, exists: (route: Route) => boolean
     return activeStillOpen ? { tabs, activeKey: state.activeKey } : { tabs, activeKey: tabs[0]?.key }
 }
 
+function changeIssues(state: WorkspaceTabs, key: string, change: (issues: number[]) => number[]): WorkspaceTabs {
+    const tabs = state.tabs.map((tab) => (tab.key === key ? { ...tab, issues: change(tab.issues ?? []) } : tab))
+    return { ...state, tabs }
+}
+
+/** Opens an issue in the tab's modal, on top of the ones already open there (unless it is already on top). */
+export function pushIssue(state: WorkspaceTabs, key: string, issueId: number): WorkspaceTabs {
+    return changeIssues(state, key, (issues) => (issues.at(-1) === issueId ? issues : [...issues, issueId]))
+}
+
+/** "← back" or closing the modal: the previous issue of that tab shows again, or the modal closes. */
+export function popIssue(state: WorkspaceTabs, key: string): WorkspaceTabs {
+    return changeIssues(state, key, (issues) => issues.slice(0, -1))
+}
+
 export const activeRoute = (state: WorkspaceTabs): Route | undefined =>
     state.tabs.find((tab) => tab.key === state.activeKey)?.route
 
@@ -127,16 +144,40 @@ export function routePath(route: Route): string {
 interface StoredTabs {
     paths: string[]
     activeIndex?: number
+    /** Each tab's open issues, in the order of `paths`. */
+    issues?: number[][]
 }
 
-/** Tabs of the last session on this computer; anything unreadable is left out. */
+function storedIssues(value: unknown): number[] {
+    if (!Array.isArray(value)) return []
+    return value.filter((issueId): issueId is number => Number.isInteger(issueId) && issueId > 0)
+}
+
+interface RestorableTab {
+    route: Route
+    issues: number[]
+}
+
+function restorableTabs(stored: StoredTabs): RestorableTab[] {
+    return stored.paths.flatMap((path, index) => {
+        const route = parseRoute(String(path))
+        return route ? [{ route, issues: storedIssues(stored.issues?.[index]) }] : []
+    })
+}
+
+function restoreTab(state: WorkspaceTabs, { route, issues }: RestorableTab): WorkspaceTabs {
+    const key = unusedKey(state, tabKey(route))
+    return { tabs: [...state.tabs, { key, route, issues }], activeKey: key }
+}
+
+/** Tabs of the last session on this computer, with the issues open in each; anything unreadable is left out. */
 export function loadTabs(): WorkspaceTabs | undefined {
     try {
         const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null') as StoredTabs | null
         if (!stored || !Array.isArray(stored.paths)) return undefined
-        const routes = stored.paths.map((path) => parseRoute(String(path))).filter((route) => route !== null)
-        if (!routes.length) return undefined
-        const restored = routes.reduce<WorkspaceTabs>((state, route) => openNewTab(state, route), { tabs: [] })
+        const tabs = restorableTabs(stored)
+        if (!tabs.length) return undefined
+        const restored = tabs.reduce<WorkspaceTabs>(restoreTab, { tabs: [] })
         const active = restored.tabs[Number(stored.activeIndex)] ?? restored.tabs[0]
         return { ...restored, activeKey: active.key }
     } catch {
@@ -146,7 +187,9 @@ export function loadTabs(): WorkspaceTabs | undefined {
 
 export function saveTabs(state: WorkspaceTabs): void {
     const paths = state.tabs.map((tab) => routePath(tab.route))
-    const stored: StoredTabs = { paths, activeIndex: state.tabs.findIndex((tab) => tab.key === state.activeKey) }
+    const issues = state.tabs.map((tab) => tab.issues ?? [])
+    const activeIndex = state.tabs.findIndex((tab) => tab.key === state.activeKey)
+    const stored: StoredTabs = { paths, activeIndex, issues }
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(stored))
     } catch {

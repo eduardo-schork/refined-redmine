@@ -1031,20 +1031,57 @@ export const enUS: Resources = {
         confirmClear: 'Clear the whole notification history?',
         nothingPending: 'Nothing pending.',
         empty: 'No notifications yet. The monitor checks Redmine periodically while the app is open (including in the tray).',
-        errorIn: 'Monitor “{{query}}”: {{message}}'
+        errorIn: 'Monitor “{{query}}”: {{message}}',
+        filter: {
+            all: 'All',
+            mentions: 'Mentions',
+            comments: 'Comments',
+            status: 'Status',
+            issues: 'New & assigned',
+            unqueued: 'Left my queue',
+            queries: 'Queries',
+            reminders: 'Reminders'
+        },
+        filters: 'Filter by type',
+        allMonitors: 'All monitors',
+        today: 'Today',
+        yesterday: 'Yesterday',
+        commented: 'commented',
+        mentioned: 'mentioned you',
+        markRead: 'Mark as read',
+        markUnread: 'Mark as unread',
+        remove: 'Remove',
+        emptyTitle: 'No notifications yet',
+        caughtUpTitle: 'All caught up',
+        noMatchTitle: 'Nothing here',
+        noMatch: 'No notification matches these filters.',
+        showAll: 'Show all',
+        keys: {
+            move: 'move',
+            open: 'open',
+            read: 'read/unread',
+            remove: 'remove'
+        }
     },
     settings: {
         issueStyle: {
-            title: 'Issue colors',
-            hint: 'The app picks the color of each status and the level of each priority from its name. Change only the ones that do not fit.',
+            title: 'Statuses, priorities and trackers',
+            hint: 'The app picks the family of each status, the level of each priority and the color of each tracker from its name. Change only the ones that do not fit.',
             reset: 'Back to automatic',
             statuses: 'Status colors',
-            priorities: 'Priority levels',
-            prioritiesHint: 'Urgent and High stand out on the cards and count as high priority.',
+            statusesHint:
+                'Click a family (its colors follow the color set above) or + to use any color for this status only.',
+            priorities: 'Priorities',
+            prioritiesHint:
+                'The level sets the arrow and the high priority counter (Urgent and High); Normal has no highlight. Use + to pick any color for the priority.',
+            customColor: 'Other color',
+            resetOne: 'Back to automatic ({{value}})',
+            trackers: 'Tracker colors',
+            trackersHint: 'Shown as a dot next to the tracker on cards and lists.',
             automatic: 'Automatic: {{value}}',
             dueSoon: 'Highlight the due date from (days before)',
             dueSoonHint:
-                'The due date turns yellow on the cards when this many days or fewer are left. 0 = only on the day and overdue.',
+                'The due date stands out on the cards when this many days or fewer are left. 0 = only on the day and overdue.',
             tones: {
                 new: 'New',
                 progress: 'In progress',
@@ -1055,10 +1092,10 @@ export const enUS: Resources = {
                 rejected: 'Rejected / cancelled'
             },
             levels: {
-                urgent: 'Urgent · red',
-                high: 'High · yellow',
-                normal: 'Normal · no highlight',
-                low: 'Low · gray'
+                urgent: 'Urgent',
+                high: 'High',
+                normal: 'Normal',
+                low: 'Low'
             }
         },
         tab: {
@@ -1100,6 +1137,10 @@ export const enUS: Resources = {
             'Each screen and each board opens in a tab, as in a browser. Ctrl+Tab goes to the next one and {{key}}1…9 jumps to one.',
         workspaceTabs: 'Open screens in tabs',
         workspaceRestore: 'Reopen the tabs when the app starts',
+        diagnostics: 'Diagnostics',
+        diagnosticsHint: 'Tools to investigate problems: the log lists the requests and the monitor cycles.',
+        showLog: 'Show Log in the sidebar',
+        openLog: 'Open log',
         openAtLogin: 'Open at login',
         reminderHistory: 'Keep calendar reminders in the history',
         reminderHistoryHint: 'The system notification shows either way.',
@@ -1127,9 +1168,76 @@ export const enUS: Resources = {
         home: 'Home',
         staleDays: 'Consider an issue stalled after (days without activity)'
     },
+    issueColors: {
+        title: 'Colors',
+        hint: 'Colors of statuses, priorities, due dates and app messages. Changes apply right away.',
+        restoreAll: 'Restore colors',
+        restoreOne: 'Back to the set color',
+        preset: 'Color set',
+        presetHint: 'Sets every color, for the light and the dark theme. The colors you change below still apply.',
+        presets: {
+            default: 'Default',
+            vivid: 'Vivid',
+            soft: 'Soft',
+            colorblind: 'Colorblind-safe'
+        },
+        cardAccentLabel: 'Card side stripe',
+        cardAccentHint: 'What the colored stripe on the left of each card shows.',
+        cardAccent: {
+            priority: 'Priority',
+            status: 'Status',
+            tracker: 'Tracker',
+            none: 'Nothing'
+        },
+        cardTint: 'Colored card background',
+        cardTintHint: 'Lightly tints the card background with the stripe color.',
+        group: {
+            status: 'Statuses',
+            priority: 'Priorities',
+            due: 'Due date',
+            semantic: 'App messages'
+        },
+        color: {
+            'st-new': 'New',
+            'st-progress': 'In progress',
+            'st-review': 'In review / approval',
+            'st-testing': 'In testing',
+            'st-blocked': 'Paused / blocked',
+            'st-done': 'Done',
+            'st-rejected': 'Rejected / cancelled',
+            'pr-urgent': 'Urgent',
+            'pr-high': 'High',
+            'pr-low': 'Low',
+            'due-overdue': 'Overdue',
+            'due-today': 'Due today',
+            'due-soon': 'Due soon',
+            ok: 'Success',
+            warn: 'Warning',
+            danger: 'Error'
+        },
+        sample: {
+            project: 'Sample project',
+            person: 'Ann Sample',
+            priority: {
+                urgent: 'Urgent',
+                high: 'High',
+                low: 'Low'
+            },
+            tracker: {
+                bug: 'Bug',
+                feature: 'Feature',
+                support: 'Support'
+            },
+            subject: {
+                first: 'Error when saving the form',
+                second: 'Export report as PDF',
+                third: 'Question about permissions'
+            }
+        }
+    },
     appearance: {
         title: 'Appearance',
-        hint: 'Theme, colors and interface size. Changes apply right away.',
+        hint: 'Theme, palettes, accent color and interface size. Changes apply right away.',
         reset: 'Restore defaults',
         theme: 'Theme',
         mode: {
@@ -1149,6 +1257,7 @@ export const enUS: Resources = {
         accent: 'Accent color',
         accentHint: 'Buttons, links, selection, today and counters. In the dark theme it is slightly lighter.',
         accentPreset: {
+            refined: 'Refined blue',
             redmine: 'Redmine red',
             blue: 'Blue',
             teal: 'Teal',

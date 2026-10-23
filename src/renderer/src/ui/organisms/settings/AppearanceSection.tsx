@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { Check, Monitor, Moon, Sun } from 'lucide-react'
 import type { ReactNode } from 'react'
 import {
@@ -6,7 +6,6 @@ import {
     DARK_PALETTES,
     DEFAULT_APPEARANCE,
     INTERFACE_SCALES,
-    isHexColor,
     LIGHT_PALETTES,
     THEME_MODES,
     type AccentPreset,
@@ -23,6 +22,7 @@ import { Button } from '../../atoms/Button'
 import { Input } from '../../atoms/fields'
 import { Switch } from '../../atoms/Switch'
 import { Field, ToggleField } from '../../molecules/Field'
+import { useColorDraft } from '../../molecules/ColorSwatch'
 import { SegmentedControl } from '../../molecules/SegmentedControl'
 import { Card } from '../../molecules/surfaces'
 
@@ -55,7 +55,12 @@ function useAppearance() {
     const update = useUpdateSettings()
     const appearance = settings.appearance
     const change = (patch: Partial<Appearance>) => update.mutate({ appearance: { ...appearance, ...patch } })
-    return { appearance, change, reset: () => update.mutate({ appearance: DEFAULT_APPEARANCE }) }
+    // Issue colors have their own section and "restore" button.
+    const reset = () =>
+        update.mutate({
+            appearance: { ...DEFAULT_APPEARANCE, colorPreset: appearance.colorPreset, colors: appearance.colors }
+        })
+    return { appearance, change, reset }
 }
 
 export function AppearanceSection() {
@@ -233,23 +238,9 @@ function PaletteChip({
 /** Presets plus any color: the native color picker or a typed hex value. */
 function AccentPicker({ accent, onChange }: { accent: string; onChange: (accent: string) => void }) {
     const { t } = useI18n()
-    const [typed, setTyped] = useState(accent)
-    const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
+    const draft = useColorDraft(accent, onChange)
     const presets = Object.entries(ACCENT_PRESETS) as [AccentPreset, string][]
     const isCustom = !presets.some(([, hex]) => hex === accent)
-
-    // The native picker fires on every mouse move; saving waits until the user stops dragging.
-    const pickLater = (hex: string) => {
-        setTyped(hex)
-        clearTimeout(timer.current)
-        timer.current = setTimeout(() => onChange(hex), 250)
-    }
-
-    const commitTyped = (value: string) => {
-        const hex = value.startsWith('#') ? value : `#${value}`
-        if (isHexColor(hex)) onChange(hex.toLowerCase())
-        else setTyped(accent)
-    }
 
     return (
         <Field label={t('appearance.accent')} hint={t('appearance.accentHint')}>
@@ -277,15 +268,15 @@ function AccentPicker({ accent, onChange }: { accent: string; onChange: (accent:
                     <input
                         type="color"
                         className="absolute inset-0 opacity-0"
-                        value={isHexColor(typed) ? typed : accent}
-                        onChange={(event) => pickLater(event.target.value)}
+                        value={draft.pickerValue}
+                        onChange={(event) => draft.pickLater(event.target.value)}
                     />
                 </label>
                 <Input
                     className="ml-2 w-28 font-mono"
-                    value={typed}
-                    onChange={(event) => setTyped(event.target.value)}
-                    onBlur={(event) => commitTyped(event.target.value.trim())}
+                    value={draft.typed}
+                    onChange={(event) => draft.setTyped(event.target.value)}
+                    onBlur={(event) => draft.commitTyped(event.target.value.trim())}
                 />
             </div>
         </Field>

@@ -11,6 +11,8 @@ import {
     moveTab,
     openNewTab,
     openTab,
+    popIssue,
+    pushIssue,
     replaceTab,
     saveTabs,
     stepTab,
@@ -31,6 +33,18 @@ function boardExists(boards: Board[]) {
     return (route: Route) => route.page !== 'board' || !route.boardId || ids.has(route.boardId)
 }
 
+/** Without tabs only the screen in front is shown, with its open issues. */
+function frontTabOnly(state: WorkspaceTabs): WorkspaceTabs {
+    const front = state.tabs.find((tab) => tab.key === state.activeKey)
+    return front ? { tabs: [front], activeKey: front.key } : replaceTab(HOME)
+}
+
+/** An issue opened outside any screen (search, a system notification) goes to the tab in front, or to a new Home tab. */
+function openIssueInFront(state: WorkspaceTabs, issueId: number): WorkspaceTabs {
+    const withTab = state.activeKey ? state : openTab(state, HOME)
+    return withTab.activeKey ? pushIssue(withTab, withTab.activeKey, issueId) : withTab
+}
+
 function initialTabs(preferences: WorkspacePreferences): WorkspaceTabs {
     const restored = preferences.tabs && preferences.restoreTabs ? loadTabs() : undefined
     return restored ?? replaceTab(HOME)
@@ -43,7 +57,7 @@ function initialTabs(preferences: WorkspacePreferences): WorkspaceTabs {
 export function useWorkspaceTabs(preferences: WorkspacePreferences, boards: Board[]) {
     const [stored, setStored] = useState(() => initialTabs(preferences))
     const current = keepTabs(stored, boardExists(boards))
-    const visible = preferences.tabs ? current : replaceTab(activeRoute(current) ?? HOME)
+    const visible = preferences.tabs ? current : frontTabOnly(current)
 
     const update = useCallback(
         (change: (state: WorkspaceTabs) => WorkspaceTabs) =>
@@ -65,6 +79,15 @@ export function useWorkspaceTabs(preferences: WorkspacePreferences, boards: Boar
         },
         [boards, preferences.tabs, update]
     )
+    const openIssue = useCallback(
+        (key: string, issueId: number) => update((state) => pushIssue(state, key, issueId)),
+        [update]
+    )
+    const closeIssue = useCallback((key: string) => update((state) => popIssue(state, key)), [update])
+    const openIssueInFrontTab = useCallback(
+        (issueId: number) => update((state) => openIssueInFront(state, issueId)),
+        [update]
+    )
     const duplicate = (key: string) =>
         update((state) => {
             const tab = state.tabs.find((candidate) => candidate.key === key)
@@ -82,6 +105,9 @@ export function useWorkspaceTabs(preferences: WorkspacePreferences, boards: Boar
         closeOthers: (key: string) => update((state) => closeOtherTabs(state, key)),
         move: (fromKey: string, toKey: string) => update((state) => moveTab(state, fromKey, toKey)),
         duplicate,
+        openIssue,
+        closeIssue,
+        openIssueInFrontTab,
         step: (step: number) => update((state) => stepTab(state, step)),
         selectPosition: (position: number) => update((state) => tabAt(state, position))
     }

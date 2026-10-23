@@ -288,7 +288,7 @@ export function IssueFieldEditors({ issue, busy }: { issue: IssueDetail; busy: b
                     type="date"
                     saved={issue.due_date ?? NONE}
                     disabled={disabled}
-                    className={cn(isOverdue(issue, new Date()) && 'border-danger/50 text-danger')}
+                    className={cn(isOverdue(issue, new Date()) && 'border-due-overdue/50 text-due-overdue')}
                     onSave={(value) => save({ dueDate: value || null }, 'dueDate', dateText(value))}
                 />
             </Property>

@@ -1,6 +1,8 @@
 import { CalendarDays, ChevronDown, ChevronsUp, ChevronUp, type LucideIcon } from 'lucide-react'
 import type { Issue, Named } from '@domain/redmine/entities'
 import { dueState, priorityLevel, type DueState, type PriorityLevel } from '@domain/redmine/issue-signals'
+import type { IssueStyleRules } from '@domain/redmine/issue-style'
+import { customPriorityColor, softChipStyle, trackerColorStyle } from '@/lib/issue-colors'
 import { useIssueStyle } from '@/lib/issue-style'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/cn'
@@ -8,38 +10,43 @@ import { cn } from '@/lib/cn'
 const CHIP = 'inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-px text-2xs font-medium'
 
 const PRIORITY_STYLES: Record<PriorityLevel, { icon?: LucideIcon; className: string }> = {
-    urgent: { icon: ChevronsUp, className: 'bg-danger/15 text-danger' },
-    high: { icon: ChevronUp, className: 'bg-warn/15 text-warn' },
+    urgent: { icon: ChevronsUp, className: 'bg-pr-urgent/15 text-pr-urgent' },
+    high: { icon: ChevronUp, className: 'bg-pr-high/15 text-pr-high' },
     normal: { className: '' },
-    low: { icon: ChevronDown, className: 'bg-panel-2 text-muted' }
+    low: { icon: ChevronDown, className: 'bg-pr-low/15 text-pr-low' }
 }
 
-/** Colored stripe on the left of a card, by priority. */
-export const PRIORITY_STRIPE: Record<PriorityLevel, string> = {
-    urgent: 'border-l-danger',
-    high: 'border-l-warn',
-    normal: 'border-l-line',
-    low: 'border-l-line'
-}
-
-/** Priority name with an arrow; "normal" shows nothing, so the chip stands out when it matters. */
+/**
+ * Priority name with an arrow; "normal" shows nothing, so the chip stands out when it matters, unless the user
+ * picked a color for it.
+ */
 export function PriorityChip({ priority }: { priority: Named }) {
-    const level = priorityLevel(priority, useIssueStyle())
-    const style = PRIORITY_STYLES[level]
-    if (!style.icon) return null
+    const rules = useIssueStyle()
+    const style = PRIORITY_STYLES[priorityLevel(priority, rules)]
+    const custom = customPriorityColor(priority.id, rules)
+    if (!style.icon && !custom) return null
     const Icon = style.icon
     return (
-        <span className={cn(CHIP, style.className)} title={priority.name}>
-            <Icon size={12} strokeWidth={2.5} />
+        <span
+            className={cn(CHIP, !custom && style.className)}
+            style={custom ? softChipStyle(custom) : undefined}
+            title={priority.name}
+        >
+            {Icon && <Icon size={12} strokeWidth={2.5} />}
             {priority.name}
         </span>
     )
 }
 
+/** Whether the priority shows a chip at all (normal priorities without a color of their own do not). */
+export function hasPriorityChip(priority: Named, rules: IssueStyleRules): boolean {
+    return priorityLevel(priority, rules) !== 'normal' || priority.id in rules.priorityColors
+}
+
 const DUE_STYLES: Record<DueState, string> = {
-    overdue: 'bg-danger/15 text-danger',
-    today: 'bg-danger/15 text-danger',
-    soon: 'bg-warn/15 text-warn',
+    overdue: 'bg-due-overdue/15 text-due-overdue',
+    today: 'bg-due-today/15 text-due-today',
+    soon: 'bg-due-soon/15 text-due-soon',
     later: 'bg-panel-2 text-muted',
     none: ''
 }
@@ -56,6 +63,17 @@ export function DueChip({ issue, now }: { issue: Issue; now: Date }) {
             <CalendarDays size={12} />
             {dates.date(issue.due_date)}
             {relative}
+        </span>
+    )
+}
+
+/** Tracker name after a dot of its color. */
+export function TrackerLabel({ tracker, className }: { tracker: Named; className?: string }) {
+    const style = trackerColorStyle(tracker, useIssueStyle())
+    return (
+        <span className={cn('tracker-color inline-flex min-w-0 items-center gap-1.5', className)} style={style}>
+            <span className="h-2 w-2 shrink-0 rounded-full bg-(--tracker)" />
+            <span className="truncate">{tracker.name}</span>
         </span>
     )
 }

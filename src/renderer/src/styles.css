@@ -11,20 +11,13 @@
     --border: #e3e6eb;
     --text: #16181d;
     --muted: #5d6573;
-    --ok: #1f9d55;
-    --warn: #c27c0e;
-    --danger: #d14343;
-    --accent: var(--accent-base, #c43a3a);
+    --accent: var(--accent-base, #0085ff);
     --accent-soft: color-mix(in srgb, var(--accent) 11%, var(--panel));
     --on-accent: var(--accent-text-light, #ffffff);
-    /* Status families (domain/redmine/status-tone.ts). */
-    --st-new: #7b8494;
-    --st-progress: #2f6fdb;
-    --st-review: #8b5cf6;
-    --st-testing: #0d9488;
-    --st-blocked: var(--warn);
-    --st-done: var(--ok);
-    --st-rejected: #a3a8b2;
+    /*
+     * Issue colors (--st-*, --pr-*, --due-*) and --ok/--warn/--danger come from the color preset and the user's
+     * colors (domain/settings/colors.ts), injected by useApplyAppearance with their light and dark values.
+     */
     color-scheme: light;
 }
 
@@ -47,18 +40,10 @@
         --border: #262b36;
         --text: #e7e9ee;
         --muted: #9ba3b3;
-        --ok: #3ccf7f;
-        --warn: #e8a93a;
-        --danger: #f06a6a;
         /* On dark backgrounds the accent is lightened so it keeps the contrast. */
-        --accent: color-mix(in srgb, var(--accent-base, #c43a3a) 78%, white);
+        --accent: color-mix(in srgb, var(--accent-base, #0085ff) 78%, white);
         --accent-soft: color-mix(in srgb, var(--accent) 18%, var(--panel));
         --on-accent: var(--accent-text-dark, #ffffff);
-        --st-new: #8f98a8;
-        --st-progress: #5b9bff;
-        --st-review: #a78bfa;
-        --st-testing: #2dd4bf;
-        --st-rejected: #5f6573;
         color-scheme: dark;
     }
     :root[data-dark-palette='midnight'] {
@@ -76,6 +61,16 @@
         --border: #232328;
         --text: #ececef;
         --muted: #9d9da6;
+    }
+}
+
+/* Tracker colors are any hex (--tracker-base, set inline); on dark backgrounds they are lightened like the accent. */
+.tracker-color {
+    --tracker: var(--tracker-base);
+}
+@media (prefers-color-scheme: dark) {
+    .tracker-color {
+        --tracker: color-mix(in srgb, var(--tracker-base) 78%, white);
     }
 }
 
@@ -106,6 +101,12 @@
     --color-st-blocked: var(--st-blocked);
     --color-st-done: var(--st-done);
     --color-st-rejected: var(--st-rejected);
+    --color-pr-urgent: var(--pr-urgent);
+    --color-pr-high: var(--pr-high);
+    --color-pr-low: var(--pr-low);
+    --color-due-overdue: var(--due-overdue);
+    --color-due-today: var(--due-today);
+    --color-due-soon: var(--due-soon);
     /* Type scale: every text size in the app comes from here. */
     --text-2xs: 11.5px;
     --text-2xs--line-height: 1.35;

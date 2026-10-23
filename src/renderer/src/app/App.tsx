@@ -10,7 +10,7 @@ import { I18nProvider, useI18n } from '@/lib/i18n'
 import { IssueStyleContext } from '@/lib/issue-style'
 import { NavContext, type NavigateOptions, type Route } from '@/lib/router'
 import { useModifierShortcut, useTabShortcuts } from '@/lib/shortcuts'
-import { ActiveTabContext } from '@/lib/workspace-tabs'
+import { ActiveTabContext, type WorkspaceTab } from '@/lib/workspace-tabs'
 import BoardPage from '@/pages/BoardPage'
 import CalendarPage from '@/pages/CalendarPage'
 import HomePage from '@/pages/HomePage'
@@ -24,7 +24,7 @@ import TeamTimePage from '@/pages/TeamTimePage'
 import TimePage from '@/pages/TimePage'
 import { ToastProvider } from '@/ui/molecules/Toast'
 import { BoardEditor } from '@/ui/organisms/BoardEditor'
-import { IssueModalProvider, useOpenIssue } from '@/ui/organisms/IssueModal'
+import { IssueModalProvider, TabIssueModals, useOpenIssue } from '@/ui/organisms/IssueModal'
 import { NotificationPermissionGate } from '@/ui/organisms/NotificationPermission'
 import { QuickSearch } from '@/ui/organisms/search/QuickSearch'
 import { WhatsNewDialog } from '@/ui/organisms/WhatsNewDialog'
@@ -72,7 +72,7 @@ function AuthenticatedApp() {
     return (
         <NavContext.Provider value={navigate}>
             <IssueStyleContext.Provider value={settings.issueStyle}>
-                <IssueModalProvider>
+                <IssueModalProvider onOpenIssue={workspace.openIssueInFrontTab}>
                     <AppEventsSync onNavigate={navigate} />
                     <NotificationPermissionGate />
                     <WhatsNewDialog />
@@ -95,7 +95,13 @@ function AuthenticatedApp() {
                         )}
                         {workspace.tabs.length === 0 && <NoTabs />}
                         {workspace.tabs.map((tab) => (
-                            <TabPanel key={tab.key} active={tab.key === workspace.activeKey}>
+                            <TabPanel
+                                key={tab.key}
+                                tab={tab}
+                                active={tab.key === workspace.activeKey}
+                                onOpenIssue={workspace.openIssue}
+                                onCloseIssue={workspace.closeIssue}
+                            >
                                 <PageView route={tab.route} {...pageActions} />
                             </TabPanel>
                         ))}
@@ -110,11 +116,32 @@ function AuthenticatedApp() {
     )
 }
 
-/** Hidden tabs stay mounted (scroll, filters and forms are kept) but do not react to the keyboard. */
-function TabPanel({ active, children }: { active: boolean; children: ReactNode }) {
+interface TabPanelProps {
+    tab: WorkspaceTab
+    active: boolean
+    onOpenIssue: (key: string, issueId: number) => void
+    onCloseIssue: (key: string) => void
+    children: ReactNode
+}
+
+/**
+ * Hidden tabs stay mounted (scroll, filters, forms and open dialogs are kept) but do not react to the keyboard.
+ * Layout containment makes the panel the box of its `fixed` dialogs: they cover only this tab, leaving the sidebar and
+ * the tab bar usable, and hide with it.
+ */
+function TabPanel({ tab, active, onOpenIssue, onCloseIssue, children }: TabPanelProps) {
+    const panelClass = active ? 'flex min-h-0 flex-1 flex-col contain-layout' : 'hidden'
     return (
         <ActiveTabContext.Provider value={active}>
-            <div className={active ? 'flex min-h-0 flex-1 flex-col' : 'hidden'}>{children}</div>
+            <div className={panelClass}>
+                <TabIssueModals
+                    issues={tab.issues ?? []}
+                    onOpenIssue={(issueId) => onOpenIssue(tab.key, issueId)}
+                    onBack={() => onCloseIssue(tab.key)}
+                >
+                    {children}
+                </TabIssueModals>
+            </div>
         </ActiveTabContext.Provider>
     )
 }

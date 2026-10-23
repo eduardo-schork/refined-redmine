@@ -1,6 +1,7 @@
+import { useEffect, useRef } from 'react'
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import type { SettingsView } from '@contracts/api'
-import type { SettingsPatch } from '@domain/settings/settings'
+import type { Settings, SettingsPatch } from '@domain/settings/settings'
 import { api } from '@/lib/api'
 import { qk } from '@/lib/query-keys'
 
@@ -28,6 +29,26 @@ export function useUpdateSettings() {
             }
         }
     })
+}
+
+type SavedSection = 'appearance' | 'issueStyle'
+
+/**
+ * Saves part of a settings section. Each change starts from the latest value, including changes still being saved:
+ * two quick changes in a row would otherwise both start from the same old value and the second would undo the first.
+ */
+export function useSaveSection<K extends SavedSection>(section: K) {
+    const current = useSettings()[section]
+    const update = useUpdateSettings()
+    const latest = useRef(current)
+    useEffect(() => {
+        latest.current = current
+    }, [current])
+    return (change: (value: Settings[K]) => Partial<Settings[K]>) => {
+        const next = { ...latest.current, ...change(latest.current) }
+        latest.current = next
+        update.mutate({ [section]: next })
+    }
 }
 
 // A different account (or none) must not see the previous account's cached data.

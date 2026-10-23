@@ -20,6 +20,22 @@ export function useMarkRead() {
     })
 }
 
+export function useMarkUnread() {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: (ids: string[]) => api.notifications.markUnread(ids),
+        onSuccess: (items) => queryClient.setQueryData(qk.notifications, items)
+    })
+}
+
+export function useRemoveNotifications() {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: (ids: string[]) => api.notifications.remove(ids),
+        onSuccess: (items) => queryClient.setQueryData(qk.notifications, items)
+    })
+}
+
 export function useClearNotifications() {
     const queryClient = useQueryClient()
     return useMutation({

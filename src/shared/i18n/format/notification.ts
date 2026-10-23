@@ -23,7 +23,7 @@ const SEPARATOR = ' · '
 const MAX_LISTED_QUERY_ISSUES = 3
 const MILLISECONDS_PER_DAY = 86_400_000
 
-function describeChange(issueChange: IssueChange, t: TFunction): string {
+export function describeChange(issueChange: IssueChange, t: TFunction): string {
     switch (issueChange.type) {
         case 'assignedToYou':
             return t('notification.change.assignedToYou')
@@ -48,7 +48,7 @@ function describeChange(issueChange: IssueChange, t: TFunction): string {
     }
 }
 
-function describeExitReason(reason: QueueExitReason, t: TFunction): string {
+export function describeExitReason(reason: QueueExitReason, t: TFunction): string {
     switch (reason.type) {
         case 'reassigned':
             if (!reason.to) return t('notification.exit.unassigned')

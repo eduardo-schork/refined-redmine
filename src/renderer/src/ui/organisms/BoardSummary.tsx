@@ -8,6 +8,7 @@ import type { PriorityLevel } from '@domain/redmine/issue-signals'
 import { useSettings } from '@/hooks/session'
 import { useIssueStyle } from '@/lib/issue-style'
 import { useI18n } from '@/lib/i18n'
+import { customStatusColor } from '@/lib/issue-colors'
 import { STATUS_BACKGROUND } from '@/lib/status-colors'
 import { cn } from '@/lib/cn'
 import { Avatar } from '../atoms/Avatar'
@@ -52,7 +53,8 @@ export function BoardSummary({
                         key: String(slice.statusId),
                         label: slice.name,
                         count: slice.count,
-                        colorClass: STATUS_BACKGROUND[slice.tone]
+                        colorClass: STATUS_BACKGROUND[slice.tone],
+                        color: customStatusColor(slice.statusId, rules)
                     }))}
                 />
             </Card>
@@ -77,10 +79,10 @@ export function BoardSummary({
 }
 
 const PRIORITY_BAR: Record<PriorityLevel, string> = {
-    urgent: 'bg-danger',
-    high: 'bg-warn',
+    urgent: 'bg-pr-urgent',
+    high: 'bg-pr-high',
     normal: 'bg-st-progress/70',
-    low: 'bg-st-new'
+    low: 'bg-pr-low'
 }
 
 function SummaryTiles({ summary }: { summary: Summary }) {
