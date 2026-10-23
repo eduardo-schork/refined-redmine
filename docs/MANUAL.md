@@ -23,7 +23,7 @@ Não há servidor próprio: o app fala direto com o Redmine usando a sua chave d
 
 ### Instalar
 
-O passo a passo (macOS e Windows, com os avisos de segurança do sistema na primeira abertura) está em [Instalar o Refined Redmine](INSTALACAO.md). Versões novas são instaladas por cima da anterior; quadros, agenda e preferências são mantidos.
+Baixe o instalador na [última Release](https://github.com/eduardo-schork/refined-redmine/releases/latest) (não precisa de conta no GitHub). O passo a passo (macOS e Windows, com os avisos de segurança do sistema na primeira abertura) está em [Instalar o Refined Redmine](INSTALACAO.md). Versões novas são instaladas por cima da anterior; quadros, agenda e preferências são mantidos.
 
 ### Conectar ao Redmine
 

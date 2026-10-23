@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-No primeiro acesso, informe a URL do Redmine e a chave em **Minha conta → Chave de acesso à API**. Para instalar a partir do `.dmg`/`.exe`: [docs/INSTALACAO.md](docs/INSTALACAO.md).
+No primeiro acesso, informe a URL do Redmine e a chave em **Minha conta → Chave de acesso à API**. Instaladores (`.dmg` para Mac, `.exe` para Windows) na [última Release](https://github.com/eduardo-schork/refined-redmine/releases/latest); passo a passo em [docs/INSTALACAO.md](docs/INSTALACAO.md).
 
 Como usar cada tela: [manual do usuário](docs/MANUAL.md).
 

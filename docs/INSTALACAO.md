@@ -4,6 +4,9 @@ Guia rápido para quem vai usar o app. Leva uns 5 minutos. Dúvidas sobre o uso 
 
 Antes de começar, tenha à mão a sua **chave de API do Redmine**: no Redmine, **Minha conta → Chave de acesso à API → Mostrar**.
 
+**Baixe o instalador** da última versão em <https://github.com/eduardo-schork/refined-redmine/releases/latest>, na lista **Assets**
+(não precisa de conta no GitHub). O nome do arquivo de cada sistema está nos passos abaixo.
+
 ## macOS
 
 1. **Escolha o arquivo** do seu Mac (menu Apple → **Sobre este Mac**):
@@ -36,7 +39,7 @@ Antes de começar, tenha à mão a sua **chave de API do Redmine**: no Redmine, 
 
 - Fechar a janela **não** encerra o app: ele fica na bandeja (barra de menus no Mac, perto do relógio no Windows) verificando o Redmine. Para encerrar, use **Sair** no menu do ícone.
 - Quer que ele abra sozinho? **Configurações → Notificações → Abrir ao iniciar o computador**.
-- **Versão nova:** com as [atualizações automáticas](#atualizações-automáticas) ligadas, o próprio app avisa e instala. Sem elas, instale por cima, do mesmo jeito. Quadros, monitores, agenda e preferências são mantidos. Se o app pedir para conectar de novo, é só informar a URL e a chave outra vez.
+- **Versão nova:** o próprio app avisa e instala ([atualizações automáticas](#atualizações-automáticas), ligadas por padrão). Se preferir, baixe o instalador da página de Releases e instale por cima, do mesmo jeito. Quadros, monitores, agenda e preferências são mantidos. Se o app pedir para conectar de novo, é só informar a URL e a chave outra vez.
 
 ## Atualizações automáticas
 

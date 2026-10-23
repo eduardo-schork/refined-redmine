@@ -70,7 +70,7 @@ Só os jobs `publish` e `sync-develop` usam o `RELEASE_TOKEN`. Os jobs de verifi
 
 **Trocar ou revogar**: gere um token novo e substitua o valor de `RELEASE_TOKEN` no environment. Para cortar na hora, revogue o token em <https://github.com/settings/personal-access-tokens>.
 
-**Custo**: repositório privado no plano Free tem 2.000 minutos de Actions por mês; minuto de macOS conta 10×, de Windows 2×. Uma versão gasta em torno de 75 minutos contados.
+**Custo**: nenhum. Em repositório público, as Actions nos runners padrão (Linux, macOS e Windows) são gratuitas e sem limite de minutos. (Enquanto o repositório era privado, cada versão gastava uns 75 dos 2.000 minutos mensais do plano Free.)
 
 ## Publicar à mão (plano B)
 
@@ -95,11 +95,18 @@ GITHUB_TOKEN=seu_token npm run release -- --skip-build
 
 O app escolhe o instalador pelo final do nome, então esses nomes não podem mudar (`electron-builder.yml` → `artifactName`; `src/domain/update/release.ts`).
 
-## Dar ou tirar o acesso de alguém às atualizações
+## Colaboradores e acesso
 
-- **Dar**: GitHub → repositório → **Settings → Collaborators → Add people**. Num repositório de conta pessoal, colaborador tem permissão de escrita (não existe "só leitura"). A pessoa aceita o convite, cria o próprio token (fine-grained só de leitura ou, se o GitHub não deixar escolher o repositório, clássico com escopo `repo`) e cola no app (**Configurações → Geral → Atualizações**). Passo a passo para ela em [INSTALACAO.md](INSTALACAO.md#atualizações-automáticas).
-- **Segurança:** os apps só aceitam Releases publicadas pela sua conta (`eduardo-schork`) e instaladores enviados por ela. Se um colaborador publicar uma Release, os apps a ignoram com um aviso. Se um dia outra pessoa for publicar, ajuste `TRUSTED_PUBLISHER` em `src/infra/github/github-releases.ts`.
-- **Tirar**: remova a pessoa dos colaboradores. O app dela deixa de ver versões novas na próxima verificação; o resto continua funcionando.
+- **Atualizações não dependem de acesso**: o repositório é público, então todos os apps encontram e baixam as versões sem token. Não é preciso convidar ninguém para receber versões.
+- **Colaborador serve só para mexer no código** (GitHub → **Settings → Collaborators → Add people**). Num repositório de conta pessoal, colaborador tem permissão de escrita (não existe "só leitura"); o ruleset do `master` exige pull request de quem não é admin.
+- **Segurança:** os apps só aceitam Releases publicadas pela sua conta (`eduardo-schork`) e instaladores enviados por ela. Se um colaborador publicar uma Release, os apps a ignoram com um aviso. Se um dia outra pessoa for publicar, é preciso mudar `TRUSTED_PUBLISHER` (`src/infra/github/github-releases.ts`) e publicar uma versão com isso antes.
+
+## De privado para público (0.9.0 → 0.10.0)
+
+Até a 0.9.0 o repositório era privado e o app só procurava versões com um token do GitHub com acesso a ele. A 0.10.0 é a primeira publicada no repositório público:
+
+- quem está na 0.9.0 **com token salvo** recebe a 0.10.0 pelo app, normalmente (token fine-grained sempre consegue ler repositório público);
+- quem está na 0.9.0 **sem token** não procura versões: instala a 0.10.0 uma vez pela [página de Releases](https://github.com/eduardo-schork/refined-redmine/releases/latest), por cima. Daí em diante as versões chegam pelo app, sem token.
 
 ## Depois do primeiro build com os "fuses"
 
