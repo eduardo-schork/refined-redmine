@@ -1,4 +1,5 @@
 import { net } from 'electron'
+import { createHash } from 'node:crypto'
 import { once } from 'node:events'
 import { createWriteStream } from 'node:fs'
 import { rename, rm } from 'node:fs/promises'
@@ -28,11 +29,20 @@ interface GithubRelease {
     published_at: string
     html_url: string
     author: { login: string } | null
-    assets: { id: number; name: string; size: number; url: string; uploader: { login: string } | null }[]
+    assets: {
+        id: number
+        name: string
+        size: number
+        url: string
+        digest?: string | null
+        uploader: { login: string } | null
+    }[]
 }
 
-function headers(token: string, accept = 'application/vnd.github+json'): Record<string, string> {
-    return { Accept: accept, Authorization: `Bearer ${token}`, 'X-GitHub-Api-Version': API_VERSION }
+/** Without a token GitHub still answers for a public repository, with a lower limit of requests. */
+function headers(token: string | null, accept = 'application/vnd.github+json'): Record<string, string> {
+    const base = { Accept: accept, 'X-GitHub-Api-Version': API_VERSION }
+    return token ? { ...base, Authorization: `Bearer ${token}` } : base
 }
 
 function toRelease(release: GithubRelease): Release {
@@ -49,19 +59,25 @@ function toRelease(release: GithubRelease): Release {
             id: asset.id,
             name: asset.name,
             size: asset.size,
-            downloadUrl: asset.url
+            downloadUrl: asset.url,
+            sha256: asset.digest?.startsWith('sha256:') ? asset.digest.slice('sha256:'.length) : undefined
         }))
     }
 }
 
-function httpError(status: number): AppError {
+function httpError(status: number, rateLimited = false): AppError {
+    if (rateLimited) return new AppError('update.rateLimited', {}, status)
     if (status === 401) return new AppError('update.unauthorized', {}, status)
     if (status === 403 || status === 404) return new AppError('update.notFound', {}, status)
     return new AppError('update.http', { status }, status)
 }
 
+/** GitHub answers 403/429 with no requests left when the hourly limit is over. */
+const isRateLimited = (response: Response) =>
+    (response.status === 403 || response.status === 429) && response.headers.get('x-ratelimit-remaining') === '0'
+
 /**
- * GitHub Releases of the private repository, read with each user's own token.
+ * GitHub Releases of the app's repository, read without a token (public) or with the user's optional token.
  * GitHub answers 404 both for "no release yet" and "no access", so a 404 is double-checked on the repository itself.
  */
 export class GithubReleaseSource implements ReleaseSource {
@@ -70,17 +86,17 @@ export class GithubReleaseSource implements ReleaseSource {
         private readonly observe: (record: RequestRecord) => void = () => {}
     ) {}
 
-    async latest(token: string): Promise<Release | null> {
+    async latest(token: string | null): Promise<Release | null> {
         const response = await this.get(`${API}/repos/${RELEASES_REPOSITORY}/releases/latest`, headers(token), token)
         if (response.ok) return toRelease((await response.json()) as GithubRelease)
-        if (response.status !== 404) throw httpError(response.status)
+        if (response.status !== 404) throw httpError(response.status, isRateLimited(response))
 
         const repository = await this.get(`${API}/repos/${RELEASES_REPOSITORY}`, headers(token), token)
-        if (!repository.ok) throw httpError(repository.status)
+        if (!repository.ok) throw httpError(repository.status, isRateLimited(repository))
         return null
     }
 
-    async download(asset: ReleaseAsset, token: string, onProgress: (fraction: number) => void): Promise<string> {
+    async download(asset: ReleaseAsset, token: string | null, onProgress: (fraction: number) => void): Promise<string> {
         const fileUrl = await this.storageUrl(asset, token)
         const response = await this.get(fileUrl, {})
         if (!response.ok || !response.body) throw httpError(response.status)
@@ -88,10 +104,12 @@ export class GithubReleaseSource implements ReleaseSource {
         const target = join(this.downloadsDir(), basename(asset.name))
         const partial = `${target}.part`
         try {
-            const received = await this.save(response.body, partial, asset.size, onProgress)
+            const { received, sha256 } = await this.save(response.body, partial, asset.size, onProgress)
             // An interrupted download must not become an installer.
             const incomplete = asset.size > 0 && received !== asset.size
             if (incomplete) throw new AppError('update.http', { status: 'incomplete' })
+            // A file that is not the one GitHub published (corrupted or swapped on the way) is never opened.
+            if (asset.sha256 && asset.sha256.toLowerCase() !== sha256) throw new AppError('update.checksum')
             await rename(partial, target)
             return target
         } catch (error) {
@@ -104,7 +122,7 @@ export class GithubReleaseSource implements ReleaseSource {
      * The asset API answers with a redirect to a signed storage address. The redirect is followed by hand so the
      * token is not sent to the storage server (it refuses requests carrying two credentials).
      */
-    private storageUrl(asset: ReleaseAsset, token: string): Promise<string> {
+    private storageUrl(asset: ReleaseAsset, token: string | null): Promise<string> {
         return new Promise((resolve, reject) => {
             const startedAt = Date.now()
             const request = net.request({ url: asset.downloadUrl, redirect: 'manual' })
@@ -122,7 +140,10 @@ export class GithubReleaseSource implements ReleaseSource {
             })
             request.on('error', (error) =>
                 reject(
-                    new AppError('network.unknown', { host: 'github.com', detail: redactSecret(error.message, token) })
+                    new AppError('network.unknown', {
+                        host: 'github.com',
+                        detail: redactSecret(error.message, token ?? undefined)
+                    })
                 )
             )
             request.end()
@@ -134,24 +155,26 @@ export class GithubReleaseSource implements ReleaseSource {
         path: string,
         expectedBytes: number,
         onProgress: (fraction: number) => void
-    ): Promise<number> {
+    ): Promise<{ received: number; sha256: string }> {
         const file = createWriteStream(path)
         const reader = body.getReader()
+        const hash = createHash('sha256')
         let received = 0
         try {
             for (let chunk = await reader.read(); !chunk.done; chunk = await reader.read()) {
                 const accepted = file.write(chunk.value)
                 if (!accepted) await once(file, 'drain')
+                hash.update(chunk.value)
                 received += chunk.value.length
                 if (expectedBytes > 0) onProgress(Math.min(1, received / expectedBytes))
             }
         } finally {
             await new Promise<void>((resolve) => file.end(resolve))
         }
-        return received
+        return { received, sha256: hash.digest('hex') }
     }
 
-    private async get(url: string, requestHeaders: Record<string, string>, token?: string): Promise<Response> {
+    private async get(url: string, requestHeaders: Record<string, string>, token?: string | null): Promise<Response> {
         const startedAt = Date.now()
         try {
             const response = await net.fetch(url, { headers: requestHeaders })
@@ -160,7 +183,7 @@ export class GithubReleaseSource implements ReleaseSource {
             return response
         } catch (error) {
             this.record('GET', url, undefined, startedAt, 0, 'network.unknown')
-            const detail = redactSecret(String(error), token)
+            const detail = redactSecret(String(error), token ?? undefined)
             throw new AppError('network.unknown', { host: new URL(url).host, detail })
         }
     }

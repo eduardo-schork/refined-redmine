@@ -1,5 +1,7 @@
+import type { OvertimeBank } from '@domain/time/overtime'
 import type {
     CalendarRepository,
+    OvertimeRepository,
     MonitorStateRepository,
     NotificationRepository,
     SettingsRepository,
@@ -11,7 +13,7 @@ import type { QuerySnapshot } from '@domain/monitor/query-diff'
 import { MAX_NOTIFICATIONS, type AppNotification, type NotificationTarget } from '@domain/notification/notification'
 import type { DeliveryConfirmation, DeliveryRecord } from '@domain/notification/permission'
 import { withDefaults, type Settings } from '@domain/settings/settings'
-import type { CalendarFile, ConfigFile, LegacyNotification, StateFile } from './files'
+import type { CalendarFile, ConfigFile, LegacyNotification, OvertimeFile, StateFile } from './files'
 import type { JsonFile } from './json-file'
 import type { TimerState } from '@domain/time/timer'
 
@@ -191,5 +193,19 @@ export class JsonCalendarRepository implements CalendarRepository {
         if (nothingPruned) return
         const kept = Object.fromEntries(keptEntries)
         this.file.update((calendar) => ({ ...calendar, fired: kept }))
+    }
+}
+
+export class JsonOvertimeRepository implements OvertimeRepository {
+    constructor(private readonly file: JsonFile<OvertimeFile>) {}
+
+    load(): OvertimeBank {
+        const { entries, paidMonths } = this.file.read()
+        return { entries, paidMonths }
+    }
+
+    save(bank: OvertimeBank): OvertimeBank {
+        const saved = this.file.update((file) => ({ ...file, entries: bank.entries, paidMonths: bank.paidMonths }))
+        return { entries: saved.entries, paidMonths: saved.paidMonths }
     }
 }

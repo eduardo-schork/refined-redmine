@@ -87,7 +87,7 @@ function UpdateStatusRow({ status }: { status: UpdateStatus }) {
                 <div className={cn(hasError && 'text-danger')}>{phaseText}</div>
                 {checkedAt && <div className="text-xs text-muted">{t('updates.checkedAt', { time: checkedAt })}</div>}
             </div>
-            <Button onClick={() => check.mutate()} disabled={!status.hasToken || busy}>
+            <Button onClick={() => check.mutate()} disabled={busy}>
                 <RefreshCw size={14} className={cn(status.phase === 'checking' && 'animate-spin')} />{' '}
                 {t('updates.checkNow')}
             </Button>

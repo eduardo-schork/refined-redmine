@@ -6,11 +6,13 @@ import {
     Flag,
     Home,
     KanbanSquare,
+    Landmark,
     Plus,
     ScrollText,
     Search,
     SquarePen,
-    Settings as SettingsIcon
+    Settings as SettingsIcon,
+    Users
 } from 'lucide-react'
 import type { MonitorStatus } from '@domain/monitor/monitor-status'
 import { displayName } from '@domain/redmine/entities'
@@ -18,7 +20,7 @@ import { unreadCount, useMonitorStatus, useNotifications } from '@/hooks/notific
 import { useUpdateStatus } from '@/hooks/updates'
 import { useSettings } from '@/hooks/session'
 import { useI18n } from '@/lib/i18n'
-import type { Route } from '@/lib/router'
+import type { NavigateOptions, Route } from '@/lib/router'
 import { NEW_ISSUE_SHORTCUT, SEARCH_SHORTCUT } from '@/lib/shortcuts'
 import { Avatar } from '../atoms/Avatar'
 import { Badge } from '../atoms/Badge'
@@ -34,8 +36,9 @@ export function Sidebar({
     onNewBoard,
     onSearch
 }: {
-    route: Route
-    onNavigate: (route: Route) => void
+    /** The screen in front; undefined when every tab was closed. */
+    route?: Route
+    onNavigate: (route: Route, options?: NavigateOptions) => void
     onNewBoard: () => void
     onSearch: () => void
 }) {
@@ -45,8 +48,8 @@ export function Sidebar({
     const unread = unreadCount(useNotifications().data)
     const status = useMonitorStatus().data
     const boards = settings.boards
-    const activeBoardId = route.page === 'board' ? (route.boardId ?? boards[0]?.id) : undefined
-    const isActive = (page: Route['page']) => route.page === page
+    const activeBoardId = route?.page === 'board' ? (route.boardId ?? boards[0]?.id) : undefined
+    const isActive = (page: Route['page']) => route?.page === page
 
     return (
         <aside className="flex w-60 shrink-0 flex-col border-r border-line bg-panel">
@@ -72,31 +75,45 @@ export function Sidebar({
             <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2">
                 <NavItem
                     active={isActive('home')}
-                    onClick={() => onNavigate({ page: 'home' })}
+                    onClick={(newTab) => onNavigate({ page: 'home' }, { newTab })}
                     icon={<Home size={15} />}
                 >
                     {t('nav.home')}
                 </NavItem>
                 <NavItem
                     active={isActive('calendar')}
-                    onClick={() => onNavigate({ page: 'calendar' })}
+                    onClick={(newTab) => onNavigate({ page: 'calendar' }, { newTab })}
                     icon={<CalendarDays size={15} />}
                 >
                     {t('nav.calendar')}
                 </NavItem>
                 <NavItem
                     active={isActive('sprints')}
-                    onClick={() => onNavigate({ page: 'sprints' })}
+                    onClick={(newTab) => onNavigate({ page: 'sprints' }, { newTab })}
                     icon={<Flag size={15} />}
                 >
                     {t('nav.sprints')}
                 </NavItem>
                 <NavItem
                     active={isActive('time')}
-                    onClick={() => onNavigate({ page: 'time' })}
+                    onClick={(newTab) => onNavigate({ page: 'time' }, { newTab })}
                     icon={<Clock size={15} />}
                 >
                     {t('nav.time')}
+                </NavItem>
+                <NavItem
+                    active={isActive('overtime')}
+                    onClick={(newTab) => onNavigate({ page: 'overtime' }, { newTab })}
+                    icon={<Landmark size={15} />}
+                >
+                    {t('nav.overtime')}
+                </NavItem>
+                <NavItem
+                    active={isActive('team')}
+                    onClick={(newTab) => onNavigate({ page: 'team' }, { newTab })}
+                    icon={<Users size={15} />}
+                >
+                    {t('nav.team')}
                 </NavItem>
 
                 <div className="flex items-center justify-between px-2 pb-1 pt-4">
@@ -113,7 +130,7 @@ export function Sidebar({
                     <NavItem
                         key={board.id}
                         active={activeBoardId === board.id}
-                        onClick={() => onNavigate({ page: 'board', boardId: board.id })}
+                        onClick={(newTab) => onNavigate({ page: 'board', boardId: board.id }, { newTab })}
                         icon={<KanbanSquare size={15} />}
                     >
                         {board.name}
@@ -131,7 +148,7 @@ export function Sidebar({
                 <Overline className="mt-4 px-2 pb-1">{t('nav.app')}</Overline>
                 <NavItem
                     active={isActive('notifications')}
-                    onClick={() => onNavigate({ page: 'notifications' })}
+                    onClick={(newTab) => onNavigate({ page: 'notifications' }, { newTab })}
                     icon={<Bell size={15} />}
                 >
                     <span className="flex-1">{t('nav.notifications')}</span>
@@ -143,14 +160,14 @@ export function Sidebar({
                 </NavItem>
                 <NavItem
                     active={isActive('log')}
-                    onClick={() => onNavigate({ page: 'log' })}
+                    onClick={(newTab) => onNavigate({ page: 'log' }, { newTab })}
                     icon={<ScrollText size={15} />}
                 >
                     {t('nav.log')}
                 </NavItem>
                 <NavItem
                     active={isActive('settings')}
-                    onClick={() => onNavigate({ page: 'settings' })}
+                    onClick={(newTab) => onNavigate({ page: 'settings' }, { newTab })}
                     icon={<SettingsIcon size={15} />}
                 >
                     {t('nav.settings')}

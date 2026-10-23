@@ -77,7 +77,7 @@ function LoadingTile({ attachment, action }: { attachment: Attachment; action: T
     )
 }
 
-function useOpenInSystem() {
+export function useOpenInSystem() {
     const { t, error } = useI18n()
     const toast = useToast()
     const open = useOpenAttachment()

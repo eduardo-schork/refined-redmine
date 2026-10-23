@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react'
 import type { AppNotification } from '@domain/notification/notification'
 
-export const SETTINGS_TABS = ['general', 'appearance', 'notifications', 'calendar', 'work'] as const
+export const SETTINGS_TABS = ['general', 'appearance', 'notifications', 'calendar', 'work', 'automations'] as const
 export type SettingsTab = (typeof SETTINGS_TABS)[number]
 
 function settingsTab(value: string | null): SettingsTab | undefined {
@@ -16,9 +16,11 @@ export type Route =
     | { page: 'notifications' }
     | { page: 'log' }
     | { page: 'time' }
+    | { page: 'overtime' }
+    | { page: 'team' }
     | { page: 'settings'; tab?: SettingsTab }
 
-const PARAMETERLESS_PAGES = ['notifications', 'log', 'sprints', 'home', 'time'] as const
+const PARAMETERLESS_PAGES = ['notifications', 'log', 'sprints', 'home', 'time', 'overtime', 'team'] as const
 type ParameterlessPage = (typeof PARAMETERLESS_PAGES)[number]
 
 const isParameterlessPage = (page: string): page is ParameterlessPage =>
@@ -41,7 +43,12 @@ export function parseRoute(path: string): Route | null {
     return null
 }
 
-export const NavContext = createContext<(route: Route) => void>(() => {})
+/** `newTab`: open another tab even when the screen is already open (⌘-click or middle click in the menu). */
+export interface NavigateOptions {
+    newTab?: boolean
+}
+
+export const NavContext = createContext<(route: Route, options?: NavigateOptions) => void>(() => {})
 export const useNavigate = () => useContext(NavContext)
 
 /** The issue of an `/issue?id=1234` route (a click on a system notification), or undefined for other routes. */

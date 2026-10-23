@@ -27,6 +27,7 @@ import { Overline } from '../atoms/misc'
 import { ClampedContent } from '../molecules/ClampedContent'
 import { Dialog } from '../molecules/Dialog'
 import { Markdown } from '../molecules/Markdown'
+import { inlineAttachmentRenderer } from './attachments/InlineAttachment'
 import { Alert, Property } from '../molecules/surfaces'
 import { useToast } from '../molecules/Toast'
 import { IssueCreateDialog } from './IssueCreateDialog'
@@ -34,6 +35,7 @@ import { IssueFieldEditors, useSaveField } from './IssueFieldEditors'
 import { DueChip, PriorityChip, VersionChip } from '../molecules/issue-chips'
 import { IssueDetailTabs } from './IssueDetailTabs'
 import { IssueQuickActions } from './IssueQuickActions'
+import { SendNoteButton } from './handoff/HandoffButtons'
 import { StatusTag } from '../molecules/StatusTag'
 
 type Translate = ReturnType<typeof useI18n>['t']
@@ -45,6 +47,7 @@ interface MarkdownLinkProps {
     links: RedmineLinks
     onIssue: (id: number) => void
     onExternal: (url: string) => void
+    renderImage?: (source: string, alt: string) => ReactNode
 }
 
 // Any screen can open the modal with openIssue(id); opened issues form a stack so "← back" returns to the previous one.
@@ -123,7 +126,12 @@ function IssueModal({ id, onClose, canGoBack }: { id: number; onClose: () => voi
     }, [issue])
     const statusName = new Map((statuses.data ?? []).map((status) => [status.id, status.name]))
     const saving = changeStatus.isPending || comment.isPending
-    const markdownLinks: MarkdownLinkProps = { links, onIssue: openIssue, onExternal: openExternal }
+    const markdownLinks: MarkdownLinkProps = {
+        links,
+        onIssue: openIssue,
+        onExternal: openExternal,
+        renderImage: issue ? inlineAttachmentRenderer(issue.attachments, links) : undefined
+    }
 
     const handleStatusChange = (statusId: number) => {
         changeStatus.mutate(statusId, {
@@ -303,14 +311,14 @@ function DescriptionSection({ issue, ...markdownLinks }: { issue: IssueDetail } 
     )
 }
 
-function Description({ issue, links, onIssue, onExternal }: { issue: IssueDetail } & MarkdownLinkProps) {
+function Description({ issue, ...markdownLinks }: { issue: IssueDetail } & MarkdownLinkProps) {
     const { t } = useI18n()
     if (!issue.description?.trim()) {
         return <p className="text-sm italic text-muted">{t('issue.noDescription')}</p>
     }
     return (
         <ClampedContent lines={DESCRIPTION_VISIBLE_LINES}>
-            <Markdown text={issue.description} links={links} onIssue={onIssue} onExternal={onExternal} />
+            <Markdown text={issue.description} {...markdownLinks} />
         </ClampedContent>
     )
 }
@@ -527,7 +535,13 @@ function History({
         <Block title={t('issue.history', { count: journals.length })}>
             <ol className="flex flex-col gap-4">
                 {journals.map((journal) => (
-                    <JournalItem key={journal.id} journal={journal} statusName={statusName} {...markdownLinks} />
+                    <JournalItem
+                        key={journal.id}
+                        issue={issue}
+                        journal={journal}
+                        statusName={statusName}
+                        {...markdownLinks}
+                    />
                 ))}
             </ol>
         </Block>
@@ -535,12 +549,11 @@ function History({
 }
 
 function JournalItem({
+    issue,
     journal,
     statusName,
-    links,
-    onIssue,
-    onExternal
-}: { journal: Journal; statusName: Map<number, string> } & MarkdownLinkProps) {
+    ...markdownLinks
+}: { issue: IssueDetail; journal: Journal; statusName: Map<number, string> } & MarkdownLinkProps) {
     const { t, dates } = useI18n()
     return (
         <li className="flex gap-3">
@@ -549,6 +562,7 @@ function JournalItem({
                 <div className="text-xs">
                     <span className="font-medium">{journal.user.name}</span>{' '}
                     <span className="text-muted">· {dates.dateTime(journal.created_on)}</span>
+                    <SendNoteButton issue={issue} journal={journal} />
                     {journal.private_notes && (
                         <span className="ml-1 rounded bg-panel-2 px-1 text-2xs text-muted">{t('common.private')}</span>
                     )}
@@ -562,7 +576,7 @@ function JournalItem({
                 )}
                 {journal.notes?.trim() && (
                     <div className="mt-1.5 rounded-lg border border-line bg-panel px-3 py-2">
-                        <Markdown text={journal.notes} links={links} onIssue={onIssue} onExternal={onExternal} />
+                        <Markdown text={journal.notes} {...markdownLinks} />
                     </div>
                 )}
             </div>

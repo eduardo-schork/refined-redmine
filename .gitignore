@@ -4,3 +4,6 @@ dist
 .DS_Store
 *.log
 *.tsbuildinfo
+# Company-specific notes and publishing helpers: never committed
+NOTAS-INTERNAS.md
+.publicacao/

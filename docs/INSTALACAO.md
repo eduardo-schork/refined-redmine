@@ -4,6 +4,9 @@ Guia rápido para quem vai usar o app. Leva uns 5 minutos. Dúvidas sobre o uso 
 
 Antes de começar, tenha à mão a sua **chave de API do Redmine**: no Redmine, **Minha conta → Chave de acesso à API → Mostrar**.
 
+**Baixe o instalador** da última versão em <https://github.com/eduardo-schork/refined-redmine/releases/latest>, na lista **Assets**
+(não precisa de conta no GitHub). O nome do arquivo de cada sistema está nos passos abaixo.
+
 ## macOS
 
 1. **Escolha o arquivo** do seu Mac (menu Apple → **Sobre este Mac**):
@@ -36,26 +39,15 @@ Antes de começar, tenha à mão a sua **chave de API do Redmine**: no Redmine, 
 
 - Fechar a janela **não** encerra o app: ele fica na bandeja (barra de menus no Mac, perto do relógio no Windows) verificando o Redmine. Para encerrar, use **Sair** no menu do ícone.
 - Quer que ele abra sozinho? **Configurações → Notificações → Abrir ao iniciar o computador**.
-- **Versão nova:** com as [atualizações automáticas](#atualizações-automáticas) ligadas, o próprio app avisa e instala. Sem elas, instale por cima, do mesmo jeito. Quadros, monitores, agenda e preferências são mantidos. Se o app pedir para conectar de novo, é só informar a URL e a chave outra vez.
+- **Versão nova:** o próprio app avisa e instala ([atualizações automáticas](#atualizações-automáticas), ligadas por padrão). Se preferir, baixe o instalador da página de Releases e instale por cima, do mesmo jeito. Quadros, monitores, agenda e preferências são mantidos. Se o app pedir para conectar de novo, é só informar a URL e a chave outra vez.
 
 ## Atualizações automáticas
 
-Opcional. Com isso, o app avisa quando sai versão nova, baixa o instalador e, no Windows, atualiza e reabre sozinho. No Mac, ele abre o `.dmg` e fecha; você arrasta o app para Aplicativos, substitui e abre de novo.
+Não precisa configurar nada: o app procura versões novas nas Releases públicas do GitHub (30 s depois de abrir e depois no intervalo escolhido em **Configurações → Geral → Atualizações**), baixa o instalador, confere que o arquivo é o publicado (SHA-256) e, no Windows, atualiza e reabre sozinho. No Mac, ele abre o `.dmg` e fecha; você arrasta o app para Aplicativos, substitui e abre de novo.
 
-1. **Peça acesso** ao repositório para quem mantém o app. Você recebe um convite do GitHub por e-mail: aceite.
-2. **Crie um token** no GitHub. De preferência um **fine-grained** (começa com `github_pat_`), que só enxerga este repositório e só pode ler:
-   - abra <https://github.com/settings/personal-access-tokens/new>;
-   - em **Repository access**, escolha **Only select repositories** e selecione `refined-redmine`;
-   - em **Permissions → Repository permissions**, deixe **Contents: Read-only** (o resto fica sem acesso);
-   - escolha uma validade (quando expirar, gere outro e cole no app de novo).
+**Token do GitHub (opcional).** Sem conta, o GitHub permite 60 consultas por hora por rede. Num escritório com muita gente atrás do mesmo endereço, se aparecer "O GitHub limitou as consultas", crie um token **fine-grained** sem nenhuma permissão em <https://github.com/settings/personal-access-tokens/new> e cole em **Configurações → Geral → Atualizações** (**Testar** e **Salvar token**). O app guarda o token criptografado pelo sistema e ele nunca aparece no log nem nas informações de suporte.
 
-   Se o `refined-redmine` não aparecer na lista, o GitHub não deixa usar token fine-grained para esse repositório na sua conta. Crie então um token **clássico** em <https://github.com/settings/tokens/new?scopes=repo&description=Refined%20Redmine>, só com o escopo **`repo`**.
-
-3. No app: **Configurações → Geral → Atualizações**, cole o token, clique em **Testar** e depois em **Salvar token**.
-
-Cuidados: trate o token como uma senha (o clássico dá acesso a todos os repositórios privados da sua conta no GitHub); o app o guarda criptografado pelo sistema, usa só para consultar e baixar as versões, e ele nunca aparece no log nem nas informações de suporte. Se desconfiar que vazou, apague-o no GitHub (a mesma página dos tokens) e crie outro.
-
-A primeira versão com atualizações é a 0.2.0: quem está na 0.1.0 instala a 0.2.0 manualmente uma vez.
+Versões até a 0.9.0 só atualizavam com um token com acesso ao repositório (que era privado). Quem está nelas recebe a próxima versão normalmente se já salvou um token; sem token, instale a próxima versão manualmente uma vez (página de Releases do repositório).
 
 ## Deu problema?
 

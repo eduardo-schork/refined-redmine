@@ -32,6 +32,8 @@ export interface Issue {
     created_on: string
     updated_on: string
     closed_on?: string | null
+    custom_fields?: CustomFieldValue[]
+    parent?: { id: number }
 }
 
 export interface JournalDetail {
@@ -76,14 +78,12 @@ export interface Relation {
 export interface IssueDetail extends Issue {
     description?: string | null
     spent_hours?: number
-    custom_fields?: CustomFieldValue[]
     journals: Journal[]
     attachments: Attachment[]
     relations: Relation[]
     children: { id: number; tracker: Named; subject: string }[]
     watchers: Named[]
     allowed_statuses: IssueStatus[]
-    parent?: { id: number }
 }
 
 export interface Version extends Named {

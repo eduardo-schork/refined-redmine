@@ -3,6 +3,7 @@ import type {
     IssueDetail,
     IssuePriority,
     IssueStatus,
+    Named,
     Page,
     Project,
     SavedQuery
@@ -15,6 +16,7 @@ import {
     type NewIssue
 } from '@domain/redmine/issue-edit'
 import type { IssueFilter } from '@domain/redmine/issue-filter'
+import { CUSTOM_FIELD_SAMPLE, projectCustomFields, type ProjectCustomFields } from '@domain/redmine/custom-fields'
 import { MAX_SEARCH_RESULTS, parseIssueSearch, titleSearchQuery } from '@domain/redmine/issue-search'
 import { assertValidUploads, cleanUpload, type IssueUpload, type UploadedFile } from '@domain/redmine/issue-upload'
 import { AppError } from '@domain/shared/errors'
@@ -75,6 +77,13 @@ export class IssueQueries {
             assignees: [...members].sort(byName),
             versions: versions.filter((version) => version.status !== 'closed').sort(byName)
         }
+    }
+
+    /** The newest issues of the project, in any status, show which fields each tracker uses and how. */
+    async customFields(projectId: number): Promise<ProjectCustomFields> {
+        const recent: IssueFilter = { project: { id: projectId, includeSubprojects: false }, status: '*', sort: 'id' }
+        const page = await this.gateway.listIssues(recent, CUSTOM_FIELD_SAMPLE)
+        return projectCustomFields(page.items)
     }
 }
 
@@ -150,6 +159,10 @@ export class ReferenceDataQueries {
             const priorities = await this.gateway.listPriorities()
             return priorities.filter((priority) => priority.active !== false)
         })
+    }
+
+    trackers(): Promise<Named[]> {
+        return this.cached('trackers', () => this.gateway.listTrackers())
     }
 
     /** Kinds of work for time entries (Development, Meeting…); inactive ones are not offered. */

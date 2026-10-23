@@ -79,7 +79,8 @@ function issueBody(update: IssueUpdate) {
         due_date: clearable(update.dueDate),
         done_ratio: update.doneRatio,
         estimated_hours: clearable(update.estimatedHours),
-        parent_issue_id: clearable(update.parentIssueId)
+        parent_issue_id: clearable(update.parentIssueId),
+        uploads: update.uploads?.map(uploadReference)
     }
 }
 
@@ -96,6 +97,7 @@ function newIssueBody(issue: NewIssue, uploads: UploadedFile[]) {
         due_date: issue.dueDate,
         estimated_hours: issue.estimatedHours,
         parent_issue_id: issue.parentIssueId,
+        custom_fields: issue.customFields?.length ? issue.customFields : undefined,
         uploads: uploads.length ? uploads.map(uploadReference) : undefined
     }
 }
@@ -251,6 +253,11 @@ export class HttpRedmineGateway implements RedmineGateway {
         return response.project.trackers ?? []
     }
 
+    async listTrackers(): Promise<Named[]> {
+        const response = await this.http.request<{ trackers: Named[] }>('GET', '/trackers.json')
+        return response.trackers
+    }
+
     async listPriorities(): Promise<IssuePriority[]> {
         const response = await this.http.request<{ issue_priorities: IssuePriority[] }>(
             'GET',
@@ -262,7 +269,7 @@ export class HttpRedmineGateway implements RedmineGateway {
     /** Up to 1000 entries: a week or an issue fits easily. */
     async listTimeEntries(query: TimeEntryQuery): Promise<TimeEntry[]> {
         const params: Params = {
-            user_id: query.mine ? 'me' : undefined,
+            user_id: query.mine ? 'me' : query.userId,
             issue_id: query.issueId,
             from: query.from,
             to: query.to

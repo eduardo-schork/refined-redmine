@@ -23,7 +23,7 @@ Não há servidor próprio: o app fala direto com o Redmine usando a sua chave d
 
 ### Instalar
 
-O passo a passo (macOS e Windows, com os avisos de segurança do sistema na primeira abertura) está em [Instalar o Refined Redmine](INSTALACAO.md). Versões novas são instaladas por cima da anterior; quadros, agenda e preferências são mantidos.
+Baixe o instalador na [última Release](https://github.com/eduardo-schork/refined-redmine/releases/latest) (não precisa de conta no GitHub). O passo a passo (macOS e Windows, com os avisos de segurança do sistema na primeira abertura) está em [Instalar o Refined Redmine](INSTALACAO.md). Versões novas são instaladas por cima da anterior; quadros, agenda e preferências são mantidos.
 
 ### Conectar ao Redmine
 
@@ -43,6 +43,20 @@ Enquanto as notificações não estiverem confirmadas, o app abre a janela **Con
 
 - **Não apareceu**: o app mostra onde ligar as notificações. No macOS, **Ajustes do Sistema → Notificações → Refined Redmine → Permitir notificações** (estilo **Alertas** ou **Faixas**); no Windows, **Configurações → Sistema → Notificações**. Depois clique em **Testar de novo** e confirme.
 - Dá para refazer o teste a qualquer momento em **Configurações → Notificações → Enviar notificação de teste**.
+
+### Abas
+
+![Abas](images/workspace-tabs.png)
+
+Cada tela e cada quadro abrem numa **aba** no topo da janela, como no navegador. Clicar num item do menu traz a aba dele para a frente (ou abre uma nova no fim); cada tela e cada quadro têm uma aba só.
+
+- O **×** (ou um clique com o botão do meio) fecha a aba. Fechando a da frente, aparece a seguinte.
+- Arraste uma aba para mudar a ordem. O botão direito numa aba oferece **Duplicar aba** (duas abas do mesmo quadro, cada uma com seus filtros), **Fechar aba** e **Fechar as outras abas**.
+- **⌘-clique** (Ctrl-clique no Windows) ou clique do meio num item do menu abre uma aba nova mesmo que a tela já esteja aberta.
+- As abas de trás guardam o que estava na tela: filtros, rolagem, a semana da agenda, um formulário pela metade.
+- **Ctrl+Tab** e **Ctrl+Shift+Tab** passam para a próxima e para a anterior; **⌘1…⌘9** (Ctrl+1…9 no Windows) vão direto para uma aba (⌘9 é a última).
+- Ao abrir o app, as abas da última vez voltam.
+- Em **Configurações → Geral → Abas** dá para desligar as abas (as telas voltam a abrir uma por vez) ou não reabrir as abas ao iniciar.
 
 ### Bandeja do sistema
 
@@ -225,12 +239,33 @@ Para criar uma tarefa no Redmine sem sair do app, use o botão com lápis ao lad
 - **Projeto** e **Título** são obrigatórios. O projeto já vem preenchido: o do quadro (e, num quadro de sprint, a versão da sprint; vale também para o botão da barra lateral e o ⌘N enquanto o quadro está aberto) ou o projeto das sprints configurado em Configurações → Sprints e Início. Clique no campo e digite para procurar outro projeto.
 - **Tipo** e **Prioridade** começam com o padrão do Redmine. Trocar o projeto limpa tipo, responsável e versão, que dependem do projeto.
 - **Descrição** em Markdown, como no Redmine.
+- **Campos personalizados do tipo** (por exemplo Módulo, Solicitante, Categoria) aparecem abaixo da descrição, com os valores já usados no projeto como sugestão ao digitar. Os marcados com `*` estão preenchidos em todas as tarefas recentes desse tipo e são tratados como obrigatórios. A lista vem das tarefas recentes do projeto, então um valor novo de uma lista do Redmine pode ser recusado; nesse caso aparece a mensagem do Redmine. Numa **Nova subtarefa**, eles já vêm com os valores da tarefa pai.
 - **Anexos**: clique em **Escolher arquivos**, arraste arquivos para a área tracejada ou cole uma imagem (⌘V, por exemplo uma captura de tela) em qualquer campo. Cada arquivo aparece como um cartão, igual aos da aba Anexos: miniatura das imagens e ícone do tipo para o resto. Clique numa imagem ou num arquivo de texto para ver maior (as setas passam entre eles); o ✕ tira o arquivo. Até 10 arquivos de até 20 MB cada (o Redmine pode ter um limite menor).
 - **Responsável** funciona como no detalhe: digite para filtrar e clique no nome. **Versão**, **Início** e **Previsão** são opcionais.
 - **Tarefa pai**: o número, com ou sem `#`. Ao sair do campo, o título dela aparece embaixo, para conferir.
 - **Estimado**: as horas previstas, do mesmo jeito que no lançamento de horas (8, 1,5, 1:30, 1h30).
 - A tarefa só é criada pelo botão **Criar tarefa** (o `Enter` no título não cria, para evitar criar por engano). Depois de criada, ela abre no detalhe.
-- Se o Redmine exigir algum campo que o formulário não tem (um campo personalizado obrigatório do tipo, por exemplo), aparece a mensagem do Redmine; nesse caso, crie pelo Redmine.
+- Se faltar algum campo obrigatório, aparece a mensagem do Redmine (ex.: "Categoria não pode ficar em branco") e nada é criado: preencha e clique de novo.
+
+### Trâmites
+
+![Enviar trâmite](images/handoff.png)
+
+Os botões de trâmite ficam na linha de ações do detalhe da tarefa:
+
+- **Novo trâmite** (sempre): num só passo, comentário (com anexos), situação, responsável, versão e, se quiser, horas da própria tarefa.
+- **Botões configurados** em Configurações → Automações (ex.: **Enviar para QA**). Cada um aparece só nos tipos e situações escolhidos. Há dois tipos:
+  - **Trâmite na própria tarefa**: como o Novo trâmite, mas já com a situação, o responsável, a atividade e o comentário padrão da regra (`{{tarefa}}` e `{{titulo}}` viram o número e o título).
+  - **Enviar para outra tarefa**: o app procura nas tarefas ligadas (pai, subtarefas, relacionadas e as delas) a do tipo de destino (ex.: Qualidade) e já a escolhe quando só há uma; dá para informar outra pelo número. Marque as **notas citadas** (as três últimas de cada tarefa aparecem; "Mostrar todas" abre o resto): o comentário é montado com os links (`#1201#note-3`) pelo modelo da regra e pode ser editado. Situação, responsável e versão mudam na tarefa de destino; as horas vão para esta tarefa. Se a regra tiver **fechamento**, as tarefas ligadas do tipo escolhido mudam de situação depois (marcadas por padrão: esta tarefa e as que tiveram notas citadas).
+- No **Histórico**, cada nota tem um ícone de envio (**Enviar este trâmite**) que abre o envio já com aquela nota marcada.
+- **Horas**: vazio não lança nada. "Hora extra (destas horas)" separa a parte que foi hora extra, que vai também para o [banco de horas extras](#horas-extras).
+- O envio acontece em passos (comentário, cada tarefa a mais, horas, hora extra, fechamento). Se algum falhar, os que deram certo ficam marcados e **Tentar de novo** repete só o resto, sem comentar duas vezes. Se o Redmine não aplicar uma mudança (workflow ou sem permissão), aparece um aviso.
+
+### Alterar em massa
+
+![Alterar em massa](images/bulk-edit.png)
+
+**Alterar em massa**, na linha de ações do detalhe, mostra a tarefa com a pai, as relacionadas e as subtarefas (até 3 níveis). Escolha a situação, o responsável e/ou a versão (cada um começa em "Manter") e marque as tarefas: marcar uma marca as subtarefas dela, e a tarefa aberta com as subtarefas já vem marcada. Por exemplo, levar uma história e as tarefas dela do backlog para a sprint. Só é enviado o que muda em cada tarefa; cada linha mostra ✓, ⚠ (o Redmine não aplicou algo, com o motivo ao parar o mouse) ou ✗, e **Tentar de novo** repete só as que falharam.
 
 ### Anexos
 
@@ -241,12 +276,17 @@ A aba **Anexos** mostra cada arquivo da tarefa como um cartão com o nome, o tam
 Ao clicar num anexo:
 
 - **Imagens** (PNG, JPG, GIF, WebP, SVG…) e **arquivos de texto** (`.txt`, `.log`, `.json`, `.csv`, `.md`, `.sql`, código…) abrem **dentro do app**. JSON aparece já indentado. Arquivos de texto muito grandes mostram só o começo.
-- **PDF, documentos, planilhas, apresentações, vídeos e áudios** abrem no **app do sistema** (Preview, Word, Excel…).
+- **Vídeos e áudios** (MP4, MOV, WebM, MP3, M4A…) até 100 MB **tocam dentro do app**. Se o formato ou o codec não tocar, a visualização avisa; use **Abrir no app do sistema**.
+- **PDF, documentos, planilhas e apresentações**, e vídeos MKV/AVI, abrem no **app do sistema** (Preview, Word, Excel…).
 - **Arquivos compactados** (`.zip`, `.rar`…), **programas** e outros tipos abrem **no Redmine**, no navegador.
 
 ![Visualizar anexo](images/attachment-preview.png)
 
 Na visualização, as setas (`←` `→` ou os botões) passam pelos outros anexos que dá para ver no app, e os botões no topo abrem o arquivo no app do sistema ou no Redmine. `Esc` fecha.
+
+**Imagens no meio do texto**: quando a descrição ou um comentário tem uma imagem anexada à tarefa (o print colado no Redmine), ela aparece como uma miniatura pequena no lugar, para não ocupar a tela; clique para ver maior, com as setas para os outros anexos. Um vídeo citado no texto aparece como etiqueta com o nome e toca ao clicar.
+
+![Imagem na descrição](images/issue-inline-image.png)
 
 Por segurança, o app nunca entrega ao sistema arquivos que podem executar algo ao abrir: programas (`.exe`, `.app`, `.dmg`…), scripts (`.bat`, `.js`, `.sh`, `.ps1`…), páginas (`.html`, `.svg`) e documentos do Office com macro (`.docm`, `.xlsm`, `.pptm`). Esses abrem no Redmine; os de texto ainda dá para ver dentro do app.
 
@@ -275,6 +315,26 @@ Em **Lançar horas**, informe:
 - Ele continua contando com a janela fechada e mesmo depois de fechar e abrir o app.
 - Ele pausa sozinho quando o computador dorme ou a tela é bloqueada. Depois de 10 minutos sem uso do teclado e do mouse, pausa e não conta o tempo em que você ficou fora; a barra lateral avisa desde quando.
 - Só existe um cronômetro por vez: começar em outra tarefa pede confirmação e descarta o anterior.
+
+### Horas extras
+
+![Horas extras](images/overtime.png)
+
+**Horas extras**, no menu, é um banco de horas que fica só no app (o Redmine não tem isso). Mostra as horas extras do mês, o **saldo em banco** e as pagas no ano, um gráfico dos últimos 12 meses e a lista de meses: cada mês fica no **Banco** ou é marcado como **Paga** (sai do saldo). Clique num mês para ver os lançamentos; a lixeira exclui um.
+
+Horas extras entram de três jeitos: **Lançar hora extra** nesta tela (data, horas, tarefa opcional e descrição), o campo **Hora extra (destas horas)** ao lançar horas numa tarefa, e o mesmo campo nos trâmites. Nos dois últimos, as horas vão inteiras para o Redmine e a parte extra vai também para o banco.
+
+### Tempo do time
+
+![Tempo do time](images/team-time.png)
+
+**Tempo do time**, no menu, mostra as horas lançadas por várias pessoas: **Meu tempo** vem pronto e **Novo time** monta um time com pessoas de um ou mais projetos (escolha o projeto, filtre e marque; não precisa ser administrador). Os times ficam só no app.
+
+- Período: hoje, esta semana, semana passada, este mês ou um período escolhido.
+- Indicadores: total do time, média por pessoa (contando quem não lançou) e por pessoa por dia útil (segunda a sexta, sem feriados), e quantos lançamentos e de quantas pessoas.
+- **Horas por pessoa**: uma linha por pessoa e uma coluna por dia, com o total; clique numa pessoa, num dia ou numa célula para filtrar o detalhe.
+- **Detalhe** por tarefa ou por atividade, das que têm mais horas para as que têm menos; clique para ver cada lançamento e no número para abrir a tarefa.
+- Só aparecem as horas que o seu papel no Redmine permite ver (permissão "Ver tempo gasto").
 
 ### Minhas horas
 
@@ -435,7 +495,11 @@ As configurações ficam divididas em abas, na coluna à esquerda.
 - **Conta**: o Redmine e o usuário conectados. **Desconectar** apaga a chave deste computador.
 - **Idioma**: Português (Brasil), English (US) ou o idioma do sistema.
 - **Sobre**: a versão instalada, o sistema e a pasta de dados; **Abrir pasta de dados** abre essa pasta no Finder/Explorer. **Copiar informações de suporte** copia um texto com versão, sistema, estado do monitor, notificações e erros recentes (sem a chave de API) para colar na conversa com quem vai ajudar.
-- **Atualizações**: com um token do GitHub (veja [Atualizações automáticas](INSTALACAO.md#atualizações-automáticas)), o app procura versões novas 30 segundos depois de abrir e depois no intervalo escolhido em **Procurar**: a cada 1 hora, 4 horas, 12 horas, uma vez por dia (padrão) ou uma vez por semana. Quando sai uma, aparece um aviso na barra lateral e, aqui, o botão **Baixar versão…** com as novidades. Depois de baixar: no Windows, **Reiniciar e atualizar**; no Mac, **Abrir instalador** (o app fecha para você arrastar a versão nova para Aplicativos). **Verificar agora** força a consulta; o switch **Procurar versões novas automaticamente** desliga a verificação. Sem token, o app funciona normalmente e só não avisa sobre versões novas.
+- **Atualizações**: sem precisar configurar nada (o token do GitHub é opcional; veja [Atualizações automáticas](INSTALACAO.md#atualizações-automáticas)), o app procura versões novas 30 segundos depois de abrir e depois no intervalo escolhido em **Procurar**: a cada 1 hora, 4 horas, 12 horas, uma vez por dia (padrão) ou uma vez por semana. Quando sai uma, aparece um aviso na barra lateral e, aqui, o botão **Baixar versão…** com as novidades. Depois de baixar: no Windows, **Reiniciar e atualizar**; no Mac, **Abrir instalador** (o app fecha para você arrastar a versão nova para Aplicativos). **Verificar agora** força a consulta; o switch **Procurar versões novas automaticamente** desliga a verificação. Sem token, o app funciona normalmente e só não avisa sobre versões novas.
+
+### Automações
+
+Em **Configurações → Automações** ficam as regras dos [trâmites](#trâmites), na ordem em que os botões aparecem (setas para mudar). Cada regra tem: tipo (enviar para outra tarefa ou trâmite na própria tarefa), nome do botão, tipos e situações em que aparece (nenhum marcado = todos), tipo da tarefa de destino, situação e responsável padrão (escolha um projeto para listar as pessoas), modelos de comentário (`{{noteSelecionado}}`, `{{tipoAtividadeComentario}}`, `{{tarefa}}`, `{{titulo}}`), aplicar também em tarefas ligadas, lançar horas (com atividade padrão) e fechamento (tipo → situação).
 
 ### Aparência
 
@@ -491,13 +555,15 @@ A prévia ao lado de cada item muda na hora, e a escolha vale em todo o app.
 
 ### Atalhos gerais
 
-| Tecla               | Ação                       |
-| ------------------- | -------------------------- |
-| `⌘K` / `Ctrl+K`     | Abrir a busca rápida       |
-| `↑` / `↓` e `Enter` | Escolher e abrir, na busca |
-| `Esc`               | Fechar a busca             |
-| `⌘N` / `Ctrl+N`     | Nova tarefa                |
-| `⌘↵` / `Ctrl+Enter` | Salvar a descrição editada |
+| Tecla                         | Ação                       |
+| ----------------------------- | -------------------------- |
+| `⌘K` / `Ctrl+K`               | Abrir a busca rápida       |
+| `↑` / `↓` e `Enter`           | Escolher e abrir, na busca |
+| `Esc`                         | Fechar a busca             |
+| `⌘N` / `Ctrl+N`               | Nova tarefa                |
+| `⌘↵` / `Ctrl+Enter`           | Salvar a descrição editada |
+| `Ctrl+Tab` / `Ctrl+Shift+Tab` | Próxima / aba anterior     |
+| `⌘1…9` / `Ctrl+1…9`           | Ir para a aba (9 = última) |
 
 ### Atalhos da Agenda
 

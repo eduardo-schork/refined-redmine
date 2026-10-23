@@ -1,6 +1,7 @@
 # Refined Redmine
 
-- Leia `PROJECT.md` antes de mexer no projeto: é a base de conhecimento (convenções do Redmine da empresa, decisões, arquitetura, pendências).
+- Leia `PROJECT.md` antes de mexer no projeto: é a base de conhecimento (convenções de Redmine suportadas, decisões, arquitetura, pendências).
+- **O repositório é público**: nada específico do Redmine da empresa (nomes de projeto, ids, campos, valores, pessoas, URLs) vai para arquivos versionados, testes ou capturas. Isso fica em `NOTAS-INTERNAS.md` (fora do git); testes e o Redmine falso usam dados fictícios.
 - **Sempre que algo for implementado, alterado ou descoberto, atualize o `PROJECT.md`** na mesma tarefa: a seção relevante, a lista de pendências (marque o que foi feito) e uma linha no Histórico. Atualize também o `README.md` se o uso mudar.
 - Mudou timers, requisições, arquivos, cache ou segurança? Atualize `docs/FUNCIONAMENTO.md`.
 - **Regra de negócio nova ou alterada vai para `docs/REGRAS-DE-NEGOCIO.md`** (com o nome da função onde está). Funcionalidade visível nova ou alterada vai para `docs/MANUAL.md` (capturas com dados falsos: `scripts/demo-redmine.mjs`, ver PROJECT.md §9).

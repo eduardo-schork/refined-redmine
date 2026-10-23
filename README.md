@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-No primeiro acesso, informe a URL do Redmine e a chave em **Minha conta → Chave de acesso à API**. Para instalar a partir do `.dmg`/`.exe`: [docs/INSTALACAO.md](docs/INSTALACAO.md).
+No primeiro acesso, informe a URL do Redmine e a chave em **Minha conta → Chave de acesso à API**. Instaladores (`.dmg` para Mac, `.exe` para Windows) na [última Release](https://github.com/eduardo-schork/refined-redmine/releases/latest); passo a passo em [docs/INSTALACAO.md](docs/INSTALACAO.md).
 
 Como usar cada tela: [manual do usuário](docs/MANUAL.md).
 
@@ -41,15 +41,18 @@ Como usar cada tela: [manual do usuário](docs/MANUAL.md).
 
 **Sprints**
 
-- As versões de um projeto viram sprints. Convenção: `X.Y` = sprint (ex.: 3.78); `X.Y.Z` = correção na branch da qualidade/staging (ex.: 3.77.1); o resto são agrupadores (backlog, site…).
+- As versões de um projeto viram sprints. Convenção: `X.Y` = sprint (ex.: 3.78); `X.Y.Z` = correção na branch da qualidade/staging (ex.: 3.77.1); o resto são agrupadores (backlog…).
 - Datas lidas dos campos personalizados da versão (detectados pelo nome: "Prazo dos devs", "Publicação").
 - Fase calculada: em desenvolvimento (prazo dos devs mais próximo), em homologação (prazo vencido, publicação futura), publicação atrasada, planejada, em produção (última publicada), correção.
 - Lista de tarefas por status e "Criar quadro desta versão".
 
 **Detalhes da atividade**
 
-- Clique em qualquer tarefa (kanban, início, sprints) abre um modal com descrição (Markdown), campos, abas de tarefas relacionadas (subtarefas e relações com título, status e responsável), anexos (imagens e texto vistos no próprio app, documentos no app do sistema) e horas, e histórico; permite mudar status, comentar e editar título, descrição, tipo, prioridade, responsável, versão, datas, % concluído, estimativa e tarefa pai. Descrição longa aparece cortada em 25 linhas, com "Mostrar tudo".
-- **Criar tarefa** pela barra lateral, por `⌘N`/`Ctrl+N` ou pelo quadro (já no projeto e na sprint do quadro), e **Nova subtarefa** no detalhe: projeto, tipo, título, descrição, anexos (escolher, arrastar ou colar, com miniaturas), prioridade, responsável, versão, tarefa pai, datas e estimativa.
+- Clique em qualquer tarefa (kanban, início, sprints) abre um modal com descrição (Markdown), campos, abas de tarefas relacionadas (subtarefas e relações com título, status e responsável), anexos (imagens, texto, vídeo e áudio vistos no próprio app, documentos no app do sistema; imagens citadas na descrição e nos comentários aparecem como miniatura) e horas, e histórico; permite mudar status, comentar e editar título, descrição, tipo, prioridade, responsável, versão, datas, % concluído, estimativa e tarefa pai. Descrição longa aparece cortada em 25 linhas, com "Mostrar tudo".
+- **Abas**: cada tela e cada quadro abrem numa aba (Ctrl+Tab, ⌘1…9), que guarda o estado e volta ao reabrir o app; configurável em Configurações → Geral → Abas.
+- **Trâmites** configuráveis (Configurações → Automações) no detalhe da tarefa: comentar e mover a própria tarefa ou enviar para a tarefa vizinha (ex.: Qualidade) citando notas, com horas e fechamento; **Alterar em massa** situação, responsável e versão de uma árvore de tarefas.
+- **Horas extras** (banco no app, meses no banco ou pagos) e **Tempo do time** (horas por pessoa e dia, médias, detalhe por tarefa ou atividade).
+- **Criar tarefa** pela barra lateral, por `⌘N`/`Ctrl+N` ou pelo quadro (já no projeto e na sprint do quadro), e **Nova subtarefa** no detalhe: projeto, tipo, título, descrição, campos personalizados do tipo (com sugestões; a subtarefa herda da pai), anexos (escolher, arrastar ou colar, com miniaturas), prioridade, responsável, versão, tarefa pai, datas e estimativa.
 - **Busca rápida** (`⌘K` / `Ctrl+K`): tarefa por `#número` ou título, quadros, telas e tarefas recentes. Links `#1234` abrem no próprio modal. Botão "Abrir no Redmine".
 
 **Kanban**

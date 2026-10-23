@@ -1,22 +1,26 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, type ReactNode } from 'react'
 import type { SettingsView } from '@contracts/api'
 import type { Board } from '@domain/board/board'
 import { resolveLocale } from '@shared/i18n/index'
 import { useAppEventsSync } from '@/hooks/notifications'
 import { useSession, useSettings } from '@/hooks/session'
+import { useWorkspaceTabs } from '@/hooks/workspace'
 import { useApplyAppearance } from '@/lib/appearance'
-import { I18nProvider } from '@/lib/i18n'
+import { I18nProvider, useI18n } from '@/lib/i18n'
 import { IssueStyleContext } from '@/lib/issue-style'
-import { NavContext, type Route } from '@/lib/router'
-import { useModifierShortcut } from '@/lib/shortcuts'
+import { NavContext, type NavigateOptions, type Route } from '@/lib/router'
+import { useModifierShortcut, useTabShortcuts } from '@/lib/shortcuts'
+import { ActiveTabContext } from '@/lib/workspace-tabs'
 import BoardPage from '@/pages/BoardPage'
 import CalendarPage from '@/pages/CalendarPage'
 import HomePage from '@/pages/HomePage'
 import LogPage from '@/pages/LogPage'
 import NotificationsPage from '@/pages/NotificationsPage'
+import OvertimePage from '@/pages/OvertimePage'
 import OnboardingPage from '@/pages/OnboardingPage'
 import SettingsPage from '@/pages/SettingsPage'
 import SprintsPage from '@/pages/SprintsPage'
+import TeamTimePage from '@/pages/TeamTimePage'
 import TimePage from '@/pages/TimePage'
 import { ToastProvider } from '@/ui/molecules/Toast'
 import { BoardEditor } from '@/ui/organisms/BoardEditor'
@@ -25,6 +29,7 @@ import { NotificationPermissionGate } from '@/ui/organisms/NotificationPermissio
 import { QuickSearch } from '@/ui/organisms/search/QuickSearch'
 import { WhatsNewDialog } from '@/ui/organisms/WhatsNewDialog'
 import { Sidebar } from '@/ui/organisms/Sidebar'
+import { WorkspaceTabBar } from '@/ui/organisms/WorkspaceTabBar'
 import { AppShell } from '@/ui/templates/layouts'
 
 export default function App() {
@@ -45,15 +50,16 @@ function SessionApp({ session }: { session: SettingsView }) {
 }
 
 function AuthenticatedApp() {
-    const [route, setRoute] = useState<Route>({ page: 'home' })
+    const settings = useSettings()
+    const workspace = useWorkspaceTabs(settings.workspace, settings.boards)
+    const navigate = workspace.navigate
     // undefined = editor closed; an object (empty or prefilled) = editor open.
     const [newBoard, setNewBoard] = useState<Partial<Board> | undefined>()
-    const navigate = useCallback((nextRoute: Route) => setRoute(nextRoute), [])
     const [searching, setSearching] = useState(false)
     const openSearch = useCallback(() => setSearching(true), [])
     const closeSearch = useCallback(() => setSearching(false), [])
-    const issueStyle = useSettings().issueStyle
     useModifierShortcut('k', openSearch)
+    useTabShortcuts(workspace.enabled, workspace.step, workspace.selectPosition)
 
     const openEmptyBoardEditor = () => setNewBoard({})
     const closeBoardEditor = () => setNewBoard(undefined)
@@ -61,10 +67,11 @@ function AuthenticatedApp() {
         closeBoardEditor()
         navigate({ page: 'board', boardId })
     }
+    const pageActions = { navigate, onNewBoard: openEmptyBoardEditor, onCreateBoard: setNewBoard }
 
     return (
         <NavContext.Provider value={navigate}>
-            <IssueStyleContext.Provider value={issueStyle}>
+            <IssueStyleContext.Provider value={settings.issueStyle}>
                 <IssueModalProvider>
                     <AppEventsSync onNavigate={navigate} />
                     <NotificationPermissionGate />
@@ -72,35 +79,26 @@ function AuthenticatedApp() {
                     <AppShell
                         sidebar={
                             <Sidebar
-                                route={route}
+                                route={workspace.activeRoute}
                                 onNavigate={navigate}
                                 onNewBoard={openEmptyBoardEditor}
                                 onSearch={openSearch}
                             />
                         }
                     >
-                        {route.page === 'home' && <HomePage />}
-                        {route.page === 'calendar' && (
-                            <CalendarPage
-                                key={`${route.date}|${route.eventId}`}
-                                focusDate={route.date}
-                                focusEventId={route.eventId}
-                                onGoSprints={() => navigate({ page: 'sprints' })}
+                        {workspace.enabled && (
+                            <WorkspaceTabBar
+                                tabs={workspace.tabs}
+                                activeKey={workspace.activeKey}
+                                actions={workspace}
                             />
                         )}
-                        {route.page === 'sprints' && <SprintsPage onCreateBoard={setNewBoard} />}
-                        {route.page === 'board' && (
-                            <BoardPage
-                                key={route.boardId}
-                                boardId={route.boardId}
-                                onCreate={openEmptyBoardEditor}
-                                onDeleted={() => navigate({ page: 'board' })}
-                            />
-                        )}
-                        {route.page === 'notifications' && <NotificationsPage />}
-                        {route.page === 'log' && <LogPage />}
-                        {route.page === 'time' && <TimePage />}
-                        {route.page === 'settings' && <SettingsPage key={route.tab} tab={route.tab} />}
+                        {workspace.tabs.length === 0 && <NoTabs />}
+                        {workspace.tabs.map((tab) => (
+                            <TabPanel key={tab.key} active={tab.key === workspace.activeKey}>
+                                <PageView route={tab.route} {...pageActions} />
+                            </TabPanel>
+                        ))}
                     </AppShell>
                     {newBoard && (
                         <BoardEditor initial={newBoard} onClose={closeBoardEditor} onSaved={handleBoardSaved} />
@@ -112,8 +110,71 @@ function AuthenticatedApp() {
     )
 }
 
+/** Hidden tabs stay mounted (scroll, filters and forms are kept) but do not react to the keyboard. */
+function TabPanel({ active, children }: { active: boolean; children: ReactNode }) {
+    return (
+        <ActiveTabContext.Provider value={active}>
+            <div className={active ? 'flex min-h-0 flex-1 flex-col' : 'hidden'}>{children}</div>
+        </ActiveTabContext.Provider>
+    )
+}
+
+function NoTabs() {
+    const { t } = useI18n()
+    return (
+        <div className="drag flex flex-1 items-start justify-center pt-[20vh] text-sm text-muted">
+            {t('workspace.noTabs')}
+        </div>
+    )
+}
+
+interface PageActions {
+    navigate: (route: Route, options?: NavigateOptions) => void
+    onNewBoard: () => void
+    onCreateBoard: (board: Partial<Board>) => void
+}
+
+function PageView({ route, navigate, onNewBoard, onCreateBoard }: { route: Route } & PageActions) {
+    switch (route.page) {
+        case 'home':
+            return <HomePage />
+        case 'calendar':
+            return (
+                <CalendarPage
+                    key={`${route.date}|${route.eventId}`}
+                    focusDate={route.date}
+                    focusEventId={route.eventId}
+                    onGoSprints={() => navigate({ page: 'sprints' })}
+                />
+            )
+        case 'sprints':
+            return <SprintsPage onCreateBoard={onCreateBoard} />
+        case 'board':
+            return (
+                <BoardPage
+                    key={route.boardId}
+                    boardId={route.boardId}
+                    onCreate={onNewBoard}
+                    onDeleted={() => navigate({ page: 'board' })}
+                />
+            )
+        case 'notifications':
+            return <NotificationsPage />
+        case 'log':
+            return <LogPage />
+        case 'time':
+            return <TimePage />
+        case 'overtime':
+            return <OvertimePage />
+        case 'team':
+            return <TeamTimePage />
+        case 'settings':
+            return <SettingsPage key={route.tab} tab={route.tab} />
+    }
+}
+
 /** Inside the issue modal provider: a click on a system notification about an issue opens it in the modal. */
-function AppEventsSync({ onNavigate }: { onNavigate: (route: Route) => void }) {
+function AppEventsSync({ onNavigate }: { onNavigate: (route: Route, options?: NavigateOptions) => void }) {
     const openIssue = useOpenIssue()
     useAppEventsSync(onNavigate, openIssue)
     return null

@@ -1,18 +1,20 @@
 import { useState, type ClipboardEvent } from 'react'
 import type { IssueEditOptions } from '@contracts/api'
 import type { Named } from '@domain/redmine/entities'
+import { customFieldEntries, trackerCustomFields, type CustomFieldUsage } from '@domain/redmine/custom-fields'
 import { MAX_SUBJECT_LENGTH, type NewIssue, type NewIssueDefaults } from '@domain/redmine/issue-edit'
 import { parseIssueSearch } from '@domain/redmine/issue-search'
 import { attachmentKind, canPreview, previewFromBytes, THUMBNAIL_MAX_BYTES } from '@domain/redmine/attachment-kind'
 import { MAX_UPLOAD_BYTES, MAX_UPLOADS, type IssueUpload } from '@domain/redmine/issue-upload'
 import { parseHours } from '@domain/time/time-entry'
-import { useCreateIssue, useIssueEditOptions, useIssueTitle } from '@/hooks/issues'
+import { useCreateIssue, useIssueCustomFields, useIssueEditOptions, useIssueTitle } from '@/hooks/issues'
 import { usePriorities, useProjects } from '@/hooks/reference'
 import { useSettings } from '@/hooks/session'
 import { useI18n } from '@/lib/i18n'
 import { Button } from '../atoms/Button'
 import { Input, Select, Textarea } from '../atoms/fields'
 import { AttachmentPicker, type PickedFile } from '../molecules/AttachmentPicker'
+import { CustomFieldInputs } from '../molecules/CustomFieldInputs'
 import { Dialog } from '../molecules/Dialog'
 import { Field } from '../molecules/Field'
 import { PickList, type PickOption } from '../molecules/PickList'
@@ -35,6 +37,8 @@ interface IssueForm {
     estimate: string
     /** As typed: "#1234" or "1234"; empty = no parent. */
     parent: string
+    /** By field id; kept when the tracker changes, but only the chosen tracker's fields are sent. */
+    customValues: Record<number, string>
 }
 
 const toOptions = (items: Named[]): PickOption[] => items.map((item) => ({ value: String(item.id), label: item.name }))
@@ -52,7 +56,7 @@ function typedParent(text: string): number | null | undefined {
     return reference.type === 'id' ? reference.id : null
 }
 
-function toNewIssue(form: IssueForm, projectId: number): NewIssue {
+function toNewIssue(form: IssueForm, projectId: number, customFields: CustomFieldUsage[]): NewIssue {
     return {
         projectId,
         trackerId: form.trackerId,
@@ -64,7 +68,8 @@ function toNewIssue(form: IssueForm, projectId: number): NewIssue {
         startDate: form.startDate || undefined,
         dueDate: form.dueDate || undefined,
         estimatedHours: typedEstimate(form.estimate) ?? undefined,
-        parentIssueId: typedParent(form.parent) ?? undefined
+        parentIssueId: typedParent(form.parent) ?? undefined,
+        customFields: customFieldEntries(customFields, form.customValues)
     }
 }
 
@@ -100,14 +105,8 @@ function useProjectId(chosen: number | undefined, projects: Named[]): number | u
     return chosen ?? settings.sprints.projectId ?? projects[0]?.id
 }
 
-/**
- * The form state. Tracker and priority start empty and show Redmine's defaults (the project's first tracker,
- * the default priority) until the user picks one; trackers, people and versions belong to the project.
- */
-function useIssueForm(defaults: NewIssueDefaults) {
-    const projects = useProjects().data ?? []
-    const priorities = usePriorities().data ?? []
-    const [form, setForm] = useState<IssueForm>({
+function initialForm(defaults: NewIssueDefaults): IssueForm {
+    return {
         projectId: defaults.projectId,
         fixedVersionId: defaults.fixedVersionId,
         subject: '',
@@ -115,8 +114,24 @@ function useIssueForm(defaults: NewIssueDefaults) {
         startDate: '',
         dueDate: '',
         estimate: '',
-        parent: defaults.parentIssueId ? `#${defaults.parentIssueId}` : ''
-    })
+        parent: defaults.parentIssueId ? `#${defaults.parentIssueId}` : '',
+        customValues: Object.fromEntries((defaults.customFields ?? []).map((entry) => [entry.id, entry.value]))
+    }
+}
+
+function useTrackerCustomFields(projectId: number | undefined, trackerId: number | undefined) {
+    const projectFields = useIssueCustomFields(projectId ?? 0, projectId !== undefined).data
+    return projectFields ? trackerCustomFields(projectFields, trackerId) : []
+}
+
+/**
+ * The form state. Tracker and priority start empty and show Redmine's defaults (the project's first tracker,
+ * the default priority) until the user picks one; trackers, people and versions belong to the project.
+ */
+function useIssueForm(defaults: NewIssueDefaults) {
+    const projects = useProjects().data ?? []
+    const priorities = usePriorities().data ?? []
+    const [form, setForm] = useState(() => initialForm(defaults))
     const projectId = useProjectId(form.projectId, projects)
     const options = useIssueEditOptions(projectId ?? 0, projectId !== undefined).data
     const defaultPriority = priorities.find((priority) => priority.is_default)
@@ -126,12 +141,22 @@ function useIssueForm(defaults: NewIssueDefaults) {
         priorityId: form.priorityId ?? defaultPriority?.id
     }
 
+    const customFields = useTrackerCustomFields(projectId, resolved.trackerId)
+
     const update = (patch: Partial<IssueForm>) => setForm((current) => ({ ...current, ...patch }))
     const changeProject = (nextProjectId: number) =>
-        update({ projectId: nextProjectId, trackerId: undefined, assignedToId: undefined, fixedVersionId: undefined })
+        update({
+            projectId: nextProjectId,
+            trackerId: undefined,
+            assignedToId: undefined,
+            fixedVersionId: undefined,
+            customValues: {}
+        })
+    const changeCustomValue = (fieldId: number, value: string) =>
+        setForm((current) => ({ ...current, customValues: { ...current.customValues, [fieldId]: value } }))
 
     const choices = formChoices(projects, priorities, options)
-    return { form: { ...form, ...resolved }, choices, update, changeProject }
+    return { form: { ...form, ...resolved }, choices, customFields, update, changeProject, changeCustomValue }
 }
 
 interface FieldsProps {
@@ -314,10 +339,10 @@ function pickedFile(upload: IssueUpload): PickedFile {
 }
 
 /**
- * Files to attach, read when added (so creating is a single step). Files too large to send and files over the
+ * Files to attach, read when added (so sending is a single step). Files too large to send and files over the
  * limit are refused with a message.
  */
-function useChosenFiles() {
+export function useChosenFiles() {
     const { t } = useI18n()
     const toast = useToast()
     const [chosen, setChosen] = useState<{ upload: IssueUpload; tile: PickedFile }[]>([])
@@ -360,7 +385,7 @@ export function IssueCreateDialog({
     const { t, error } = useI18n()
     const toast = useToast()
     const create = useCreateIssue()
-    const { form, choices, update, changeProject } = useIssueForm(defaults)
+    const { form, choices, customFields, update, changeProject, changeCustomValue } = useIssueForm(defaults)
     const attachments = useChosenFiles()
     const [previewIndex, setPreviewIndex] = useState<number | null>(null)
     const projectId = form.projectId
@@ -371,7 +396,7 @@ export function IssueCreateDialog({
     const submit = () => {
         if (!canCreate) return
         create.mutate(
-            { issue: toNewIssue(form, projectId), uploads: attachments.uploads },
+            { issue: toNewIssue(form, projectId, customFields), uploads: attachments.uploads },
             {
                 onSuccess: (created) => {
                     toast(t('issue.create.created', { id: created.id }))
@@ -406,6 +431,7 @@ export function IssueCreateDialog({
             <div className="flex flex-col gap-4" onPaste={attachments.handlePaste}>
                 <ProjectAndTrackerFields {...fieldsProps} onProject={changeProject} />
                 <TextFields form={form} update={update} />
+                <CustomFieldInputs fields={customFields} values={form.customValues} onChange={changeCustomValue} />
                 {/* Not a <Field>: its <label> would turn a click anywhere in the list into a click on a button. */}
                 <div className="flex flex-col gap-1">
                     <span className="text-xs font-medium text-muted">{t('issue.tabs.attachments')}</span>

@@ -1,5 +1,16 @@
 import { useState } from 'react'
-import { Clock, Code2, Hash, Heading, Link2, MessageSquareText, Timer, UserCheck, type LucideIcon } from 'lucide-react'
+import {
+    Clock,
+    Code2,
+    Hash,
+    Heading,
+    Layers,
+    Link2,
+    MessageSquareText,
+    Timer,
+    UserCheck,
+    type LucideIcon
+} from 'lucide-react'
 import type { IssueDetail } from '@domain/redmine/entities'
 import { COPY_FORMATS, copyText, type CopyFormat } from '@domain/redmine/issue-copy'
 import { useEditIssue } from '@/hooks/issues'
@@ -8,6 +19,8 @@ import { useTimer, useTimerActions } from '@/hooks/time'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/cn'
 import { useToast } from '../molecules/Toast'
+import { BulkEditDialog } from './BulkEditDialog'
+import { HandoffButtons } from './handoff/HandoffButtons'
 import { TimeEntryDialog } from './time/TimeEntryDialog'
 
 const ICONS: Record<CopyFormat, LucideIcon> = {
@@ -79,6 +92,25 @@ function LogTimeButton({ issue }: { issue: IssueDetail }) {
     )
 }
 
+function BulkEditButton({ issue }: { issue: IssueDetail }) {
+    const { t } = useI18n()
+    const [open, setOpen] = useState(false)
+    return (
+        <>
+            <button
+                type="button"
+                onClick={() => setOpen(true)}
+                title={t('bulk.hint')}
+                className={cn(ACTION_BUTTON, 'border-line text-fg/85 hover:bg-panel-2 hover:text-fg')}
+            >
+                <Layers size={13} />
+                {t('bulk.button')}
+            </button>
+            {open && <BulkEditDialog issue={issue} onClose={() => setOpen(false)} />}
+        </>
+    )
+}
+
 /**
  * Starts the stopwatch on this issue. With a stopwatch already on this issue it pauses/resumes it; with one on
  * another issue it asks first, because starting here discards that time.
@@ -138,9 +170,11 @@ export function IssueQuickActions({ issue, url }: { issue: IssueDetail; url: str
 
     return (
         <div className="mt-2 flex flex-wrap items-center gap-1" role="toolbar" aria-label={t('issue.copy.label')}>
+            <HandoffButtons issue={issue} />
             <AssignToMeButton issue={issue} />
             <LogTimeButton issue={issue} />
             <TimerButton issue={issue} />
+            <BulkEditButton issue={issue} />
             {COPY_FORMATS.map((format) => {
                 const Icon = ICONS[format]
                 return (

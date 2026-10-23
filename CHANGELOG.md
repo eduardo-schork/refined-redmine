@@ -2,6 +2,18 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
+## Próxima versão — trâmites, abas e horas do time
+
+- **Trâmites**: botões no detalhe da tarefa, configurados em Configurações → Automações. "Enviar para QA" (por exemplo) acha a tarefa de Qualidade ligada, cita as notas escolhidas num comentário, muda situação e responsável dela, lança as horas e pode fechar as tarefas de desenvolvimento. O **Novo trâmite** faz comentário, situação, responsável, versão e horas da própria tarefa de uma vez. Cada nota do histórico ganhou o botão "Enviar este trâmite".
+- **Abas**: cada tela e cada quadro abrem numa aba no topo, como no navegador. As abas de trás guardam filtros, rolagem e formulários. Arraste para reordenar, duplique uma aba (dois quadros iguais com filtros diferentes), feche as outras e abra em aba nova com ⌘-clique ou clique do meio no menu. Ctrl+Tab passa entre elas e ⌘1…9 vai direto para uma. As abas voltam ao abrir o app, e dá para desligá-las em Configurações → Geral → Abas.
+- **Alterar em massa**: situação, responsável e versão da tarefa, da pai, das relacionadas e das subtarefas de uma vez, por exemplo para levar uma história e as tarefas dela para a sprint.
+- **Tempo do time**: horas por pessoa e por dia de um time montado com pessoas dos projetos, com médias e o detalhe por tarefa ou atividade.
+- **Horas extras**: banco de horas extras no app, com saldo, meses no banco ou pagos e gráfico do ano. Ao lançar horas, informe quanto foi hora extra.
+- **Campos personalizados ao criar tarefa**: o formulário mostra os campos do tipo escolhido (por exemplo Módulo, Solicitante, Categoria), com os valores já usados no projeto como sugestão e `*` nos que todas as tarefas recentes do tipo preenchem. Corrige a criação em Redmines que recusavam por falta desses campos. Numa **Nova subtarefa**, eles vêm com os valores da tarefa pai.
+- **Imagens no meio da descrição e dos comentários**: o print anexado e citado no texto aparece como miniatura no lugar, em vez de um link que abria uma página quebrada do Redmine; clique para ver maior.
+- **Vídeos e áudios tocam no app**: na aba Anexos, MP4, MOV, WebM, MP3, M4A e outros formatos comuns abrem num player dentro do app, sem ir para o app do sistema.
+- **Atualizações sem token**: o código do app agora é público, e o app procura e baixa versões novas sem precisar de token do GitHub (ele fica opcional, só para quem esbarrar no limite de consultas). O instalador baixado é conferido contra o SHA-256 publicado no GitHub.
+
 ## 0.9.0
 
 - **Criar tarefas pelo app**: o botão com lápis ao lado de Buscar, o atalho **⌘N** (Ctrl+N no Windows) e **Nova tarefa** no topo dos quadros abrem um formulário com projeto, tipo, título, descrição, anexos, prioridade, responsável, versão, tarefa pai, datas e estimativa. Num quadro, o projeto e a sprint já vêm preenchidos. A tarefa criada abre em seguida.

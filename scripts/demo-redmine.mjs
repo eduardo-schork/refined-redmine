@@ -53,7 +53,8 @@ const project = { id: 10, name: 'Loja Virtual - Desenvolvimento' }
 const trackers = {
     dev: { id: 1, name: 'Desenvolvimento' },
     bug: { id: 2, name: 'Defeito' },
-    improvement: { id: 3, name: 'Melhoria' }
+    improvement: { id: 3, name: 'Melhoria' },
+    qa: { id: 4, name: 'Qualidade' }
 }
 const priorities = {
     low: { id: 1, name: 'Baixa' },
@@ -89,6 +90,26 @@ const versions = [
 ]
 const versionById = new Map(versions.map((item) => [item.id, item]))
 
+const demoModules = ['Checkout', 'Catálogo', 'Pagamentos', 'Conta do cliente']
+const demoRequesters = ['Comercial', 'Marina / Lucas', 'Suporte']
+
+/**
+ * Fictional custom fields, like a typical Redmine: Modulo and Solicitante required in every tracker, Categoria only in
+ * Desenvolvimento, Cliente rarely filled and a checkbox. Values come from the id, so they stay the same on every start.
+ */
+function demoCustomFields(id, trackerKey) {
+    const fields = [
+        { id: 2, name: 'Modulo', value: demoModules[id % demoModules.length] },
+        { id: 3, name: 'Cliente', value: id % 5 === 0 ? 'Cliente Exemplo' : '' },
+        { id: 4, name: 'Solicitante', value: demoRequesters[id % demoRequesters.length] },
+        { id: 5, name: 'Revisão de código', value: '0' }
+    ]
+    if (trackerKey === 'dev') fields.push({ id: 6, name: 'Categoria', value: id % 3 ? 'Funcionalidade' : 'Bug' })
+    return fields
+}
+
+const requiredCustomFields = { dev: [2, 4, 6], bug: [2, 4], improvement: [2, 4], qa: [2, 4] }
+
 function issue(id, subject, fields) {
     const {
         tracker = 'dev',
@@ -117,6 +138,7 @@ function issue(id, subject, fields) {
         updated_on: daysAgo(updatedDays, fields.hour ?? 10),
         closed_on: status === 5 ? daysAgo(updatedDays) : null,
         description: fields.description ?? null,
+        custom_fields: fields.customFields ?? demoCustomFields(id, tracker),
         watcherIds: fields.watchers ?? [],
         journals: fields.journals ?? []
     }
@@ -136,6 +158,8 @@ const checkoutDescription = [
     '| Número | Cliente |',
     '',
     '### Contexto',
+    '![Layout do checkout](checkout-v2.png)',
+    '',
     'Hoje 38% dos clientes que abandonam o checkout param na etapa de endereço (dados fictícios do painel).',
     'O cadastro de lojas já consulta o CEP pelo mesmo serviço; a ideia é reaproveitar o cliente HTTP e o cache.',
     '',
@@ -188,7 +212,7 @@ const issues = [
             {
                 id: 3,
                 user: people.beatriz,
-                notes: '@marina.costa o layout do formulário já está no Figma, página *Checkout v2*.',
+                notes: '@marina.costa o layout do formulário já está no Figma, página *Checkout v2*. O fluxo ficou assim:\n\n![](fluxo-cep.svg)\n\nE o vídeo do erro: ![](reproducao-erro-cep.webm)',
                 created_on: daysAgo(1),
                 details: []
             }
@@ -263,7 +287,8 @@ const issues = [
         updatedDays: 3
     }),
     issue(1215, 'Lista de desejos compartilhável', { status: 1, assignee: 'lucas', versionId: 379, author: 'marina' }),
-    issue(1216, 'Revisar textos da página de trocas', { status: 3, assignee: 'rafael', versionId: 3771, done: 100 })
+    issue(1216, 'Revisar textos da página de trocas', { status: 3, assignee: 'rafael', versionId: 3771, done: 100 }),
+    issue(1220, 'QA: endereço automático pelo CEP no checkout', { tracker: 'qa', status: 1, assignee: 'beatriz', versionId: 378 })
 ]
 const issueById = new Map(issues.map((item) => [item.id, item]))
 
@@ -313,6 +338,8 @@ function matchesFieldFilters(item, params) {
 function matchesFilter(item, params) {
     const issueIds = params.get('issue_id')
     if (issueIds) return issueIds.split(',').map(Number).includes(item.id)
+    const parentIds = params.get('parent_id')
+    if (parentIds) return parentIds.split(',').map(Number).includes(parentOf(item.id)?.id)
     const queryId = params.get('query_id')
     if (queryId) return queryFilters[queryId]?.(item) ?? false
     if (params.getAll('f[]').length) return matchesFieldFilters(item, params)
@@ -433,6 +460,15 @@ const demoAttachments = [
         author: people.rafael,
         created_on: daysAgo(4),
         bytes: () => Buffer.concat([Buffer.from([0x50, 0x4b, 0x05, 0x06]), Buffer.alloc(18)])
+    },
+    {
+        id: 7,
+        issueId: 1201,
+        filename: 'reproducao-erro-cep.webm',
+        content_type: 'video/webm',
+        author: people.beatriz,
+        created_on: daysAgo(1),
+        bytes: () => readFileSync(new URL('./demo-assets/reproducao-erro-cep.webm', import.meta.url))
     }
 ]
 
@@ -495,7 +531,8 @@ const relations = [
     { id: 1, issue_id: 1201, issue_to_id: 1210, relation_type: 'relates' },
     { id: 2, issue_id: 1204, issue_to_id: 1201, relation_type: 'blocks' },
     { id: 3, issue_id: 1201, issue_to_id: 1208, relation_type: 'precedes' },
-    { id: 4, issue_id: 1214, issue_to_id: 1201, relation_type: 'relates' }
+    { id: 4, issue_id: 1214, issue_to_id: 1201, relation_type: 'relates' },
+    { id: 5, issue_id: 1220, issue_to_id: 1201, relation_type: 'relates' }
 ]
 const children = { 1201: [1211, 1213, 1216] }
 
@@ -510,7 +547,7 @@ function parentOf(id) {
 
 function publicIssue(item) {
     const { watcherIds: _watchers, journals: _journals, description: _description, ...fields } = item
-    return fields
+    return { ...fields, parent: parentOf(item.id) }
 }
 
 function issueDetail(item) {
@@ -518,7 +555,6 @@ function issueDetail(item) {
         ...publicIssue(item),
         description: item.description,
         spent_hours: spentOn(item.id),
-        custom_fields: [{ id: 13, name: 'Hotfix', value: '0' }],
         journals: item.journals,
         attachments: attachmentsOf(item.id).map(attachmentInfo),
         relations: relations.filter((relation) => [relation.issue_id, relation.issue_to_id].includes(item.id)),
@@ -611,9 +647,10 @@ function updateTextFields(item, fields, change) {
 
 /** POST /issues.json: like Redmine, the title is required and the tracker defaults to the project's first. */
 function createIssue(fields) {
-    if (!fields.subject?.trim()) return { errors: ['Título não pode ficar em branco'] }
-    const id = Math.max(...issues.map((item) => item.id)) + 1
     const tracker = Object.keys(trackers).find((key) => trackers[key].id === Number(fields.tracker_id)) ?? 'dev'
+    const errors = createErrors(fields, tracker)
+    if (errors.length) return { errors }
+    const id = Math.max(...issues.map((item) => item.id)) + 1
     const priority = Object.keys(priorities).find((key) => priorities[key].id === Number(fields.priority_id))
     const assignee = Object.keys(people).find((key) => people[key].id === Number(fields.assigned_to_id))
     const created = issue(id, fields.subject, {
@@ -624,6 +661,7 @@ function createIssue(fields) {
         versionId: fields.fixed_version_id ? Number(fields.fixed_version_id) : undefined,
         due: fields.due_date ?? null,
         description: fields.description ?? null,
+        customFields: newCustomFields(tracker, fields.custom_fields),
         updatedDays: 0
     })
     created.start_date = fields.start_date ?? null
@@ -634,6 +672,25 @@ function createIssue(fields) {
     issues.push(created)
     issueById.set(id, created)
     return { issue: publicIssue(created) }
+}
+
+function createErrors(fields, tracker) {
+    const errors = []
+    if (!fields.subject?.trim()) errors.push('Título não pode ficar em branco')
+    const sent = new Map((fields.custom_fields ?? []).map((field) => [field.id, String(field.value ?? '').trim()]))
+    const names = new Map(demoCustomFields(0, tracker).map((field) => [field.id, field.name]))
+    for (const fieldId of requiredCustomFields[tracker]) {
+        if (!sent.get(fieldId)) errors.push(`${names.get(fieldId)} não pode ficar em branco`)
+    }
+    return errors
+}
+
+/** The tracker's fields with what was sent; the others, like Redmine, are ignored. */
+function newCustomFields(tracker, sent = []) {
+    return demoCustomFields(0, tracker).map((field) => {
+        const value = sent.find((entry) => entry.id === field.id)?.value
+        return { ...field, value: value ?? (field.id === 5 ? '0' : '') }
+    })
 }
 
 function updateIssue(id, body) {
@@ -665,6 +722,7 @@ function updateIssue(id, body) {
         }
         item.journals.push(journal)
     }
+    attachUploads(id, body.issue?.uploads)
     item.updated_on = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
 }
 
@@ -730,7 +788,13 @@ const timeEntries = [
     timeEntry(1201, -1, 2, 9, 'Ajustes do layout do formulário'),
     timeEntry(1206, -1, 1.5, 11, 'Testes do filtro'),
     timeEntry(1201, 0, 1, 10, 'Daily e revisão'),
-    timeEntry(1201, -2, 3, 9, 'Integração com a API de CEP', people.lucas)
+    timeEntry(1201, -2, 3, 9, 'Integração com a API de CEP', people.lucas),
+    timeEntry(1210, -1, 5, 9, 'Webhook do Pix', people.lucas),
+    timeEntry(1209, 0, 2, 9, 'Compressão das imagens', people.lucas),
+    timeEntry(1213, -1, 4, 11, 'Cenários de frete grátis', people.beatriz),
+    timeEntry(1210, -2, 3.5, 9, 'Tela de pagamento', people.beatriz),
+    timeEntry(1211, -1, 2, 9, 'Formulário da newsletter', people.rafael),
+    timeEntry(1216, 0, 1, 10, 'Revisão de textos com o time', people.rafael)
 ]
 
 const spentOn = (issueId) =>
@@ -794,6 +858,7 @@ function route(method, url, body) {
     if (path === '/__demo/change') return simulateChange(url.searchParams)
     if (path === '/my/account.json') return { user: me }
     if (path === '/issue_statuses.json') return { issue_statuses: statuses }
+    if (path === '/trackers.json') return { trackers: Object.values(trackers) }
     if (path === '/projects.json') return { projects: [{ ...project, identifier: 'loja' }], total_count: 1 }
     if (path === '/queries.json') return { queries: savedQueries, total_count: savedQueries.length }
     if (path === `/projects/${project.id}/versions.json`) return { versions }
@@ -901,7 +966,26 @@ function demoConfig() {
             { id: 'q-bugs', name: 'Defeitos abertos da loja', queryId: 71, alertOn: 'increase', enabled: true }
         ],
         sprints: { sprintPattern: '^\\d+\\.\\d+$', hotfixPattern: '^\\d+\\.\\d+\\.\\d+$', projectId: project.id },
-        dashboard: { staleDays: 5 }
+        dashboard: { staleDays: 5 },
+        teams: [{ id: 't-loja', name: 'Time da loja', members: Object.values(people) }],
+        handoffRules: [
+            {
+                id: 'r-qa',
+                name: 'Enviar para QA',
+                mode: 'other',
+                trackerIds: [trackers.dev.id],
+                statusIds: [],
+                targetTrackerId: trackers.qa.id,
+                statusId: 2,
+                assigneeId: people.beatriz.id,
+                assigneeName: people.beatriz.name,
+                template: '* Trâmite de {{tipoAtividadeComentario}}: {{noteSelecionado}}',
+                multiTemplate: '* Trâmites de {{tipoAtividadeComentario}}:\n  - {{noteSelecionado}}',
+                logTime: true,
+                bulk: false,
+                closingSteps: [{ trackerId: trackers.dev.id, statusId: 110 }]
+            }
+        ]
     }
 }
 

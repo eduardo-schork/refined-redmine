@@ -1,3 +1,5 @@
+import { assertValidRules } from '@domain/automation/handoff'
+import { assertValidTeam } from '@domain/time/team'
 import { withIssueStyleDefaults } from '@domain/redmine/issue-style'
 import {
     affectsMonitor,
@@ -29,6 +31,20 @@ function cleanUpdates(patch: SettingsPatch): SettingsPatch {
     return { ...patch, updates: withUpdateDefaults(patch.updates) }
 }
 
+/** Each team needs a name and members; names are saved without spaces at the ends. */
+function cleanTeams(patch: SettingsPatch): SettingsPatch {
+    if (patch.teams === undefined) return patch
+    const teams = patch.teams.map((team) => ({ ...team, name: team.name.trim() }))
+    teams.forEach(assertValidTeam)
+    return { ...patch, teams }
+}
+
+/** Rules are checked and tidied before saving (names, default templates, incomplete closing steps). */
+function cleanHandoffRules(patch: SettingsPatch): SettingsPatch {
+    if (patch.handoffRules === undefined) return patch
+    return { ...patch, handoffRules: assertValidRules(patch.handoffRules) }
+}
+
 function updateScheduleChanged(previous: Settings, patch: SettingsPatch): boolean {
     if (!patch.updates) return false
     const autoCheckChanged = patch.updates.autoCheck !== previous.updates.autoCheck
@@ -50,7 +66,7 @@ export class UpdateSettingsUseCase {
 
     execute(patch: SettingsPatch): SettingsView {
         const previous = this.settings.get()
-        const cleanPatch = cleanUpdates(cleanIssueStyle(clampPollSeconds(patch)))
+        const cleanPatch = cleanHandoffRules(cleanTeams(cleanUpdates(cleanIssueStyle(clampPollSeconds(patch)))))
         this.settings.save({ ...previous, ...cleanPatch })
 
         const { openAtLogin, language } = cleanPatch

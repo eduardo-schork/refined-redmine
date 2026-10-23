@@ -9,6 +9,7 @@ import { LAYER_HEX, useDeleteEvent, useDisplayItems, useSaveEvent, type DisplayI
 import { useSettings, useUpdateSettings } from '@/hooks/session'
 import { localId } from '@/lib/ids'
 import { useI18n } from '@/lib/i18n'
+import { useIsActiveTab } from '@/lib/workspace-tabs'
 import { Button } from '@/ui/atoms/Button'
 import { IconButton } from '@/ui/atoms/IconButton'
 import { ColorDot, Overline } from '@/ui/atoms/misc'
@@ -307,10 +308,11 @@ export default function CalendarPage({
         return actions.get(key)
     }
 
-    // Google Calendar-like keyboard shortcuts.
+    // Google Calendar-like keyboard shortcuts, only while the calendar is the tab in front.
+    const isActiveTab = useIsActiveTab()
     useEffect(() => {
         const handleKeyDown = (keyboardEvent: KeyboardEvent) => {
-            if (isShortcutBlocked(keyboardEvent)) return
+            if (!isActiveTab || isShortcutBlocked(keyboardEvent)) return
             const action = shortcutAction(keyboardEvent.key.toLowerCase())
             if (!action) return
             action()

@@ -1,4 +1,8 @@
+import type { NearbyIssue } from '@domain/automation/handoff'
+import type { OvertimeBank, OvertimeDraft } from '@domain/time/overtime'
 import type { AttachmentPreview } from '@domain/redmine/attachment-kind'
+import type { ProjectCustomFields } from '@domain/redmine/custom-fields'
+import type { BulkChange, BulkEditResult, IssueNoteChange, IssueTreeNode } from '@domain/redmine/issue-tree'
 import type {
     AppInfo,
     BoardIssues,
@@ -24,6 +28,7 @@ import type {
     IssueDetail,
     IssuePriority,
     IssueStatus,
+    Named,
     Page,
     Project,
     SavedQuery
@@ -62,6 +67,16 @@ export interface RefinedApi {
         edit(id: number, change: IssueFieldsChange): IssueEditResult
         /** Trackers, people and open versions of a project, for creating and editing its issues. */
         editOptions(projectId: number): IssueEditOptions
+        /** Custom fields of each tracker of a project, with values already used, learned from its recent issues. */
+        customFields(projectId: number): ProjectCustomFields
+        /** The issue with its parent, related issues and up to 3 levels of subtasks. */
+        tree(id: number): IssueTreeNode[]
+        /** Applies status, assignee and version to one issue, sending only what differs. */
+        bulkEdit(id: number, change: BulkChange): BulkEditResult
+        /** Issues around this one (parent, subtasks, relations…), closest first, with journals; for handoffs. */
+        nearby(id: number, trackerIds: number[]): NearbyIssue[]
+        /** A comment (and files) with status, assignee and version, in one update; reports what Redmine ignored. */
+        commentAndChange(id: number, change: IssueNoteChange, uploads?: IssueUpload[]): BulkEditResult
         /** `uploads`: files attached to the new issue (sent to Redmine first). */
         create(issue: NewIssue, uploads?: IssueUpload[]): Issue
     }
@@ -70,17 +85,27 @@ export interface RefinedApi {
         projects(): Project[]
         savedQueries(): SavedQuery[]
         priorities(): IssuePriority[]
+        trackers(): Named[]
         timeActivities(): TimeEntryActivity[]
     }
     time: {
         forIssue(issueId: number): TimeEntry[]
         /** The signed-in user's entries between two dates (inclusive), with their issues. */
         mine(from: LocalDate, to: LocalDate): MyTimeEntries
+        /** Entries of the given people between two dates, with their issues (only what the user's role may see). */
+        team(memberIds: number[], from: LocalDate, to: LocalDate): MyTimeEntries
         log(draft: TimeEntryDraft): TimeEntry
         edit(id: number, draft: TimeEntryDraft): void
         remove(id: number): void
         /** Logs the previous week's entries again one week later; returns how many were created. */
         repeatWeek(previousWeekStart: LocalDate, previousWeekEnd: LocalDate): number
+    }
+    /** The overtime bank, kept only in this app (overtime.json). Each change returns the whole bank. */
+    overtime: {
+        list(): OvertimeBank
+        add(draft: OvertimeDraft): OvertimeBank
+        remove(id: string): OvertimeBank
+        setPaid(month: string, paid: boolean): OvertimeBank
     }
     attachments: {
         /** Image (data URL) or text of an attachment, to show inside the app. */
@@ -163,10 +188,16 @@ export const API_METHODS = {
         'search',
         'edit',
         'editOptions',
+        'customFields',
+        'tree',
+        'bulkEdit',
+        'nearby',
+        'commentAndChange',
         'create'
     ],
-    reference: ['statuses', 'projects', 'savedQueries', 'priorities', 'timeActivities'],
-    time: ['forIssue', 'mine', 'log', 'edit', 'remove', 'repeatWeek'],
+    reference: ['statuses', 'projects', 'savedQueries', 'priorities', 'trackers', 'timeActivities'],
+    time: ['forIssue', 'mine', 'team', 'log', 'edit', 'remove', 'repeatWeek'],
+    overtime: ['list', 'add', 'remove', 'setPaid'],
     attachments: ['preview', 'open'],
     timer: ['status', 'start', 'pause', 'resume', 'stop', 'discard'],
     boards: ['issues', 'save', 'remove', 'move'],

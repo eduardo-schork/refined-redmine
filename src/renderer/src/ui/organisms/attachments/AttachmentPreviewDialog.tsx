@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { AppWindow, ChevronLeft, ChevronRight, ExternalLink, X } from 'lucide-react'
 import { canOpenInSystem, type AttachmentPreview } from '@domain/redmine/attachment-kind'
 import type { Attachment } from '@domain/redmine/entities'
@@ -128,6 +128,7 @@ function PreviewBody({ preview }: { preview: ReturnType<typeof useAttachmentPrev
 
 export function PreviewContent({ preview }: { preview: AttachmentPreview }) {
     const { t } = useI18n()
+    if (preview.kind === 'video' || preview.kind === 'audio') return <MediaPlayer preview={preview} />
     if (preview.kind === 'image') {
         return (
             <div className="flex h-full items-center justify-center p-4">
@@ -143,6 +144,36 @@ export function PreviewContent({ preview }: { preview: AttachmentPreview }) {
             {preview.truncated && <p className="px-5 pb-5 text-xs text-muted">{t('attachments.truncated')}</p>}
         </div>
     )
+}
+
+type MediaPreview = Extract<AttachmentPreview, { kind: 'video' | 'audio' }>
+
+/**
+ * Plays from a blob: URL made from the downloaded bytes (the CSP allows blob: only for media). The URL is
+ * released when the player goes away.
+ */
+function MediaPlayer({ preview }: { preview: MediaPreview }) {
+    const { t } = useI18n()
+    // Remembers which file failed: the arrows reuse this player for the next file.
+    const [failedPreview, setFailedPreview] = useState<MediaPreview>()
+    const onError = () => setFailedPreview(preview)
+    const attachSource = useCallback(
+        (player: HTMLMediaElement | null) => {
+            if (!player) return
+            const sourceUrl = URL.createObjectURL(new Blob([preview.bytes as BlobPart], { type: preview.mimeType }))
+            player.src = sourceUrl
+            return () => URL.revokeObjectURL(sourceUrl)
+        },
+        [preview]
+    )
+    if (failedPreview === preview) return <Alert className="m-5">{t('attachments.cannotPlay')}</Alert>
+    const player =
+        preview.kind === 'video' ? (
+            <video ref={attachSource} controls autoPlay className="max-h-full max-w-full" onError={onError} />
+        ) : (
+            <audio ref={attachSource} controls autoPlay className="w-full max-w-lg" onError={onError} />
+        )
+    return <div className="flex h-full items-center justify-center bg-black/80 p-4">{player}</div>
 }
 
 /** JSON on one line is unreadable; it is shown indented. Anything else is shown as it is. */

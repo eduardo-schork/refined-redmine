@@ -13,17 +13,19 @@ export interface ReleaseAsset {
     id: number
     name: string
     size: number
-    /** API address used to download it (needs the token on a private repository). */
+    /** API address used to download it (a token is only needed while the repository is private). */
     downloadUrl: string
+    /** SHA-256 GitHub computed for the file (hex), checked after downloading; absent on old releases. */
+    sha256?: string
 }
 
-export type UpdatePhase =
-    'disabled' | 'idle' | 'checking' | 'upToDate' | 'available' | 'downloading' | 'ready' | 'error'
+export type UpdatePhase = 'idle' | 'checking' | 'upToDate' | 'available' | 'downloading' | 'ready' | 'error'
 
 /** What the Settings screen and the sidebar show about updates. */
 export interface UpdateStatus {
     phase: UpdatePhase
     currentVersion: string
+    /** A personal token is optional: it raises GitHub's limit of 60 checks per hour per network address. */
     hasToken: boolean
     latest?: Release
     checkedAt?: string

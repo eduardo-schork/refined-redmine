@@ -4,7 +4,7 @@ import type { Version } from '../redmine/entities'
  * Team convention:
  * - Sprint: version "X.Y" (e.g. 3.78). Cycle: development → dev deadline → QA (staging) → release.
  * - Hotfix: version "X.Y.Z" (e.g. 3.77.1) — fixes on the quality (staging) branch of sprint X.Y.
- * - Other versions (backlog, site, …) are groupings.
+ * - Other versions (backlog, …) are groupings.
  */
 export type SprintKind = 'sprint' | 'hotfix' | 'other'
 export type SprintPhase = 'dev' | 'qa' | 'late' | 'planned' | 'production' | 'hotfix' | 'released' | 'other'

@@ -25,6 +25,8 @@ export interface RedmineCredentials {
 /** Time entries of the signed-in user, of an issue, or both, between two dates (inclusive). */
 export interface TimeEntryQuery {
     mine?: boolean
+    /** Someone else's entries: only those the user's role may see ("View spent time"). */
+    userId?: number
     issueId?: number
     from?: LocalDate
     to?: LocalDate
@@ -33,6 +35,8 @@ export interface TimeEntryQuery {
 export interface IssueUpdate extends IssueFieldsChange {
     statusId?: number
     notes?: string
+    /** Files already sent with `uploadFile`, attached with this update. */
+    uploads?: UploadedFile[]
 }
 
 /** Errors surface as AppError. Without explicit credentials, the session ones are used. */
@@ -57,6 +61,8 @@ export interface RedmineGateway {
     /** Trackers (issue types) enabled in the project. */
     listProjectTrackers(projectId: number): Promise<Named[]>
     listPriorities(): Promise<IssuePriority[]>
+    /** Every tracker of the Redmine (readable without administrator rights). */
+    listTrackers(): Promise<Named[]>
     listTimeEntries(query: TimeEntryQuery): Promise<TimeEntry[]>
     createTimeEntry(draft: TimeEntryDraft): Promise<TimeEntry>
     updateTimeEntry(id: number, draft: TimeEntryDraft): Promise<void>

@@ -18,11 +18,13 @@ class FakeSource implements ReleaseSource {
     published: Release | null = release('0.3.0')
     downloads: ReleaseAsset[] = []
     failWith?: AppError
-    async latest() {
+    async latest(token: string | null) {
+        this.tokensSeen.push(token)
         if (this.failWith) throw this.failWith
         return this.published
     }
-    async download(asset: ReleaseAsset, _token: string, onProgress: (fraction: number) => void) {
+    tokensSeen: (string | null)[] = []
+    async download(asset: ReleaseAsset, _token: string | null, onProgress: (fraction: number) => void) {
         this.downloads.push(asset)
         onProgress(0.5)
         onProgress(1)
@@ -95,10 +97,11 @@ describe('UpdateService', () => {
         expect(calls).toEqual([])
     })
 
-    it('without a token it stays disabled and never asks GitHub', async () => {
+    it('without a token it still checks the public releases and downloads', async () => {
         const { service, source } = setup(null)
-        source.failWith = new AppError('update.http', { status: 500 })
-        expect((await service.check()).phase).toBe('disabled')
+        expect((await service.check()).phase).toBe('available')
+        expect(source.tokensSeen).toEqual([null])
+        expect((await service.download()).phase).toBe('ready')
     })
 
     it('finds a newer version, downloads the installer of this computer and opens it', async () => {
@@ -141,10 +144,11 @@ describe('UpdateService', () => {
         expect(tokens.value).toBeNull()
     })
 
-    it('saving a token checks right away; removing it disables updates', async () => {
-        const { service, tokens } = setup(null)
+    it('saving a token checks right away with it; removing it goes back to checking without one', async () => {
+        const { service, tokens, source } = setup(null)
         expect((await service.setToken('  ghp_new  ')).phase).toBe('available')
         expect(tokens.value).toBe('ghp_new')
-        expect((await service.setToken(null)).phase).toBe('disabled')
+        await service.setToken(null)
+        expect(source.tokensSeen.at(-1)).toBeNull()
     })
 })
