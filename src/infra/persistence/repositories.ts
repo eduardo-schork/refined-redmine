@@ -59,10 +59,10 @@ function upgrade(stored: AppNotification | LegacyNotification): AppNotification 
     }
 }
 
-function markAsRead(notification: AppNotification, ids: string[] | 'all'): AppNotification {
+function withReadState(notification: AppNotification, ids: string[] | 'all', read: boolean): AppNotification {
     const selected = ids === 'all' || ids.includes(notification.id)
     if (!selected) return notification
-    return { ...notification, read: true }
+    return { ...notification, read }
 }
 
 export class JsonNotificationRepository implements NotificationRepository {
@@ -80,8 +80,24 @@ export class JsonNotificationRepository implements NotificationRepository {
     }
 
     markRead(ids: string[] | 'all'): AppNotification[] {
+        return this.setRead(ids, true)
+    }
+
+    markUnread(ids: string[]): AppNotification[] {
+        return this.setRead(ids, false)
+    }
+
+    remove(ids: string[]): AppNotification[] {
         const updated = this.file.update((state) => {
-            const events = state.events.map(upgrade).map((notification) => markAsRead(notification, ids))
+            const events = state.events.map(upgrade).filter((notification) => !ids.includes(notification.id))
+            return { ...state, events }
+        })
+        return updated.events.map(upgrade)
+    }
+
+    private setRead(ids: string[] | 'all', read: boolean): AppNotification[] {
+        const updated = this.file.update((state) => {
+            const events = state.events.map(upgrade).map((notification) => withReadState(notification, ids, read))
             return { ...state, events }
         })
         return updated.events.map(upgrade)

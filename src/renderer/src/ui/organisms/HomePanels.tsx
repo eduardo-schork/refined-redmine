@@ -258,8 +258,9 @@ function StaleLabel({ issue, today }: { issue: Issue; today: Date }) {
 }
 
 function deadlineColor(daysLeft: number): string {
-    if (daysLeft < 0) return 'font-medium text-danger'
-    if (daysLeft <= DUE_SOON_WARN_DAYS) return 'text-warn'
+    if (daysLeft < 0) return 'font-medium text-due-overdue'
+    if (daysLeft === 0) return 'text-due-today'
+    if (daysLeft <= DUE_SOON_WARN_DAYS) return 'text-due-soon'
     return 'text-muted'
 }
 

@@ -6,7 +6,8 @@ import {
     useRef,
     useState,
     type KeyboardEvent,
-    type ReactNode
+    type ReactNode,
+    type RefObject
 } from 'react'
 import { ExternalLink, Pencil, X } from 'lucide-react'
 import type { CustomFieldValue, IssueDetail, Journal, JournalDetail } from '@domain/redmine/entities'
@@ -19,6 +20,7 @@ import { api } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { rememberIssue } from '@/lib/recent-issues'
 import { SUBMIT_SHORTCUT, useModifierShortcut } from '@/lib/shortcuts'
+import { useIsActiveTab } from '@/lib/workspace-tabs'
 import { Avatar } from '../atoms/Avatar'
 import { Button } from '../atoms/Button'
 import { Input, Select, Textarea } from '../atoms/fields'
@@ -32,7 +34,7 @@ import { Alert, Property } from '../molecules/surfaces'
 import { useToast } from '../molecules/Toast'
 import { IssueCreateDialog } from './IssueCreateDialog'
 import { IssueFieldEditors, useSaveField } from './IssueFieldEditors'
-import { DueChip, PriorityChip, VersionChip } from '../molecules/issue-chips'
+import { DueChip, PriorityChip, TrackerLabel, VersionChip } from '../molecules/issue-chips'
 import { IssueDetailTabs } from './IssueDetailTabs'
 import { IssueQuickActions } from './IssueQuickActions'
 import { SendNoteButton } from './handoff/HandoffButtons'
@@ -51,6 +53,7 @@ interface MarkdownLinkProps {
 }
 
 // Any screen can open the modal with openIssue(id); opened issues form a stack so "← back" returns to the previous one.
+// Inside a tab it opens in that tab's modal; outside (sidebar, search, system notifications), in the tab in front.
 const OpenIssueContext = createContext<(id: number) => void>(() => {})
 export const useOpenIssue = () => useContext(OpenIssueContext)
 
@@ -61,6 +64,9 @@ export const useNewIssue = () => useContext(NewIssueContext)
 
 const ScreenDefaultsContext = createContext<(defaults?: NewIssueDefaults) => void>(() => {})
 
+type NewIssueOpener = (defaults?: NewIssueDefaults) => void
+const FrontTabNewIssueContext = createContext<RefObject<NewIssueOpener | undefined>>({ current: undefined })
+
 /** Project and sprint for issues created while this screen is shown (⌘N and the sidebar button). */
 export function useScreenIssueDefaults({ projectId, fixedVersionId }: NewIssueDefaults) {
     const register = useContext(ScreenDefaultsContext)
@@ -70,34 +76,78 @@ export function useScreenIssueDefaults({ projectId, fixedVersionId }: NewIssueDe
     }, [register, projectId, fixedVersionId])
 }
 
-export function IssueModalProvider({ children }: { children: ReactNode }) {
-    const [stack, setStack] = useState<number[]>([])
+/** Outside the tabs: issues and the "New issue" form (also ⌘N) open in the tab in front. */
+export function IssueModalProvider({
+    onOpenIssue,
+    children
+}: {
+    onOpenIssue: (id: number) => void
+    children: ReactNode
+}) {
+    const frontTabNewIssue = useRef<NewIssueOpener>(undefined)
+    const openNewIssue = useCallback((defaults?: NewIssueDefaults) => frontTabNewIssue.current?.(defaults), [])
+    useModifierShortcut('n', openNewIssue)
+    return (
+        <FrontTabNewIssueContext.Provider value={frontTabNewIssue}>
+            <OpenIssueContext.Provider value={onOpenIssue}>
+                <NewIssueContext.Provider value={openNewIssue}>{children}</NewIssueContext.Provider>
+            </OpenIssueContext.Provider>
+        </FrontTabNewIssueContext.Provider>
+    )
+}
+
+/** While this tab is in front, the "New issue" opened outside the tabs is this tab's. */
+function useFrontTabNewIssue(openNewIssue: NewIssueOpener) {
+    const isActiveTab = useIsActiveTab()
+    const frontTabNewIssue = useContext(FrontTabNewIssueContext)
+    useEffect(() => {
+        if (!isActiveTab) return
+        frontTabNewIssue.current = openNewIssue
+        return () => {
+            if (frontTabNewIssue.current === openNewIssue) frontTabNewIssue.current = undefined
+        }
+    }, [isActiveTab, frontTabNewIssue, openNewIssue])
+}
+
+/**
+ * The issue modal and "New issue" form of one tab. They are hidden with the tab and come back as they were, so each
+ * tab can have its own issue open. `issues` is the tab's stack, oldest first.
+ */
+export function TabIssueModals({
+    issues,
+    onOpenIssue,
+    onBack,
+    children
+}: {
+    issues: number[]
+    onOpenIssue: (id: number) => void
+    onBack: () => void
+    children: ReactNode
+}) {
     const [newIssue, setNewIssue] = useState<NewIssueDefaults>()
     const screenDefaults = useRef<NewIssueDefaults>(undefined)
-    const current = stack[stack.length - 1]
-    const pushIssue = useCallback((id: number) => setStack((previous) => [...previous, id]), [])
-    const popIssue = () => setStack((previous) => previous.slice(0, -1))
+    const current = issues.at(-1)
     const registerScreenDefaults = useCallback((defaults?: NewIssueDefaults) => {
         screenDefaults.current = defaults
     }, [])
     const openNewIssue = useCallback((defaults?: NewIssueDefaults) => {
         setNewIssue(defaults ?? screenDefaults.current ?? {})
     }, [])
-    useModifierShortcut('n', openNewIssue)
+    useFrontTabNewIssue(openNewIssue)
     return (
-        <OpenIssueContext.Provider value={pushIssue}>
+        <OpenIssueContext.Provider value={onOpenIssue}>
             <NewIssueContext.Provider value={openNewIssue}>
                 <ScreenDefaultsContext.Provider value={registerScreenDefaults}>
                     {children}
                 </ScreenDefaultsContext.Provider>
                 {current !== undefined && (
-                    <IssueModal key={current} id={current} canGoBack={stack.length > 1} onClose={popIssue} />
+                    <IssueModal key={current} id={current} canGoBack={issues.length > 1} onClose={onBack} />
                 )}
                 {newIssue && (
                     <IssueCreateDialog
                         defaults={newIssue}
                         onClose={() => setNewIssue(undefined)}
-                        onCreated={pushIssue}
+                        onCreated={onOpenIssue}
                     />
                 )}
             </NewIssueContext.Provider>
@@ -207,7 +257,7 @@ function IssueHeader({
                             ← {t('common.back')}
                         </button>
                     )}
-                    <span>{issue?.tracker.name}</span>
+                    {issue && <TrackerLabel tracker={issue.tracker} />}
                     <span className="font-medium">#{id}</span>
                     {issue && <span>· {issue.project.name}</span>}
                     {parent && (

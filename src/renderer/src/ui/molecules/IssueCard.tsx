@@ -1,13 +1,13 @@
 import { Pause } from 'lucide-react'
 import type { Issue } from '@domain/redmine/entities'
-import { priorityLevel } from '@domain/redmine/issue-signals'
 import { isStale } from '@domain/redmine/queue'
 import { daysSince } from '@domain/shared/date'
+import { cardAccentStyle } from '@/lib/issue-colors'
 import { useIssueStyle } from '@/lib/issue-style'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/cn'
 import { Avatar } from '../atoms/Avatar'
-import { DueChip, PRIORITY_STRIPE, PriorityChip, VersionChip } from './issue-chips'
+import { DueChip, PriorityChip, TrackerLabel, VersionChip } from './issue-chips'
 import { StatusTag } from './StatusTag'
 
 export interface IssueCardOptions {
@@ -23,19 +23,19 @@ export interface IssueCardOptions {
  */
 export function IssueCard({ issue, overlay, options }: { issue: Issue; overlay?: boolean; options: IssueCardOptions }) {
     const now = new Date()
-    const level = priorityLevel(issue.priority, useIssueStyle())
+    const accentStyle = cardAccentStyle(issue, useIssueStyle())
     return (
         <div
             className={cn(
-                'rounded-lg border border-l-[3px] border-line bg-panel px-3 py-2.5 text-sm shadow-sm hover:border-muted/50',
-                PRIORITY_STRIPE[level],
+                'tracker-color rounded-lg border border-l-[3px] border-line bg-panel px-3 py-2.5 text-sm shadow-sm hover:border-muted/50',
                 overlay && 'rotate-1 cursor-grabbing shadow-xl'
             )}
+            style={accentStyle}
         >
             <div className="mb-1 flex items-center gap-1.5 text-xs text-muted">
                 <span className="font-semibold tabular-nums text-fg/80">#{issue.id}</span>
                 <span>·</span>
-                <span className="truncate">{issue.tracker.name}</span>
+                <TrackerLabel tracker={issue.tracker} />
                 <span className="ml-auto" />
                 <PriorityChip priority={issue.priority} />
             </div>

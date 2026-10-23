@@ -80,13 +80,16 @@ function useResults(input: string, onDone: () => void) {
             openIssue(id)
         }
         const matches = (label: string) => !term || foldForSearch(label).includes(term)
-        const pages = PAGES.filter((page) => matches(t(page.labelKey as 'nav.home'))).map<SearchResult>((page) => ({
-            key: `page-${page.route.page}`,
-            section: 'pages',
-            icon: page.icon,
-            label: t(page.labelKey as 'nav.home'),
-            run: () => goTo(page.route)
-        }))
+        const visiblePages = PAGES.filter((page) => settings.showLog || page.route.page !== 'log')
+        const pages = visiblePages
+            .filter((page) => matches(t(page.labelKey as 'nav.home')))
+            .map<SearchResult>((page) => ({
+                key: `page-${page.route.page}`,
+                section: 'pages',
+                icon: page.icon,
+                label: t(page.labelKey as 'nav.home'),
+                run: () => goTo(page.route)
+            }))
         const boards = settings.boards
             .filter((board) => matches(board.name))
             .map<SearchResult>((board) => ({
@@ -108,7 +111,7 @@ function useResults(input: string, onDone: () => void) {
               }))
         const issues = searching ? (search.data ?? []).map((issue) => issueResult(issue, open)) : []
         return [...recent, ...issues, ...boards, ...pages]
-    }, [term, searching, search.data, settings.boards, t, onDone, navigate, openIssue])
+    }, [term, searching, search.data, settings.boards, settings.showLog, t, onDone, navigate, openIssue])
 
     const loading = searching && (search.isFetching || debounced !== input)
     return { items, loading, searchedTerm: debounced }

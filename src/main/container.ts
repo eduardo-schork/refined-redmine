@@ -357,6 +357,8 @@ export function createContainer(presentation: () => Presentation) {
         notifications: {
             list: () => feed.list(),
             markRead: (ids) => feed.markRead(ids),
+            markUnread: (ids) => feed.markUnread(ids),
+            remove: (ids) => feed.remove(ids),
             clear: () => feed.clear(),
             test: () => permission.sendTest(),
             confirm: (seen) => permission.confirm(seen),

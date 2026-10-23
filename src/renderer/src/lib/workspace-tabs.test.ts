@@ -1,13 +1,17 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { parseRoute } from './router'
 import {
     closeOtherTabs,
     closeTab,
     keepTabs,
+    loadTabs,
     moveTab,
     openNewTab,
     openTab,
+    popIssue,
+    pushIssue,
     routePath,
+    saveTabs,
     stepTab,
     tabAt,
     tabKey,
@@ -98,5 +102,53 @@ describe('duplicates, order and closing the others', () => {
             tabs: [{ key: 'board:b1', route: { page: 'board', boardId: 'b1' } }],
             activeKey: 'board:b1'
         })
+    })
+})
+
+describe('issues open in a tab', () => {
+    const state = open({ page: 'home' }, { page: 'board', boardId: 'b1' })
+    const issuesOf = (tabs: WorkspaceTabs, key: string) => tabs.tabs.find((tab) => tab.key === key)?.issues
+
+    it('each tab keeps its own stack; the same issue is not stacked twice in a row', () => {
+        const opened = pushIssue(pushIssue(pushIssue(state, 'home', 1), 'home', 2), 'home', 2)
+        const withBoardIssue = pushIssue(opened, 'board:b1', 3)
+        expect(issuesOf(withBoardIssue, 'home')).toEqual([1, 2])
+        expect(issuesOf(withBoardIssue, 'board:b1')).toEqual([3])
+        expect(issuesOf(popIssue(withBoardIssue, 'home'), 'home')).toEqual([1])
+    })
+    it('survive bringing the screen to the front again and moving tabs; closing the tab drops them', () => {
+        const opened = pushIssue(state, 'board:b1', 3)
+        expect(issuesOf(openTab(opened, { page: 'board', boardId: 'b1' }), 'board:b1')).toEqual([3])
+        expect(issuesOf(moveTab(opened, 'board:b1', 'home'), 'board:b1')).toEqual([3])
+        expect(closeTab(opened, 'board:b1').tabs.flatMap((tab) => tab.issues ?? [])).toEqual([])
+    })
+})
+
+describe('saveTabs and loadTabs', () => {
+    afterEach(() => vi.unstubAllGlobals())
+
+    it('reopen the tabs with the issues that were open in each', () => {
+        const stored = new Map<string, string>()
+        vi.stubGlobal('localStorage', {
+            getItem: (key: string) => stored.get(key) ?? null,
+            setItem: (key: string, value: string) => stored.set(key, value)
+        })
+        const state = pushIssue(open({ page: 'home' }, { page: 'board', boardId: 'b1' }), 'board:b1', 7)
+        saveTabs(state)
+        expect(loadTabs()).toEqual({
+            tabs: [
+                { key: 'home', route: { page: 'home' }, issues: [] },
+                { key: 'board:b1', route: { page: 'board', boardId: 'b1' }, issues: [7] }
+            ],
+            activeKey: 'board:b1'
+        })
+    })
+    it('tabs saved before issues were kept open come back without them', () => {
+        const legacy = JSON.stringify({ paths: ['/home', '/nowhere', '/time'], activeIndex: 1 })
+        vi.stubGlobal('localStorage', { getItem: () => legacy })
+        expect(loadTabs()?.tabs).toEqual([
+            { key: 'home', route: { page: 'home' }, issues: [] },
+            { key: 'time', route: { page: 'time' }, issues: [] }
+        ])
     })
 })

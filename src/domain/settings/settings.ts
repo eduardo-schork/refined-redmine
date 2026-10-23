@@ -40,6 +40,8 @@ export interface Settings {
     handoffRules: HandoffRule[]
     /** Last version whose "What's new" was shown. */
     lastSeenVersion?: string
+    /** Diagnostics: the activity log is hidden from the sidebar unless the user turns it on. */
+    showLog: boolean
 }
 
 /** How screens open: in tabs (one per screen or board) or one at a time. */
@@ -93,7 +95,8 @@ export const DEFAULT_SETTINGS: Settings = {
     updates: DEFAULT_UPDATE_PREFERENCES,
     workspace: { tabs: true, restoreTabs: true },
     teams: [],
-    handoffRules: []
+    handoffRules: [],
+    showLog: false
 }
 
 type LegacyAlertOn = 'any' | 'increase' | 'decrease'
@@ -164,6 +167,7 @@ export function withDefaults(loaded: Partial<Settings> & LegacySettings): Settin
         issueStyle: withIssueStyleDefaults(loaded.issueStyle),
         updates: withUpdateDefaults(loaded.updates),
         workspace: { ...defaults.workspace, ...loaded.workspace },
+        showLog: loaded.showLog === true,
         calendar: { ...defaults.calendar, ...loaded.calendar, layers: calendarLayers }
     }
 }

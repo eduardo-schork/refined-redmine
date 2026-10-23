@@ -158,13 +158,15 @@ export function Sidebar({
                         </Badge>
                     )}
                 </NavItem>
-                <NavItem
-                    active={isActive('log')}
-                    onClick={(newTab) => onNavigate({ page: 'log' }, { newTab })}
-                    icon={<ScrollText size={15} />}
-                >
-                    {t('nav.log')}
-                </NavItem>
+                {settings.showLog && (
+                    <NavItem
+                        active={isActive('log')}
+                        onClick={(newTab) => onNavigate({ page: 'log' }, { newTab })}
+                        icon={<ScrollText size={15} />}
+                    >
+                        {t('nav.log')}
+                    </NavItem>
+                )}
                 <NavItem
                     active={isActive('settings')}
                     onClick={(newTab) => onNavigate({ page: 'settings' }, { newTab })}

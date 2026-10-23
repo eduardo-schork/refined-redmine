@@ -9,13 +9,13 @@ import {
     type ListSort
 } from '@domain/board/issue-list'
 import type { Issue } from '@domain/redmine/entities'
-import { dueState, priorityLevel, type DueState } from '@domain/redmine/issue-signals'
+import { dueState, type DueState } from '@domain/redmine/issue-signals'
 import { useStatuses } from '@/hooks/reference'
 import { useI18n } from '@/lib/i18n'
 import { useIssueStyle } from '@/lib/issue-style'
 import { cn } from '@/lib/cn'
 import { Avatar } from '../atoms/Avatar'
-import { PriorityChip, VersionChip } from '../molecules/issue-chips'
+import { hasPriorityChip, PriorityChip, TrackerLabel, VersionChip } from '../molecules/issue-chips'
 import { StatusTag } from '../molecules/StatusTag'
 
 const COLUMNS: { column: ListColumn; labelKey: string }[] = [
@@ -32,9 +32,9 @@ const COLUMNS: { column: ListColumn; labelKey: string }[] = [
 const GRID = 'grid grid-cols-[5rem_8.5rem_10rem_7rem_minmax(0,1fr)_11rem_6rem_6.5rem] items-center gap-3 px-4'
 
 const DUE_TONE: Record<DueState, string> = {
-    overdue: 'font-medium text-danger',
-    today: 'font-medium text-danger',
-    soon: 'font-medium text-warn',
+    overdue: 'font-medium text-due-overdue',
+    today: 'font-medium text-due-today',
+    soon: 'font-medium text-due-soon',
     later: '',
     none: 'text-muted'
 }
@@ -173,7 +173,7 @@ function ListGroup({
 
 function ListRow({ issue, onOpen }: { issue: Issue; onOpen: (id: number) => void }) {
     const { t, dates } = useI18n()
-    const due = dueState(issue, new Date())
+    const due = dueState(issue, new Date(), useIssueStyle().dueSoonDays)
     const assignee = issue.assigned_to?.name
     return (
         <button
@@ -185,7 +185,7 @@ function ListRow({ issue, onOpen }: { issue: Issue; onOpen: (id: number) => void
             )}
         >
             <span className="font-semibold tabular-nums text-fg/85">#{issue.id}</span>
-            <span className="truncate text-fg/85">{issue.tracker.name}</span>
+            <TrackerLabel tracker={issue.tracker} className="text-fg/85" />
             <span className="min-w-0">
                 <StatusTag status={issue.status} className="max-w-full truncate" />
             </span>
@@ -214,6 +214,6 @@ function ListRow({ issue, onOpen }: { issue: Issue; onOpen: (id: number) => void
 /** Normal priority has no chip (to keep attention on the others): the column still says what it is. */
 function PriorityCell({ issue }: { issue: Issue }) {
     const rules = useIssueStyle()
-    if (priorityLevel(issue.priority, rules) !== 'normal') return <PriorityChip priority={issue.priority} />
+    if (hasPriorityChip(issue.priority, rules)) return <PriorityChip priority={issue.priority} />
     return <span className="text-muted">{issue.priority.name}</span>
 }

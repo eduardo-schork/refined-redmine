@@ -1,83 +1,151 @@
-import { AlarmClock, AtSign, Bell, FilePlus2, ListFilter, LogOut, MessageSquare, Shuffle, UserPlus } from 'lucide-react'
-import type { ReactNode } from 'react'
-import type { AppNotification, NotificationKind } from '@domain/notification/notification'
-import { describeSources, formatNotification } from '@shared/i18n/format/notification'
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { groupByDay } from '@domain/notification/inbox'
+import type { AppNotification } from '@domain/notification/notification'
+import { daysUntil, parseLocal, type LocalDate } from '@domain/shared/date'
+import { formatNotification } from '@shared/i18n/format/notification'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/cn'
+import { Kbd } from '../atoms/Kbd'
+import { Overline } from '../atoms/misc'
+import { NotificationItem, type NotificationActions } from './NotificationItem'
 
-const ICONS: Record<NotificationKind, ReactNode> = {
-    new_issue: <FilePlus2 size={15} />,
-    assigned: <UserPlus size={15} />,
-    status: <Shuffle size={15} />,
-    comment: <MessageSquare size={15} />,
-    mention: <AtSign size={15} />,
-    updated: <Bell size={15} />,
-    unqueued: <LogOut size={15} />,
-    query: <ListFilter size={15} />,
-    reminder: <AlarmClock size={15} />
+const STEP_KEYS: Record<string, number> = { ArrowDown: 1, j: 1, ArrowUp: -1, k: -1 }
+
+const ITEM_KEYS: Record<string, keyof NotificationActions> = {
+    Enter: 'open',
+    e: 'toggleRead',
+    Delete: 'remove',
+    Backspace: 'remove'
 }
 
-/** Full history (Notifications page). */
+function dayLabel(date: LocalDate, now: Date, { t, dates }: Pick<ReturnType<typeof useI18n>, 't' | 'dates'>): string {
+    const offset = daysUntil(date, now)
+    if (offset === 0) return t('notificationsPage.today')
+    if (offset === -1) return t('notificationsPage.yesterday')
+    const day = parseLocal(date)
+    const options: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'long' }
+    if (day.getFullYear() !== now.getFullYear()) options.year = 'numeric'
+    return dates.format(day, options)
+}
+
+/** After removing the selected row, the selection goes to the next one (or the previous one at the end). */
+function neighborOf(ordered: AppNotification[], id: string): string | undefined {
+    const index = ordered.findIndex((notification) => notification.id === id)
+    const neighbor = ordered[index + 1] ?? ordered[index - 1]
+    return neighbor?.id
+}
+
+function useKeyboardSelection(ordered: AppNotification[], actions: NotificationActions) {
+    const [activeId, setActiveId] = useState<string>()
+    const listRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const active = listRef.current?.querySelector('[data-active="true"]')
+        active?.scrollIntoView({ block: 'nearest' })
+    }, [activeId])
+
+    const moveBy = (step: number) => {
+        if (!ordered.length) return
+        const index = ordered.findIndex((notification) => notification.id === activeId)
+        const start = index < 0 && step < 0 ? ordered.length : index
+        const nextIndex = Math.min(ordered.length - 1, Math.max(0, start + step))
+        setActiveId(ordered[nextIndex].id)
+    }
+
+    const runOnActive = (action: keyof NotificationActions) => {
+        const active = ordered.find((notification) => notification.id === activeId)
+        if (!active) return
+        if (action === 'remove') setActiveId(neighborOf(ordered, active.id))
+        actions[action](active)
+    }
+
+    const handleKeyDown = (keyboardEvent: KeyboardEvent) => {
+        if (keyboardEvent.metaKey || keyboardEvent.ctrlKey || keyboardEvent.altKey) return
+        // The hover buttons (read, remove, Redmine) keep their own Enter.
+        const onRowAction = (keyboardEvent.target as HTMLElement).closest('[data-row-actions]')
+        if (onRowAction) return
+        const step = STEP_KEYS[keyboardEvent.key]
+        const action = ITEM_KEYS[keyboardEvent.key]
+        if (!step && !action) return
+        keyboardEvent.preventDefault()
+        if (step) {
+            moveBy(step)
+            return
+        }
+        runOnActive(action)
+    }
+
+    return { activeId, setActiveId, listRef, handleKeyDown }
+}
+
+/** Full history (Notifications page), grouped by day, with keyboard navigation. */
 export function NotificationList({
     items,
-    onOpen
+    now,
+    actions
 }: {
     items: AppNotification[]
-    onOpen: (notification: AppNotification) => void
+    now: Date
+    actions: NotificationActions
 }) {
-    const now = new Date()
+    const { t, dates } = useI18n()
+    const days = groupByDay(items)
+    const ordered = days.flatMap((day) => day.items)
+    const { activeId, setActiveId, listRef, handleKeyDown } = useKeyboardSelection(ordered, actions)
     return (
-        <ul className="flex flex-col gap-1">
-            {items.map((notification) => (
-                <li key={notification.id}>
-                    <NotificationCard notification={notification} now={now} onOpen={onOpen} />
-                </li>
+        <div
+            ref={listRef}
+            role="listbox"
+            aria-label={t('nav.notifications')}
+            tabIndex={0}
+            onKeyDown={handleKeyDown}
+            className="flex flex-col gap-3 rounded-lg outline-none"
+        >
+            {days.map((day) => (
+                <section key={day.date}>
+                    <div className="sticky top-0 z-10 flex items-baseline gap-2 bg-bg/95 px-2 py-1.5 backdrop-blur">
+                        <Overline>{dayLabel(day.date, now, { t, dates })}</Overline>
+                        <span className="text-2xs tabular-nums text-muted">{day.items.length}</span>
+                    </div>
+                    <ul className="flex flex-col">
+                        {day.items.map((notification) => (
+                            <li key={notification.id} role="option" aria-selected={notification.id === activeId}>
+                                <NotificationItem
+                                    notification={notification}
+                                    now={now}
+                                    active={notification.id === activeId}
+                                    actions={actions}
+                                    onFocus={() => setActiveId(notification.id)}
+                                />
+                            </li>
+                        ))}
+                    </ul>
+                </section>
             ))}
-        </ul>
+            <KeyboardHint />
+        </div>
     )
 }
 
-function NotificationCard({
-    notification,
-    now,
-    onOpen
-}: {
-    notification: AppNotification
-    now: Date
-    onOpen: (notification: AppNotification) => void
-}) {
-    const { t, dates } = useI18n()
-    const text = formatNotification(notification, t, dates, now)
-    const [subject, ...extraLines] = text.body.split('\n')
-    const via = describeSources(notification, t)
-    const { read } = notification
+function KeyboardHint() {
+    const { t } = useI18n()
+    const hints = [
+        { keys: ['↑', '↓'], label: t('notificationsPage.keys.move') },
+        { keys: ['↵'], label: t('notificationsPage.keys.open') },
+        { keys: ['E'], label: t('notificationsPage.keys.read') },
+        { keys: ['⌫'], label: t('notificationsPage.keys.remove') }
+    ]
     return (
-        <button
-            onClick={() => onOpen(notification)}
-            className={cn(
-                'flex w-full cursor-default items-start gap-3 rounded-lg border px-3 py-2.5 text-left',
-                read
-                    ? 'border-transparent hover:bg-panel'
-                    : 'border-line border-l-accent border-l-[3px] bg-panel hover:border-muted/40'
-            )}
-        >
-            <span className={cn('mt-0.5 shrink-0', read ? 'text-muted' : 'text-accent')}>
-                {ICONS[notification.kind]}
-            </span>
-            <span className="min-w-0 flex-1">
-                <span className="flex items-baseline gap-2">
-                    <span className={cn('truncate text-sm', !read && 'font-semibold')}>{text.title}</span>
-                    <span className="ml-auto shrink-0 text-2xs text-muted">
-                        {dates.relativeTime(notification.createdAt, now)}
-                    </span>
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 py-2 text-2xs text-muted">
+            {hints.map((hint) => (
+                <span key={hint.label} className="inline-flex items-center gap-1">
+                    {hint.keys.map((key) => (
+                        <Kbd key={key}>{key}</Kbd>
+                    ))}
+                    {hint.label}
                 </span>
-                <span className="block truncate text-sm">{subject}</span>
-                {extraLines.length > 0 && (
-                    <span className="block whitespace-pre-line text-xs text-muted">{extraLines.join('\n')}</span>
-                )}
-                {via && <span className="block text-2xs text-accent">{via}</span>}
-            </span>
-        </button>
+            ))}
+        </div>
     )
 }
 

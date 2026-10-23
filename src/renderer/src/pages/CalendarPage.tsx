@@ -118,7 +118,9 @@ function isShortcutBlocked(keyboardEvent: KeyboardEvent): boolean {
     if (keyboardEvent.metaKey || keyboardEvent.ctrlKey || keyboardEvent.altKey) return true
     const target = keyboardEvent.target as HTMLElement
     const isTyping = /INPUT|TEXTAREA|SELECT/.test(target.tagName)
-    const dialogOpen = Boolean(document.querySelector('[role=dialog], .fixed.inset-0'))
+    // Dialogs of hidden tabs stay in the page; only a visible one blocks the shortcuts.
+    const dialogs = document.querySelectorAll('[role=dialog], .fixed.inset-0')
+    const dialogOpen = Array.from(dialogs).some((dialog) => dialog.checkVisibility())
     return isTyping || dialogOpen
 }
 

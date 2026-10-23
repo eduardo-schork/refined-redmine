@@ -12,6 +12,7 @@ import { Button } from '../atoms/Button'
 import { Select } from '../atoms/fields'
 import { Dialog } from '../molecules/Dialog'
 import { ToggleField } from '../molecules/Field'
+import { TrackerLabel } from '../molecules/issue-chips'
 import { PhaseBadge } from '../molecules/sprint'
 import { useOpenIssue } from './IssueModal'
 
@@ -123,7 +124,7 @@ function StatusGroup({ status, issues }: { status: IssueStatus; issues: Issue[] 
                             className="flex w-full cursor-default items-center gap-3 border-b border-line px-3 py-1.5 text-left text-sm last:border-0 hover:bg-panel-2"
                         >
                             <span className="w-16 shrink-0 text-xs tabular-nums text-muted">#{issue.id}</span>
-                            <span className="w-28 shrink-0 truncate text-xs text-muted">{issue.tracker.name}</span>
+                            <TrackerLabel tracker={issue.tracker} className="w-28 shrink-0 text-xs text-muted" />
                             <span className="min-w-0 flex-1 truncate">{issue.subject}</span>
                             <Avatar name={issue.assigned_to?.name} />
                         </button>

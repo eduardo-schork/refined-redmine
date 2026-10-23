@@ -33,6 +33,11 @@ describe('withDefaults', () => {
         }
         expect(withDefaults({ monitors: [other] }).monitors.map((monitor) => monitor.id)).toEqual(['mine', 'x'])
     })
+    it('hides the log from the sidebar unless it was explicitly turned on', () => {
+        expect(withDefaults({}).showLog).toBe(false)
+        expect(withDefaults({ showLog: 'yes' as unknown as boolean }).showLog).toBe(false)
+        expect(withDefaults({ showLog: true }).showLog).toBe(true)
+    })
 })
 
 describe('appearance', () => {
@@ -40,7 +45,7 @@ describe('appearance', () => {
         const appearance = withDefaults({
             appearance: { theme: 'neon', accent: 'red', scale: 300, darkPalette: 'black' } as never
         }).appearance
-        expect(appearance).toMatchObject({ theme: 'system', accent: '#c43a3a', scale: 100, darkPalette: 'black' })
+        expect(appearance).toMatchObject({ theme: 'system', accent: '#0085ff', scale: 100, darkPalette: 'black' })
     })
     it('picks readable text on the accent', () => {
         expect(textOnAccent('#c43a3a')).toBe('#ffffff')

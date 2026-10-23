@@ -207,12 +207,12 @@ function ColumnHeader({
             <span className="text-xs font-semibold uppercase tracking-wide">{name}</span>
             <Badge className="font-semibold">{issues.length}</Badge>
             {overdue > 0 && (
-                <span className="text-2xs font-semibold text-danger" title={t('board.column.overdueHint')}>
+                <span className="text-2xs font-semibold text-due-overdue" title={t('board.column.overdueHint')}>
                     {t('board.column.overdue', { count: overdue })}
                 </span>
             )}
             {highPriority > 0 && (
-                <span className="text-2xs font-semibold text-warn" title={t('board.column.highPriorityHint')}>
+                <span className="text-2xs font-semibold text-pr-high" title={t('board.column.highPriorityHint')}>
                     {t('board.column.highPriority', { count: highPriority })}
                 </span>
             )}

@@ -4,8 +4,8 @@ import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/cn'
 
 const SIGNAL_STYLES: Record<IssueSignal, { icon: LucideIcon; tone: string }> = {
-    overdue: { icon: AlarmClock, tone: 'text-danger' },
-    highPriority: { icon: ChevronsUp, tone: 'text-warn' },
+    overdue: { icon: AlarmClock, tone: 'text-due-overdue' },
+    highPriority: { icon: ChevronsUp, tone: 'text-pr-high' },
     stale: { icon: Pause, tone: 'text-warn' },
     unassigned: { icon: UserX, tone: 'text-fg/80' }
 }

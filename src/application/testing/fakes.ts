@@ -194,9 +194,19 @@ export class MemoryNotifications implements NotificationRepository {
         this.items = [...items, ...this.items]
     }
     markRead(ids: string[] | 'all') {
+        return this.setRead(ids, true)
+    }
+    markUnread(ids: string[]) {
+        return this.setRead(ids, false)
+    }
+    remove(ids: string[]) {
+        this.items = this.items.filter((notification) => !ids.includes(notification.id))
+        return this.items
+    }
+    private setRead(ids: string[] | 'all', read: boolean) {
         const shouldMark = (notification: AppNotification) => ids === 'all' || ids.includes(notification.id)
         this.items = this.items.map((notification) =>
-            shouldMark(notification) ? { ...notification, read: true } : notification
+            shouldMark(notification) ? { ...notification, read } : notification
         )
         return this.items
     }

@@ -6,7 +6,12 @@ export interface DistributionSegment {
     count: number
     /** Background class of the segment and of its legend dot. */
     colorClass: string
+    /** CSS color that replaces the class (a color the user picked). */
+    color?: string
 }
+
+const segmentStyle = (segment: DistributionSegment) => (segment.color ? { backgroundColor: segment.color } : {})
+const segmentClass = (segment: DistributionSegment) => (segment.color ? undefined : segment.colorClass)
 
 const percentOf = (count: number, total: number) => (total ? Math.round((count / total) * 100) : 0)
 
@@ -20,15 +25,18 @@ export function DistributionBar({ segments }: { segments: DistributionSegment[] 
                     <div
                         key={segment.key}
                         title={`${segment.label}: ${segment.count}`}
-                        className={cn('h-full border-r-2 border-panel last:border-r-0', segment.colorClass)}
-                        style={{ width: `${(segment.count / Math.max(total, 1)) * 100}%` }}
+                        className={cn('h-full border-r-2 border-panel last:border-r-0', segmentClass(segment))}
+                        style={{ ...segmentStyle(segment), width: `${(segment.count / Math.max(total, 1)) * 100}%` }}
                     />
                 ))}
             </div>
             <div className="flex flex-wrap gap-x-5 gap-y-2">
                 {segments.map((segment) => (
                     <span key={segment.key} className="flex items-center gap-1.5 text-sm">
-                        <span className={cn('h-2.5 w-2.5 rounded-full', segment.colorClass)} />
+                        <span
+                            className={cn('h-2.5 w-2.5 rounded-full', segmentClass(segment))}
+                            style={segmentStyle(segment)}
+                        />
                         <span>{segment.label}</span>
                         <span className="font-semibold tabular-nums">{segment.count}</span>
                         <span className="text-xs text-muted">{percentOf(segment.count, total)}%</span>

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_ISSUE_STYLE } from './issue-style'
 import { statusTone } from './status-tone'
 
 const open = (name: string) => ({ id: 1, name, is_closed: false })
@@ -16,7 +17,7 @@ describe('statusTone', () => {
     })
 
     it('lets the user choose the color of a status', () => {
-        const rules = { statusTones: { 1: 'review' as const }, priorityLevels: {}, dueSoonDays: 3 }
+        const rules = { ...DEFAULT_ISSUE_STYLE, statusTones: { 1: 'review' as const } }
         expect(statusTone(open('Aguardando deploy'), rules)).toBe('review')
         expect(statusTone({ id: 3, name: 'Aguardando deploy', is_closed: false }, rules)).toBe('blocked')
     })

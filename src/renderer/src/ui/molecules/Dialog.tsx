@@ -2,26 +2,41 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/cn'
+import { useIsActiveTab } from '@/lib/workspace-tabs'
 import { IconButton } from '../atoms/IconButton'
 
 export type DialogSize = 'md' | 'lg' | 'xl'
 const SIZES: Record<DialogSize, string> = { md: 'max-w-lg', lg: 'max-w-3xl', xl: 'h-full max-h-[900px] max-w-5xl' }
 
-/** Open dialogs, oldest first: Esc closes only the one on top (a form opened from the issue detail). */
-const openDialogs: symbol[] = []
+interface OpenDialog {
+    isInFrontTab: () => boolean
+}
+
+/**
+ * Open dialogs, oldest first: Esc closes only the one on top (a form opened from the issue detail). Dialogs of hidden
+ * tabs stay open but are skipped: Esc is for the tab in front.
+ */
+const openDialogs: OpenDialog[] = []
+
+function isOnTop(dialog: OpenDialog): boolean {
+    const visibleDialogs = openDialogs.filter((candidate) => candidate.isInFrontTab())
+    return visibleDialogs[visibleDialogs.length - 1] === dialog
+}
 
 /** Registered once, when the dialog opens: re-renders must not move a dialog to the top. */
 function useEscapeOnTop(onClose: () => void) {
+    const isActiveTab = useIsActiveTab()
     const latestOnClose = useRef(onClose)
+    const latestIsActiveTab = useRef(isActiveTab)
     useEffect(() => {
         latestOnClose.current = onClose
-    }, [onClose])
+        latestIsActiveTab.current = isActiveTab
+    }, [onClose, isActiveTab])
     useEffect(() => {
-        const self = Symbol('dialog')
+        const self: OpenDialog = { isInFrontTab: () => latestIsActiveTab.current }
         openDialogs.push(self)
         const handleKeyDown = (event: KeyboardEvent) => {
-            const onTop = openDialogs[openDialogs.length - 1] === self
-            if (event.key === 'Escape' && onTop) latestOnClose.current()
+            if (event.key === 'Escape' && isOnTop(self)) latestOnClose.current()
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => {

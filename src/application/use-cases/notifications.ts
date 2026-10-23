@@ -14,15 +14,26 @@ export class NotificationFeed {
     }
 
     markRead(ids: string[] | 'all'): AppNotification[] {
-        const items = this.repo.markRead(ids)
-        this.events.notificationsChanged(items)
-        return items
+        return this.publish(this.repo.markRead(ids))
+    }
+
+    markUnread(ids: string[]): AppNotification[] {
+        return this.publish(this.repo.markUnread(ids))
+    }
+
+    remove(ids: string[]): AppNotification[] {
+        return this.publish(this.repo.remove(ids))
     }
 
     clear(): AppNotification[] {
         this.repo.clear()
         this.events.notificationsChanged([])
         return []
+    }
+
+    private publish(items: AppNotification[]): AppNotification[] {
+        this.events.notificationsChanged(items)
+        return items
     }
 }
 
