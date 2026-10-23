@@ -2,7 +2,7 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
-## Próxima versão — cores, notificações e modais por aba
+## 0.11.0 — cores, notificações e modais por aba
 
 - **Cores mais personalizáveis** (Configurações → Aparência → Cores): conjuntos de cores prontos (Padrão, Vívido, Suave e Para daltônicos), cada um com cores para o tema claro e o escuro, e troca de qualquer cor: famílias de status, prioridades, previsão (vencida, hoje, em breve) e mensagens de sucesso, atenção e erro. Prévia com cards de exemplo.
 - **Status e prioridades mais fáceis de colorir**: em vez de listas, cada status mostra as bolinhas das famílias de cor e cada prioridade os botões Urgente, Alta, Normal e Baixa; no **+** dá para escolher qualquer cor só para aquele status ou prioridade.
