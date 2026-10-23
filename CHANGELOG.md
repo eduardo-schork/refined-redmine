@@ -2,7 +2,7 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
-## Próxima versão — trâmites, abas e horas do time
+## 0.10.0 — trâmites, abas e horas do time
 
 - **Trâmites**: botões no detalhe da tarefa, configurados em Configurações → Automações. "Enviar para QA" (por exemplo) acha a tarefa de Qualidade ligada, cita as notas escolhidas num comentário, muda situação e responsável dela, lança as horas e pode fechar as tarefas de desenvolvimento. O **Novo trâmite** faz comentário, situação, responsável, versão e horas da própria tarefa de uma vez. Cada nota do histórico ganhou o botão "Enviar este trâmite".
 - **Abas**: cada tela e cada quadro abrem numa aba no topo, como no navegador. As abas de trás guardam filtros, rolagem e formulários. Arraste para reordenar, duplique uma aba (dois quadros iguais com filtros diferentes), feche as outras e abra em aba nova com ⌘-clique ou clique do meio no menu. Ctrl+Tab passa entre elas e ⌘1…9 vai direto para uma. As abas voltam ao abrir o app, e dá para desligá-las em Configurações → Geral → Abas.
