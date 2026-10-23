@@ -2,6 +2,18 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
+## Próxima versão — cores, notificações e modais por aba
+
+- **Cores mais personalizáveis** (Configurações → Aparência → Cores): conjuntos de cores prontos (Padrão, Vívido, Suave e Para daltônicos), cada um com cores para o tema claro e o escuro, e troca de qualquer cor: famílias de status, prioridades, previsão (vencida, hoje, em breve) e mensagens de sucesso, atenção e erro. Prévia com cards de exemplo.
+- **Status e prioridades mais fáceis de colorir**: em vez de listas, cada status mostra as bolinhas das famílias de cor e cada prioridade os botões Urgente, Alta, Normal e Baixa; no **+** dá para escolher qualquer cor só para aquele status ou prioridade.
+- **Novo ícone azul** (`#0085ff`) e cor de destaque padrão **Azul Refined**, a mesma do ícone. Quem já usa outra cor continua com ela; o azul está em Configurações → Aparência → Cor de destaque.
+- **Cor por tipo de tarefa**: Defeito, Funcionalidade, Suporte… aparecem com um ponto colorido nos cards, na lista e no detalhe; a cor vem do nome e pode ser trocada.
+- **Faixa dos cards**: escolha se a faixa colorida à esquerda mostra a prioridade, o status, o tipo ou nada, e se o card ganha um fundo levemente colorido.
+- **Notificações como caixa de entrada**: agrupadas por dia, filtros por tipo (menções, comentários, situação…) com contagem e por monitor, mudança de situação de → para, trecho do comentário, e ações em cada linha: marcar como lida ou não lida, abrir no Redmine e remover. Teclado: setas ou j/k, Enter, `e` e Delete.
+- **Cada aba com o seu detalhe de tarefa**: a tarefa aberta num quadro fica naquela aba; troque de aba (a barra de abas e o menu continuam clicáveis) e volte com a tarefa e o comentário pela metade no lugar. As tarefas abertas voltam junto com as abas ao abrir o app.
+- **Log escondido**: a tela Log saiu do menu; abra em Configurações → Geral → Diagnóstico ou ligue lá para ela voltar ao menu.
+- **Correções**: a cor da previsão na Lista dos quadros agora respeita os dias de "vence em breve"; Esc e os atalhos da Agenda não reagem mais a janelas de abas escondidas; o ⌘N usa o projeto e a sprint do quadro da frente.
+
 ## 0.10.0 — trâmites, abas e horas do time
 
 - **Trâmites**: botões no detalhe da tarefa, configurados em Configurações → Automações. "Enviar para QA" (por exemplo) acha a tarefa de Qualidade ligada, cita as notas escolhidas num comentário, muda situação e responsável dela, lança as horas e pode fechar as tarefas de desenvolvimento. O **Novo trâmite** faz comentário, situação, responsável, versão e horas da própria tarefa de uma vez. Cada nota do histórico ganhou o botão "Enviar este trâmite".

@@ -54,8 +54,9 @@ Cada tela e cada quadro abrem numa **aba** no topo da janela, como no navegador.
 - Arraste uma aba para mudar a ordem. O botão direito numa aba oferece **Duplicar aba** (duas abas do mesmo quadro, cada uma com seus filtros), **Fechar aba** e **Fechar as outras abas**.
 - **⌘-clique** (Ctrl-clique no Windows) ou clique do meio num item do menu abre uma aba nova mesmo que a tela já esteja aberta.
 - As abas de trás guardam o que estava na tela: filtros, rolagem, a semana da agenda, um formulário pela metade.
+- **Cada aba tem o seu detalhe de tarefa**: abra uma tarefa num quadro, troque de aba (a barra de abas e o menu continuam clicáveis com o detalhe aberto) e, ao voltar, a tarefa continua aberta, com o comentário pela metade. Abas diferentes podem ter tarefas diferentes abertas ao mesmo tempo. Tarefas abertas pela busca, pelo menu ou pela notificação do sistema abrem na aba da frente.
 - **Ctrl+Tab** e **Ctrl+Shift+Tab** passam para a próxima e para a anterior; **⌘1…⌘9** (Ctrl+1…9 no Windows) vão direto para uma aba (⌘9 é a última).
-- Ao abrir o app, as abas da última vez voltam.
+- Ao abrir o app, as abas da última vez voltam, com as tarefas que estavam abertas nelas.
 - Em **Configurações → Geral → Abas** dá para desligar as abas (as telas voltam a abrir uma por vez) ou não reabrir as abas ao iniciar.
 
 ### Bandeja do sistema
@@ -125,7 +126,7 @@ Ao lado do nome de cada coluna, além do total, aparecem em vermelho as **atrasa
 
 Cada card tem uma informação por linha:
 
-1. **Número e tipo**, e à direita a **prioridade**, quando não é Normal: **Urgente/Imediata** em vermelho, **Alta** em amarelo, **Baixa** em cinza. A borda esquerda do card também fica vermelha ou amarela.
+1. **Número e tipo**, e à direita a **prioridade**, quando não é Normal: **Urgente/Imediata** em vermelho, **Alta** em amarelo, **Baixa** em cinza (cores ajustáveis em [Cores das tarefas](#cores-das-tarefas)). A faixa à esquerda do card mostra a prioridade, o status ou o tipo, como você escolher.
 2. **Título**.
 3. **Etiquetas**: versão, previsão (vermelha se venceu ou vence hoje, amarela se vence em até 3 dias (ajustável), com "ontem", "amanhã", "em 2 dias"), o status quando a coluna junta mais de um e o projeto quando o quadro tem mais de um.
 4. **Responsável** (ou "Sem responsável") e quando a tarefa mudou pela última vez. Se ela está parada, aparece "parada há N dias" em amarelo.
@@ -457,7 +458,15 @@ Regras importantes:
 - Na primeira verificação (ou ao ligar um monitor) o app só "tira uma foto": nada do passado é notificado.
 - Quando muitas novidades chegam de uma vez, o sistema mostra uma notificação resumida.
 
-Na tela: **Não lidas** filtra, **Verificar agora** força uma verificação, e os ícones marcam tudo como lido e limpam o histórico. Clicar em um item **abre a tarefa no próprio app** (ou a lista, quando o aviso fala de várias). O mesmo vale para a notificação do sistema: o clique traz o app para a frente já com a tarefa aberta. O número de não lidas também aparece na barra lateral e no ícone da bandeja.
+A tela funciona como uma caixa de entrada:
+
+- As notificações ficam **agrupadas por dia** (Hoje, Ontem, …), e o topo mostra quando foi a última verificação (ou o erro, se houve).
+- **Filtros por tipo** (Menções, Comentários, Situação, Tarefas, Saiu da fila, Consultas, Lembretes) mostram quantas há de cada; **Todas / Não lidas** e, com mais de um monitor, a escolha do monitor completam o filtro.
+- Cada linha mostra o tipo, a tarefa, quem fez, a mudança de situação (de → para) ou o trecho do comentário. Ao passar o mouse: **marcar como lida/não lida**, **abrir no Redmine** e **remover**.
+- Com a lista em foco: **↑/↓** ou **j/k** andam, **Enter** abre, **e** alterna lida/não lida e **Delete** remove.
+- **Verificar agora** força uma verificação; **Marcar todas como lidas** e **Limpar** valem para o histórico inteiro.
+
+Clicar em um item **abre a tarefa no próprio app** (ou a lista, quando o aviso fala de várias). O mesmo vale para a notificação do sistema: o clique traz o app para a frente já com a tarefa aberta. O número de não lidas também aparece na barra lateral e no ícone da bandeja.
 
 ### Criar e editar monitores
 
@@ -475,7 +484,7 @@ Em **Configurações → Notificações → Monitores**: o switch liga e desliga
 
 ![Tela Log](images/log.png)
 
-A tela **Log** (barra lateral → App) mostra o que o app fez:
+A tela **Log** mostra o que o app fez. Ela fica escondida: abra em **Configurações → Geral → Diagnóstico → Abrir log**, ou ligue **Mostrar o Log na barra lateral** para ela voltar ao menu (seção App) e à busca rápida.
 
 - **Requisições** ao Redmine: horário, endereço, status, **tempo** e **tamanho** da resposta (e a tentativa, quando houve nova tentativa).
 - Passos do **monitor**: verificação concluída (quantos monitores e notificações, em quanto tempo), monitor ignorado ou com erro, resultado grande demais para comparar.
@@ -507,10 +516,10 @@ Em **Configurações → Automações** ficam as regras dos [trâmites](#trâmit
 
 - **Tema**: **Do sistema** (segue o claro/escuro do computador), **Claro** ou **Escuro**. Menus, barra de título e barras de rolagem acompanham.
 - **Paleta do tema claro**: Padrão ou Papel (tons mais quentes). **Paleta do tema escuro**: Grafite, Meia-noite (azulado) ou Preto (bom para telas OLED). Cada tema guarda a sua paleta; com "Do sistema", vale a do tema do momento.
-- **Cor de destaque**: usada em botões, links, seleção, dia de hoje e contadores. Escolha uma das 8 cores, clique no **+** para qualquer cor, ou digite o código (ex.: `#2563eb`). O texto sobre a cor fica preto ou branco, o que for mais legível; no tema escuro a cor fica um pouco mais clara.
+- **Cor de destaque**: usada em botões, links, seleção, dia de hoje e contadores. Escolha uma das 9 cores (a padrão é o **Azul Refined**, `#0085ff`, a mesma do ícone), clique no **+** para qualquer cor, ou digite o código (ex.: `#2563eb`). O texto sobre a cor fica preto ou branco, o que for mais legível; no tema escuro a cor fica um pouco mais clara.
 - **Tamanho da interface**: 90%, 100%, 110% ou 125% — textos e espaçamentos de todas as telas.
 - **Reduzir animações**: desliga transições e ícones girando.
-- **Prévia** mostra os componentes com as escolhas atuais; **Restaurar padrão** volta ao visual original.
+- **Prévia** mostra os componentes com as escolhas atuais; **Restaurar padrão** volta ao visual original (as cores das tarefas têm o próprio botão).
 
 ![Aparência, tema claro com destaque azul](images/appearance-light.png)
 
@@ -518,12 +527,20 @@ Em **Configurações → Automações** ficam as regras dos [trâmites](#trâmit
 
 ![Cores das tarefas](images/issue-style.png)
 
-Ainda na aba **Aparência**, a seção **Cores das tarefas** ajusta o que o app deduz pelo nome:
+Ainda na aba **Aparência**, o cartão **Cores** define as cores de todo o app:
 
-- **Cor dos status**: cada status do Redmine aparece com a cor atual. Em "Automático" o app escolhe pelo nome; escolha outra família (Nova, Em andamento, Em aprovação/revisão, Em teste, Em pausa/bloqueada, Concluída, Rejeitada/cancelada) para os status que ficaram com a cor errada.
-- **Nível das prioridades**: diga qual prioridade é Urgente (vermelho), Alta (amarelo), Normal (sem destaque) ou Baixa (cinza). Urgente e Alta entram nos contadores de prioridade alta do Início e dos quadros.
+- **Conjunto de cores**: **Padrão**, **Vívido**, **Suave** ou **Para daltônicos** (cores que continuam diferentes para quem não distingue vermelho e verde). Cada conjunto tem cores para o tema claro e para o escuro.
+- **Faixa lateral dos cards**: o que a faixa colorida à esquerda de cada card mostra: **Prioridade** (padrão), **Status**, **Tipo** ou **Nada**. **Fundo do card colorido** pinta o card de leve com a mesma cor.
+- **Prévia**: etiquetas e cards de exemplo com as cores atuais.
+- **Status**, **Prioridades**, **Previsão** (vencida, vence hoje, vence em breve) e **Mensagens do app** (sucesso, atenção, erro): clique na bolinha para escolher qualquer cor ou digite o código. A cor trocada vale nos dois temas (no escuro fica um pouco mais clara) e continua ao trocar de conjunto; a seta circular, que aparece ao lado de uma cor trocada, volta aquela cor ao conjunto, e **Restaurar cores** volta tudo.
+
+O cartão **Status, prioridades e tipos** ajusta o que o app deduz pelo nome:
+
+- **Cor dos status**: cada status do Redmine aparece com a cor atual e, ao lado, as bolinhas das famílias (Nova, Em andamento, Em aprovação/revisão, Em teste, Em pausa/bloqueada, Concluída, Rejeitada/cancelada; passe o mouse para ver o nome). A bolinha marcada é a atual: o app escolhe pelo nome, e um clique troca a família. No **+** escolha qualquer cor só para aquele status. A seta circular volta ao automático.
+- **Prioridades**: clique em **Urgente**, **Alta**, **Normal** ou **Baixa** para dizer o nível de cada prioridade. O nível define a seta e os contadores de prioridade alta do Início e dos quadros (Urgente e Alta); Normal fica sem destaque. No **+** escolha qualquer cor para a prioridade (com cor própria, até uma Normal aparece nos cards). A seta circular volta ao automático.
 - **Destacar previsão a partir de**: quantos dias antes a previsão fica amarela nos cards (padrão 3; 0 = só no dia e vencidas).
-- **Voltar ao automático** apaga as escolhas de status e prioridades.
+- **Cor dos tipos**: o tipo da tarefa (Defeito, Funcionalidade, Suporte…) aparece com um ponto colorido nos cards, na lista e no detalhe. A cor vem do nome; escolha outra para qualquer tipo.
+- **Voltar ao automático** apaga as escolhas de status, prioridades e tipos.
 
 A prévia ao lado de cada item muda na hora, e a escolha vale em todo o app.
 
