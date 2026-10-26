@@ -34,7 +34,7 @@ Como usar cada tela: [manual do usuário](docs/MANUAL.md).
 **Agenda**
 
 - Visões dia, semana, mês e lista; criar clicando ou arrastando na grade; cores, local, descrição e vínculo com tarefa do Redmine.
-- Repetição como no Google Agenda (dias úteis, semanal em vários dias, mensal no dia N ou na Nª segunda, anual, personalizada com fim por data ou contagem) e edição "este / este e os seguintes / todos".
+- Repetição como no Google Agenda (dias úteis, semanal em vários dias, mensal no dia N, na Nª segunda ou no último dia útil, anual, personalizada com fim por data ou contagem) e edição "este / este e os seguintes / todos".
 - Lembretes (5 min, 1 dia antes…) com notificação do sistema, mesmo com a janela fechada.
 - Camadas do Redmine: prazos e publicações das sprints, prazos das minhas tarefas.
 - Compromissos salvos em `calendar.json` na pasta de dados do app.
@@ -48,9 +48,11 @@ Como usar cada tela: [manual do usuário](docs/MANUAL.md).
 
 **Detalhes da atividade**
 
-- Clique em qualquer tarefa (kanban, início, sprints) abre um modal com descrição (Markdown), campos, abas de tarefas relacionadas (subtarefas e relações com título, status e responsável), anexos (imagens, texto, vídeo e áudio vistos no próprio app, documentos no app do sistema; imagens citadas na descrição e nos comentários aparecem como miniatura) e horas, e histórico; permite mudar status, comentar e editar título, descrição, tipo, prioridade, responsável, versão, datas, % concluído, estimativa e tarefa pai. Descrição longa aparece cortada em 25 linhas, com "Mostrar tudo".
+- Clique em qualquer tarefa (kanban, início, sprints) abre um modal com descrição (Markdown), campos, abas de tarefas relacionadas (subtarefas e relações com título, status e responsável), anexos (imagens, texto, vídeo e áudio vistos no próprio app, documentos no app do sistema; imagens citadas na descrição e nos comentários aparecem como miniatura) e horas, e histórico; permite mudar status, comentar e editar título, descrição, tipo, prioridade, responsável, versão, datas, % concluído, estimativa e tarefa pai. Descrição longa aparece cortada em 25 linhas, com "Mostrar tudo". Botão **Atualizar** para reler a tarefa, cópia (número, link, título, descrição) junto de cada campo, histórico em ordem crescente ou decrescente e detalhe maior e redimensionável em telas grandes.
+- **Editor de Markdown** (comentários, trâmites, descrição) com Escrever/Visualizar, barra de formatação e imagem colada virando anexo e `![](…)` no texto.
 - **Abas**: cada tela e cada quadro abrem numa aba (Ctrl+Tab, ⌘1…9), que guarda o estado e volta ao reabrir o app; configurável em Configurações → Geral → Abas.
-- **Trâmites** configuráveis (Configurações → Automações) no detalhe da tarefa: comentar e mover a própria tarefa ou enviar para a tarefa vizinha (ex.: Qualidade) citando notas, com horas e fechamento; **Alterar em massa** situação, responsável e versão de uma árvore de tarefas.
+- **Trâmites** configuráveis (Configurações → Automações) no detalhe da tarefa: comentar e mover a própria tarefa ou enviar para a tarefa vizinha (ex.: Qualidade) citando notas, com horas (do cronômetro, ou contadas desde um trâmite e divididas pelo expediente em normais e extras) e fechamento; **Alterar em massa** situação, responsável e versão de uma árvore de tarefas.
+- **Ações do Claude Code** (Configurações → Automações): botões por tipo/situação que abrem o Claude Code na pasta do projeto (ou um chat no app Claude) com um prompt sobre a tarefa, e opcionalmente mudam a situação.
 - **Horas extras** (banco no app, meses no banco ou pagos) e **Tempo do time** (horas por pessoa e dia, médias, detalhe por tarefa ou atividade).
 - **Criar tarefa** pela barra lateral, por `⌘N`/`Ctrl+N` ou pelo quadro (já no projeto e na sprint do quadro), e **Nova subtarefa** no detalhe: projeto, tipo, título, descrição, campos personalizados do tipo (com sugestões; a subtarefa herda da pai), anexos (escolher, arrastar ou colar, com miniaturas), prioridade, responsável, versão, tarefa pai, datas e estimativa.
 - **Busca rápida** (`⌘K` / `Ctrl+K`): tarefa por `#número` ou título, quadros, telas e tarefas recentes. Links `#1234` abrem no próprio modal. Botão "Abrir no Redmine".
@@ -58,9 +60,11 @@ Como usar cada tela: [manual do usuário](docs/MANUAL.md).
 **Kanban**
 
 - Quadro a partir de: tarefas atribuídas a mim, um projeto (com/sem subprojetos), uma consulta salva, um **filtro copiado da tela do Redmine (URL)** ou uma sprint — fixa ou automática ("sprint em desenvolvimento", "em homologação", "correção aberta"), que troca sozinha quando a sprint muda de fase.
-- Colunas configuráveis; cada coluna agrupa um ou mais status.
+- Colunas configuráveis; cada coluna agrupa um ou mais status. Ao criar um quadro, as colunas vêm sugeridas pelas situações das tarefas da origem.
 - Arrastar um card muda o status no Redmine. Ao começar a arrastar, o app consulta `allowed_statuses` da tarefa e esmaece as colunas que o fluxo de trabalho não permite.
-- Raias por responsável, atualização automática a cada 60 s.
+- Raias por versão, situação, responsável ou tipo (o mesmo "Agrupar por" da lista), atualização automática a cada 60 s.
+- Quadro **Ágil** (minhas tarefas abertas, uma coluna por situação) criado uma vez; quadros reordenáveis arrastando na barra lateral.
+- Menu **⋮** em cada card e linha: abrir, alterar situação, alterar em massa, novo trâmite, trâmites e ações do Claude, abrir no Redmine.
 - **Filtros rápidos** para quadro e lista: busca, responsável, tipo, situação e versão (várias opções de cada).
 - **Lista**: as tarefas do quadro em linhas, como no Redmine, agrupadas por versão, situação, responsável ou tipo e ordenáveis por coluna, com o cabeçalho fixo ao rolar. Cada quadro lembra a visualização, os filtros e a ordenação.
 - Notificações do quadro (opcional): cards que entram, saem ou mudam de coluna, comentários e menções.
@@ -70,12 +74,12 @@ Como usar cada tela: [manual do usuário](docs/MANUAL.md).
 
 **Horas**
 
-- Lançar, editar e excluir horas no detalhe da tarefa; cronômetro na barra lateral e na bandeja (pausa ao dormir e por ociosidade); tela Minhas horas com a semana, grade tarefas × dias e repetir semana passada.
+- Lançar, editar e excluir horas no detalhe da tarefa (trocando também situação e responsável, se quiser), com resumo por pessoa × atividade; cronômetro na barra lateral e na bandeja (pausa ao dormir e por ociosidade; pode mudar a situação ao iniciar); tela Minhas horas com a semana, grade tarefas × dias e repetir semana passada.
 
 **Notificações**
 
 - Monitor em segundo plano (continua na bandeja ao fechar a janela).
-- **Monitores**: "Minhas tarefas" (atribuídas/observadas/criadas por mim) + quantos quiser de consulta salva, filtro por URL ou quadro, cada um com os próprios avisos (nova tarefa, atribuição, status, comentário, menção, outras alterações, entrou/saiu) e horário opcional. Alterações feitas por você mesmo não notificam.
+- **Monitores**: "Minhas tarefas" (atribuídas/observadas/criadas por mim) + quantos quiser de consulta salva, filtro por URL ou quadro, cada um com os próprios avisos (nova tarefa, atribuição, status, comentário, menção, outras alterações, entrou/saiu, **quantidade** "menos de N"/"mais de N") e horário opcional, numa tela própria na barra lateral. Alterações feitas por você mesmo não notificam.
 - Saída de tarefa: avisa quando uma tarefa sai da sua fila (passada para outra pessoa ou fechada), dizendo quem fez.
 - A mesma alteração vista por dois monitores vira uma notificação só ("via …").
 - Janela de horário opcional, som, abrir ao iniciar o sistema, contador na bandeja/dock.
