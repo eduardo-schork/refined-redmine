@@ -217,6 +217,7 @@ export class MemoryNotifications implements NotificationRepository {
 
 export class MemoryMonitorState implements MonitorStateRepository {
     watermark?: string
+    monitorWatermarks: Record<string, string> = {}
     snapshots = new Map<string, QuerySnapshot>()
     delivery?: DeliveryRecord
     confirmation?: DeliveryConfirmation
@@ -225,6 +226,12 @@ export class MemoryMonitorState implements MonitorStateRepository {
     }
     setWatermark(iso: string) {
         this.watermark = iso
+    }
+    getMonitorWatermarks() {
+        return this.monitorWatermarks
+    }
+    setMonitorWatermarks(watermarks: Record<string, string>) {
+        this.monitorWatermarks = watermarks
     }
     getSnapshot(id: string) {
         return this.snapshots.get(id)
@@ -242,6 +249,7 @@ export class MemoryMonitorState implements MonitorStateRepository {
     }
     reset() {
         this.watermark = undefined
+        this.monitorWatermarks = {}
         this.snapshots.clear()
     }
     getDelivery() {

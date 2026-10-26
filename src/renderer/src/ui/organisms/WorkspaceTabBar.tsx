@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent, type MouseEvent, type WheelEvent } from 'react'
 import {
     Bell,
+    BellRing,
     CalendarDays,
     Clock,
     Flag,
@@ -28,6 +29,7 @@ const PAGE_ICONS: Record<Route['page'], LucideIcon> = {
     team: Users,
     board: KanbanSquare,
     notifications: Bell,
+    monitors: BellRing,
     log: ScrollText,
     settings: SettingsIcon
 }

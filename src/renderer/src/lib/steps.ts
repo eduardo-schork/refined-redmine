@@ -13,6 +13,24 @@ export interface StepOutcome {
     message?: string
 }
 
+/** A step that did not fully work (Redmine ignored something, or it failed), with what to call it. */
+export interface StepProblem {
+    key: string
+    label: string
+    outcome: StepOutcome
+}
+
+/** The planned steps that ended with a warning or failed, in order. */
+export function stepProblems(
+    planned: Step[],
+    outcomes: Record<string, StepOutcome>,
+    labelOf: (key: string) => string
+): StepProblem[] {
+    return planned
+        .map((step) => ({ key: step.key, label: labelOf(step.key), outcome: outcomes[step.key] }))
+        .filter((problem) => problem.outcome?.state === 'warning' || problem.outcome?.state === 'failed')
+}
+
 const isFinished = (outcome?: StepOutcome) => outcome?.state === 'done' || outcome?.state === 'warning'
 
 /**

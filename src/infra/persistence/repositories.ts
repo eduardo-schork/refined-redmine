@@ -131,6 +131,14 @@ export class JsonMonitorStateRepository implements MonitorStateRepository {
         this.file.update((state) => ({ ...state, lastCheckAt: iso }))
     }
 
+    getMonitorWatermarks() {
+        return this.file.read().monitorWatermarks ?? {}
+    }
+
+    setMonitorWatermarks(watermarks: Record<string, string>) {
+        this.file.update((state) => ({ ...state, monitorWatermarks: watermarks }))
+    }
+
     getSnapshot(id: string) {
         return this.file.read().querySnapshots[id]
     }
@@ -158,7 +166,12 @@ export class JsonMonitorStateRepository implements MonitorStateRepository {
     }
 
     reset() {
-        this.file.update((state) => ({ ...state, lastCheckAt: undefined, querySnapshots: {} }))
+        this.file.update((state) => ({
+            ...state,
+            lastCheckAt: undefined,
+            monitorWatermarks: undefined,
+            querySnapshots: {}
+        }))
     }
 
     getDelivery(): DeliveryRecord | undefined {

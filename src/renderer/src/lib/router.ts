@@ -1,7 +1,15 @@
 import { createContext, useContext } from 'react'
 import type { AppNotification } from '@domain/notification/notification'
 
-export const SETTINGS_TABS = ['general', 'appearance', 'notifications', 'calendar', 'work', 'automations'] as const
+export const SETTINGS_TABS = [
+    'general',
+    'appearance',
+    'notifications',
+    'calendar',
+    'work',
+    'automations',
+    'backup'
+] as const
 export type SettingsTab = (typeof SETTINGS_TABS)[number]
 
 function settingsTab(value: string | null): SettingsTab | undefined {
@@ -18,9 +26,10 @@ export type Route =
     | { page: 'time' }
     | { page: 'overtime' }
     | { page: 'team' }
+    | { page: 'monitors' }
     | { page: 'settings'; tab?: SettingsTab }
 
-const PARAMETERLESS_PAGES = ['notifications', 'log', 'sprints', 'home', 'time', 'overtime', 'team'] as const
+const PARAMETERLESS_PAGES = ['notifications', 'log', 'sprints', 'home', 'time', 'overtime', 'team', 'monitors'] as const
 type ParameterlessPage = (typeof PARAMETERLESS_PAGES)[number]
 
 const isParameterlessPage = (page: string): page is ParameterlessPage =>

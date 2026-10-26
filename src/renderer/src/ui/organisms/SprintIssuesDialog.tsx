@@ -9,8 +9,8 @@ import { useI18n } from '@/lib/i18n'
 import { Avatar } from '../atoms/Avatar'
 import { Badge } from '../atoms/Badge'
 import { Button } from '../atoms/Button'
-import { Select } from '../atoms/fields'
 import { Dialog } from '../molecules/Dialog'
+import { PickList } from '../molecules/PickList'
 import { ToggleField } from '../molecules/Field'
 import { TrackerLabel } from '../molecules/issue-chips'
 import { PhaseBadge } from '../molecules/sprint'
@@ -65,7 +65,7 @@ export function SprintIssuesDialog({
 
     return (
         <Dialog
-            size="lg"
+            size="xl"
             title={sprint.version.name}
             onClose={onClose}
             footer={
@@ -83,12 +83,17 @@ export function SprintIssuesDialog({
                     })}
                 </span>
                 <div className="ml-auto flex items-center gap-3">
-                    <Select className="w-48" value={assignee} onChange={(event) => setAssignee(event.target.value)}>
-                        <option value="">{t('sprints.allAssignees')}</option>
-                        {people.map((person) => (
-                            <option key={person}>{person}</option>
-                        ))}
-                    </Select>
+                    <PickList
+                        className="w-48"
+                        value={assignee}
+                        options={[
+                            { value: '', label: t('sprints.allAssignees') },
+                            ...people.map((person) => ({ value: person, label: person }))
+                        ]}
+                        searchPlaceholder={t('issue.edit.searchPerson')}
+                        noMatches={t('issue.edit.noPerson')}
+                        onPick={(option) => setAssignee(option.value)}
+                    />
                     <div className="w-32">
                         <ToggleField checked={onlyMine} onChange={setOnlyMine} label={t('sprints.onlyMine')} />
                     </div>

@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest'
 import type { IssueDetail, IssueStatus } from '../redmine/entities'
 import { departedIds, explainQueueExit } from './queue-exit'
 import { diffMembership } from './query-diff'
-import { assertValidMonitor, availableEvents, createMineMonitor, defaultEvents, isEventEnabled } from './monitor'
+import {
+    assertValidMonitor,
+    availableEvents,
+    countRuleReached,
+    createMineMonitor,
+    defaultEvents,
+    isEventEnabled
+} from './monitor'
 import { isWithinSchedule } from './schedule'
 
 const statuses = new Map<number, IssueStatus>([
@@ -127,5 +134,29 @@ describe('isWithinSchedule', () => {
         expect(isWithinSchedule(schedule, new Date(2026, 8, 28, 19))).toBe(false)
         expect(isWithinSchedule(schedule, new Date(2026, 8, 27, 10))).toBe(false) // Sunday
         expect(isWithinSchedule({ ...schedule, enabled: false }, new Date(2026, 8, 27, 3))).toBe(true)
+    })
+})
+
+describe('count rule', () => {
+    const below2 = { op: 'below' as const, value: 2 }
+
+    it('fires when the count starts to hold, not while it keeps holding', () => {
+        expect(countRuleReached(3, 1, below2)).toBe(true)
+        expect(countRuleReached(1, 0, below2)).toBe(false)
+        expect(countRuleReached(1, 3, below2)).toBe(false)
+        expect(countRuleReached(9, 12, { op: 'above', value: 10 })).toBe(true)
+    })
+
+    it('fires on the first check of a new monitor whose rule already holds', () => {
+        expect(countRuleReached(undefined, 1, below2)).toBe(true)
+        expect(countRuleReached(undefined, 2, below2)).toBe(false)
+    })
+
+    it('needs a whole number ("fewer than 0" never holds)', () => {
+        const monitor = { ...createMineMonitor({ assigned: true, watched: false, authored: false }) }
+        const query = { ...monitor, id: 'q', name: 'Q', source: { type: 'query' as const, queryId: 1 } }
+        expect(() => assertValidMonitor({ ...query, count: { op: 'below', value: 0 } })).toThrow()
+        expect(() => assertValidMonitor({ ...query, count: { op: 'above', value: 1.5 } })).toThrow()
+        expect(() => assertValidMonitor({ ...query, count: { op: 'above', value: 0 } })).not.toThrow()
     })
 })

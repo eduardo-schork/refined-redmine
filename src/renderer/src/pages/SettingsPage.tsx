@@ -1,14 +1,18 @@
 import { useState, type ReactNode } from 'react'
-import { Bell, Briefcase, CalendarDays, Palette, UserRound, Workflow } from 'lucide-react'
+import { Archive, Bell, Briefcase, CalendarDays, Palette, UserRound, Workflow } from 'lucide-react'
 import { useI18n } from '@/lib/i18n'
-import type { SettingsTab } from '@/lib/router'
+import { useNavigate, type SettingsTab } from '@/lib/router'
+import { Button } from '@/ui/atoms/Button'
+import { Card } from '@/ui/molecules/surfaces'
 import { NavItem } from '@/ui/molecules/NavItem'
 import { AppearanceSection } from '@/ui/organisms/settings/AppearanceSection'
+import { BackupSection } from '@/ui/organisms/settings/BackupSection'
+import { ClaudeActionsSection } from '@/ui/organisms/settings/ClaudeActionsSection'
 import { HandoffRulesSection } from '@/ui/organisms/settings/HandoffRulesSection'
 import { IssueColorsSection } from '@/ui/organisms/settings/IssueColorsSection'
 import { IssueStyleSection } from '@/ui/organisms/settings/IssueStyleSection'
-import { MonitorsSection } from '@/ui/organisms/settings/MonitorsSection'
 import { UpdatesSection } from '@/ui/organisms/settings/UpdatesSection'
+import { WorkTimeSection } from '@/ui/organisms/settings/WorkTimeSection'
 import {
     AboutSection,
     AccountSection,
@@ -23,13 +27,29 @@ import {
 } from '@/ui/organisms/settings/sections'
 import { PageLayout } from '@/ui/templates/layouts'
 
+/** Monitors moved to their own screen (sidebar): this card points there. */
+function MonitorsLink() {
+    const { t } = useI18n()
+    const navigate = useNavigate()
+    return (
+        <Card
+            title={t('nav.monitors')}
+            description={t('monitors.movedHint')}
+            actions={<Button onClick={() => navigate({ page: 'monitors' })}>{t('monitors.open')}</Button>}
+        >
+            {null}
+        </Card>
+    )
+}
+
 const TAB_ICONS: Record<SettingsTab, ReactNode> = {
     general: <UserRound size={15} />,
     appearance: <Palette size={15} />,
     notifications: <Bell size={15} />,
     calendar: <CalendarDays size={15} />,
     work: <Briefcase size={15} />,
-    automations: <Workflow size={15} />
+    automations: <Workflow size={15} />,
+    backup: <Archive size={15} />
 }
 
 const TAB_SECTIONS: Record<SettingsTab, () => ReactNode> = {
@@ -53,7 +73,7 @@ const TAB_SECTIONS: Record<SettingsTab, () => ReactNode> = {
     notifications: () => (
         <>
             <MonitoringSection />
-            <MonitorsSection />
+            <MonitorsLink />
             <ScheduleSection />
         </>
     ),
@@ -64,10 +84,17 @@ const TAB_SECTIONS: Record<SettingsTab, () => ReactNode> = {
             <HomeSection />
         </>
     ),
-    automations: () => <HandoffRulesSection />
+    automations: () => (
+        <>
+            <HandoffRulesSection />
+            <ClaudeActionsSection />
+            <WorkTimeSection />
+        </>
+    ),
+    backup: () => <BackupSection />
 }
 
-const TAB_ORDER: SettingsTab[] = ['general', 'appearance', 'notifications', 'calendar', 'work', 'automations']
+const TAB_ORDER: SettingsTab[] = ['general', 'appearance', 'notifications', 'calendar', 'work', 'automations', 'backup']
 
 export default function SettingsPage({ tab = 'general' }: { tab?: SettingsTab }) {
     const { t } = useI18n()

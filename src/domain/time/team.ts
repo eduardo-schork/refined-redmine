@@ -131,6 +131,33 @@ export function groupEntries(entries: TimeEntry[], by: EntryGrouping): EntryGrou
     return sorted
 }
 
+export interface HoursMatrix {
+    /** Kinds of work, most hours first. */
+    activities: string[]
+    rows: { person: Named; byActivity: Record<string, number>; total: number }[]
+    activityTotals: Record<string, number>
+    total: number
+}
+
+/** Who spent how long on what kind of work (people and activities with the most hours first). */
+export function hoursByPersonAndActivity(entries: TimeEntry[]): HoursMatrix {
+    const activityTotals: Record<string, number> = {}
+    const people = new Map<number, { person: Named; byActivity: Record<string, number>; total: number }>()
+    for (const entry of entries) {
+        const activity = entry.activity.name
+        activityTotals[activity] = roundHours((activityTotals[activity] ?? 0) + entry.hours)
+        const row = people.get(entry.user.id) ?? { person: entry.user, byActivity: {}, total: 0 }
+        row.byActivity[activity] = roundHours((row.byActivity[activity] ?? 0) + entry.hours)
+        row.total = roundHours(row.total + entry.hours)
+        people.set(entry.user.id, row)
+    }
+    const activities = Object.keys(activityTotals).sort(
+        (first, second) => activityTotals[second] - activityTotals[first]
+    )
+    const rows = [...people.values()].sort((first, second) => second.total - first.total)
+    return { activities, rows, activityTotals, total: sumHours(entries) }
+}
+
 /** The cells a click on the grid narrows the detail to: a person, a day, or both. */
 export interface TeamFocus {
     memberId?: number

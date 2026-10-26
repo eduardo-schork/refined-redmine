@@ -4,7 +4,6 @@ import { useI18n } from '@/lib/i18n'
 
 // Content only a few lines taller than the limit is shown whole: hiding two lines behind a button helps nobody.
 const SLACK_LINES = 3
-const FADE = 'linear-gradient(to bottom, black calc(100% - 4rem), transparent)'
 
 /** Height that shows `lines` lines of the content, or null when the content is not much taller than that. */
 function clampedHeight(content: HTMLElement, lines: number): number | null {
@@ -15,7 +14,10 @@ function clampedHeight(content: HTMLElement, lines: number): number | null {
     return tooTall ? lineHeight * lines : null
 }
 
-/** Shows the first `lines` lines of long content, fading out, with a button to show the rest. */
+/**
+ * Shows the first `lines` lines of long content, fading out, with a button to show the rest. The fade is a gradient
+ * laid over the text, not a CSS mask: a mask would also cut windows opened from inside the text (an image preview).
+ */
 export function ClampedContent({ lines, children }: { lines: number; children: ReactNode }) {
     const { t } = useI18n()
     const contentRef = useRef<HTMLDivElement>(null)
@@ -34,13 +36,16 @@ export function ClampedContent({ lines, children }: { lines: number; children: R
     }, [lines])
 
     const clamped = limit !== null && !expanded
-    const clampStyle = clamped ? { maxHeight: limit, overflow: 'hidden', maskImage: FADE } : undefined
+    const clampStyle = clamped ? { maxHeight: limit, overflow: 'hidden' } : undefined
     const Chevron = expanded ? ChevronUp : ChevronDown
 
     return (
         <div>
-            <div style={clampStyle}>
+            <div className="relative" style={clampStyle}>
                 <div ref={contentRef}>{children}</div>
+                {clamped && (
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-panel" />
+                )}
             </div>
             {limit !== null && (
                 <button

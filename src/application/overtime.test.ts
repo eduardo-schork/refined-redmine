@@ -25,4 +25,13 @@ describe('OvertimeUseCases', () => {
         expect(() => overtime.setPaid('2026-13', true)).toThrow('overtime.month')
         expect(overtime.remove(added.entries[0].id).entries).toEqual([])
     })
+
+    it('changes an entry in place and refuses unknown ids or invalid hours', () => {
+        const overtime = setup()
+        const { id } = overtime.add({ day: '2026-09-16', hours: 2, note: '' }).entries[0]
+        const changed = overtime.update(id, { day: '2026-09-17', hours: 3, issueId: 1201, note: ' revisão ' })
+        expect(changed.entries).toEqual([{ id, day: '2026-09-17', hours: 3, issueId: 1201, note: 'revisão' }])
+        expect(() => overtime.update('missing', { day: '2026-09-17', hours: 1, note: '' })).toThrow('overtime.notFound')
+        expect(() => overtime.update(id, { day: '2026-09-17', hours: 0, note: '' })).toThrow('overtime.hours')
+    })
 })

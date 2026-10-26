@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useState, type KeyboardEvent } from 'react'
 import { Check, ChevronDown, X } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { FLOATING_PANEL, useFloating } from '@/lib/floating'
 
 export interface FilterChipOption {
     value: string
@@ -25,19 +26,10 @@ export function FilterChip({
     onChange: (selected: string[]) => void
 }) {
     const [open, setOpen] = useState(false)
-    const rootRef = useRef<HTMLDivElement>(null)
+    const { rootRef, floatingRef, anchorStyle, floatingStyle } = useFloating(open, () => setOpen(false))
     const active = selected.length > 0
     const chosenLabels = options.filter((option) => selected.includes(option.value)).map((option) => option.label)
     const summary = active ? chosenLabels.join(', ') || selected.join(', ') : allLabel
-
-    useEffect(() => {
-        if (!open) return
-        const closeOutside = (mouseEvent: MouseEvent) => {
-            if (!rootRef.current?.contains(mouseEvent.target as Node)) setOpen(false)
-        }
-        document.addEventListener('mousedown', closeOutside)
-        return () => document.removeEventListener('mousedown', closeOutside)
-    }, [open])
 
     const toggle = (value: string) => {
         const next = selected.includes(value) ? selected.filter((item) => item !== value) : [...selected, value]
@@ -51,11 +43,12 @@ export function FilterChip({
     }
 
     return (
-        <div ref={rootRef} className="relative" onKeyDown={handleKeyDown}>
+        <div ref={rootRef} onKeyDown={handleKeyDown}>
             <button
                 type="button"
                 aria-haspopup="listbox"
                 aria-expanded={open}
+                style={anchorStyle}
                 onClick={() => setOpen((wasOpen) => !wasOpen)}
                 className={cn(
                     'inline-flex h-9 max-w-64 cursor-default items-center gap-1.5 whitespace-nowrap rounded-md border px-3 text-sm',
@@ -67,7 +60,7 @@ export function FilterChip({
                 <ChevronDown size={14} className="shrink-0 text-muted" />
             </button>
             {open && (
-                <div className="absolute left-0 top-full z-40 mt-1 w-64 overflow-hidden rounded-lg border border-line bg-panel shadow-2xl">
+                <div ref={floatingRef} popover="manual" style={floatingStyle} className={cn(FLOATING_PANEL, 'w-64')}>
                     <ul role="listbox" aria-multiselectable="true" className="max-h-72 overflow-y-auto py-1">
                         {options.map((option) => {
                             const checked = selected.includes(option.value)

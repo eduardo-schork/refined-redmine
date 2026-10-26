@@ -22,6 +22,12 @@ export type MonitorSource =
 
 export type MonitorSourceType = MonitorSource['type']
 
+/** Alert by the number of issues of the source: "fewer than 2" (below) or "more than 10" (above). */
+export interface CountRule {
+    op: 'below' | 'above'
+    value: number
+}
+
 /** A set of issues watched by the monitor, with its own notification options. */
 export interface Monitor {
     id: string
@@ -31,6 +37,8 @@ export interface Monitor {
     events: Record<MonitorEvent, boolean>
     /** Own time window, applied on top of the global one. */
     schedule?: Schedule
+    /** Query, filter or board: also notify when the number of issues reaches this rule. */
+    count?: CountRule
 }
 
 /** The built-in "my issues" monitor: always exists and cannot be deleted. */
@@ -91,11 +99,31 @@ function assertValidSource(source: MonitorSource): void {
     if (source.type === 'board' && !source.boardId) throw new AppError('monitor.sourceRequired')
 }
 
+function assertValidCount(rule: CountRule): void {
+    const lowest = rule.op === 'below' ? 1 : 0
+    if (!Number.isInteger(rule.value) || rule.value < lowest) throw new AppError('monitor.countInvalid')
+}
+
 /** The "my issues" monitor has a translated name, so an empty name is allowed only for it. */
 export function assertValidMonitor(monitor: Monitor): void {
     const isMine = monitor.id === MINE_MONITOR_ID
     if (!isMine && !monitor.name.trim()) throw new AppError('monitor.nameRequired')
     assertValidSource(monitor.source)
+    if (monitor.count) assertValidCount(monitor.count)
+}
+
+export function meetsCountRule(count: number, rule: CountRule): boolean {
+    if (rule.op === 'below') return count < rule.value
+    return count > rule.value
+}
+
+/**
+ * The count alert fires once, when the rule starts to hold: it did not hold in the previous cycle, or there was no
+ * previous cycle (a new monitor whose rule already holds). While it keeps holding, it does not repeat.
+ */
+export function countRuleReached(previousCount: number | undefined, currentCount: number, rule: CountRule): boolean {
+    if (!meetsCountRule(currentCount, rule)) return false
+    return previousCount === undefined || !meetsCountRule(previousCount, rule)
 }
 
 /** Keeps "my issues" first and guarantees it exists. */

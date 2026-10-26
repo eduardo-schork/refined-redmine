@@ -23,6 +23,10 @@ export const ptBR = {
         no: 'Não',
         ok: 'OK',
         search: 'Buscar',
+        searchList: 'Filtrar a lista…',
+        noMatches: 'Nada encontrado.',
+        copy: 'Copiar',
+        copied: 'Copiado',
         add: 'Adicionar',
         notNow: 'Agora não',
         someone: 'Alguém',
@@ -66,6 +70,7 @@ export const ptBR = {
         'filter.invalidUrl': 'Cole o endereço de uma lista de tarefas do Redmine (…/issues?…).',
         'monitor.nameRequired': 'Dê um nome ao monitor.',
         'monitor.sourceRequired': 'Escolha de onde vêm as tarefas do monitor.',
+        'monitor.countInvalid': 'Informe um número inteiro de tarefas para o aviso por quantidade.',
         'update.unauthorized': 'O GitHub recusou o token (inválido ou expirado).',
         'update.notFound':
             'O repositório do app não está acessível no GitHub (ainda privado? Então só com um token com acesso).',
@@ -86,6 +91,12 @@ export const ptBR = {
         'issue.invalidParent': 'A tarefa pai precisa ser outra tarefa, pelo número (ex.: #1234).',
         'automation.nameRequired': 'Dê um nome ao botão do trâmite.',
         'automation.tooMany': 'Até {{max}} trâmites configurados.',
+        'claude.folderRequired': 'Escolha a pasta do projeto da ação “{{name}}” (modo terminal).',
+        'claude.notRegistered':
+            'O Claude não abriu. Rode `claude` uma vez no terminal (ou abra o app Claude) para registrar o link e tente de novo.',
+        'claude.actionMissing': 'Essa ação do Claude não existe mais.',
+        'backup.invalid': 'Esse arquivo não é um backup de configurações do Refined Redmine.',
+        'backup.newer': 'Esse backup foi feito por uma versão mais nova do app. Atualize o app e tente de novo.',
         'team.nameRequired': 'Dê um nome ao time.',
         'team.noMembers': 'Escolha ao menos uma pessoa.',
         'team.tooMany': 'Um time pode ter até {{max}} pessoas.',
@@ -93,6 +104,7 @@ export const ptBR = {
         'overtime.day': 'Escolha o dia da hora extra.',
         'overtime.issue': 'A tarefa vai pelo número (ex.: #1234).',
         'overtime.month': 'Mês inválido.',
+        'overtime.notFound': 'Esta hora extra não existe mais.',
         'issue.tooManyUploads': 'Dá para anexar até {{max}} arquivos de uma vez.',
         'issue.uploadTooLarge': '“{{name}}” passa de {{max}} MB. Anexe pelo Redmine.',
         'time.hours': 'Informe as horas: mais que 0 e até {{max}} (ex.: 1,5 · 1:30 · 1h30 · 90m).',
@@ -159,6 +171,10 @@ export const ptBR = {
         query: {
             added: 'Entraram: {{list}}',
             removed: 'Saíram: {{list}}',
+            countReached_one: 'Agora com {{count}} tarefa ({{rule}})',
+            countReached_other: 'Agora com {{count}} tarefas ({{rule}})',
+            below: 'menos de {{value}}',
+            above: 'mais de {{value}}',
             more: '(+{{count}})'
         },
         via: 'via {{names}}',
@@ -222,6 +238,7 @@ export const ptBR = {
         yearly_one: 'Anual {{when}}',
         yearly_other: 'A cada {{count}} anos {{when}}',
         onDay: 'no dia {{day}}',
+        onLastWorkday: 'no último dia útil',
         onNth_f: 'na {{nth}} {{weekday}}',
         onNth_m: 'no {{nth}} {{weekday}}',
         onDate: 'em {{date}}',
@@ -336,13 +353,14 @@ export const ptBR = {
         balance: 'Saldo em banco',
         paidInYear: 'Pagas em {{year}}',
         chart: 'Últimos 12 meses',
-        chartHint: 'Em destaque, no banco; em cinza, pagas. Clique num mês para ver os lançamentos.',
+        chartHint: 'Em destaque, no banco; em cinza, pagas. Clique num mês para filtrar os lançamentos.',
         months: 'Meses',
         empty: 'Nenhuma hora extra lançada.',
         keep: 'Banco',
         paid: 'Paga',
         bankAtEnd: 'Saldo no fim do mês: {{hours}}',
-        entriesOf: 'Lançamentos de {{month}}',
+        entries: 'Lançamentos',
+        edit: 'Alterar hora extra',
         noEntries: 'Nenhuma hora extra neste mês.',
         remove: 'Excluir',
         confirmRemove: 'Excluir esta hora extra do banco?',
@@ -355,6 +373,7 @@ export const ptBR = {
     nav: {
         overtime: 'Horas extras',
         team: 'Tempo do time',
+        monitors: 'Monitores',
         time: 'Minhas horas',
         home: 'Início',
         calendar: 'Agenda',
@@ -467,6 +486,7 @@ export const ptBR = {
     },
     board: {
         emptyTitle: 'Nenhum quadro ainda',
+        agile: 'Ágil',
         emptyText: 'Crie um quadro a partir das suas tarefas, de um projeto ou de uma consulta salva.',
         create: 'Criar quadro',
         automatic: 'automática',
@@ -609,7 +629,7 @@ export const ptBR = {
             notifications: 'Notificações do quadro',
             notificationsEnabled: 'Notificar sobre este quadro',
             notificationsHint:
-                'Avisa quando cards entram, saem ou mudam de coluna, e sobre comentários e menções nas tarefas do quadro. Também aparece em Configurações → Notificações → Monitores.',
+                'Avisa quando cards entram, saem ou mudam de coluna, e sobre comentários e menções nas tarefas do quadro. Também aparece na tela Monitores (menu lateral).',
             project: 'Projeto',
             includeSubprojects: 'Incluir subprojetos',
             query: 'Consulta',
@@ -621,12 +641,13 @@ export const ptBR = {
             fixedGroup: 'Versão fixa',
             todayIs: ' — hoje: {{name}}',
             onlyMine: 'Só tarefas atribuídas a mim',
-            swimlanes: 'Raias por responsável',
-            swimlanesHint: 'Agrupa os cards em linhas, uma por pessoa.',
             columns: 'Colunas',
             columnsHint:
                 'Cada coluna agrupa um ou mais status. Arrastar um card para a coluna muda o status no Redmine.',
             onePerStatus: 'Uma por status',
+            suggest: 'Sugerir pelas tarefas',
+            suggestedFrom_one: 'Sugestão a partir de {{count}} tarefa da origem.',
+            suggestedFrom_other: 'Sugestão a partir das {{count}} tarefas da origem.',
             addColumn: 'Coluna',
             newColumn: 'Nova coluna',
             addStatus: '+ status',
@@ -665,6 +686,8 @@ export const ptBR = {
         log: 'Lançar horas',
         logHint: 'Lançar horas nesta tarefa',
         logTitle: 'Lançar horas em #{{id}}',
+        alsoChange: 'Também mudar a tarefa',
+        alsoChangeHint: 'Por padrão continuam a situação e o responsável atuais.',
         editTitle: 'Editar lançamento em #{{id}}',
         date: 'Data',
         today: 'Hoje',
@@ -684,6 +707,10 @@ export const ptBR = {
         confirmDelete: 'Excluir o lançamento de {{hours}} em {{date}}? Isso apaga no Redmine.',
         spentOfEstimate: '{{spent}} de {{estimate}} estimadas',
         spentOnly: '{{spent}} lançadas',
+        summary: {
+            person: 'Pessoa',
+            total: 'Total'
+        },
         noComment: 'sem comentário'
     },
     timer: {
@@ -697,6 +724,8 @@ export const ptBR = {
         discard: 'Descartar cronômetro',
         confirmDiscard: 'Descartar o cronômetro de #{{id}}? O tempo contado não será lançado.',
         confirmReplace: 'Já existe um cronômetro em #{{id}}. Descartar o tempo dele e começar nesta tarefa?',
+        statusChanged: 'Cronômetro iniciado e #{{id}} passou para {{status}}.',
+        statusNotAllowed: 'Cronômetro iniciado; o fluxo do Redmine não permite passar #{{id}} para {{status}} agora.',
         paused: {
             sleep: 'Pausado: o computador dormiu ou foi bloqueado ({{since}}).',
             idle: 'Pausado por ausência desde {{since}}; esse tempo não conta.'
@@ -725,7 +754,11 @@ export const ptBR = {
         repeated_one: '{{count}} lançamento repetido',
         repeated_other: '{{count}} lançamentos repetidos'
     },
-    steps: { retry: 'Tentar de novo' },
+    steps: {
+        retry: 'Tentar de novo',
+        problems_one: '{{count}} item não foi aplicado por completo:',
+        problems_other: '{{count}} itens não foram aplicados por completo:'
+    },
     handoff: {
         newTramite: 'Novo trâmite',
         newTramiteHint: 'Comentário, situação, responsável, versão e horas desta tarefa de uma vez',
@@ -757,15 +790,87 @@ export const ptBR = {
             comment: 'Trâmite em #{{id}}',
             time: 'Horas em #{{id}}',
             overtime: 'Hora extra no banco',
-            close: 'Situação de #{{id}}'
+            close: 'Situação de #{{id}}',
+            timer: 'Zerar o cronômetro'
+        },
+        countFrom: 'Contar as horas desde',
+        countFromHint: 'Dentro do expediente vira horas; fora dele, hora extra (Configurações → Automações).',
+        typeHours: 'Digitar as horas',
+        fromTimer: 'Cronômetro ({{time}}), zerado ao enviar',
+        since: {
+            status: 'Situação alterada',
+            comment: 'Comentário',
+            changes: 'Alterações',
+            timeEntry: 'Horas lançadas ({{hours}})',
+            created: 'Criação da tarefa'
         }
+    },
+    claude: {
+        title: 'Ações do Claude Code',
+        hint: 'Botões no detalhe da tarefa e no menu ⋮ dos cards que abrem o Claude Code com um prompt sobre a tarefa, como no redmine-adapter.',
+        new: 'Nova ação',
+        empty: 'Nenhuma ação ainda. Exemplo: “Code review” com /review refs {{tarefa}}.',
+        editorTitle: 'Ação do Claude Code',
+        namePlaceholder: 'Ex.: Code review',
+        name: 'Nome do botão',
+        mode: 'Abrir em',
+        modes: {
+            terminal: 'Terminal (Claude Code)',
+            desktop: 'App Claude'
+        },
+        modeHints: {
+            terminal: 'Abre o Claude Code na pasta do projeto com o prompt (link claude-cli://).',
+            desktop:
+                'Abre um chat novo no app Claude com o prompt, que também vai para a área de transferência (experimental).'
+        },
+        folder: 'Pasta do projeto',
+        chooseFolder: 'Escolher…',
+        noFolder: 'Nenhuma pasta escolhida',
+        template: 'Prompt',
+        templateHint: '{{tarefa}} vira #1234, {{numeroAtividade}} vira 1234 e {{titulo}} o título da tarefa.',
+        statusOnOpen: 'Situação da tarefa ao abrir',
+        keep: 'Não alterar',
+        delete: 'Excluir ação',
+        confirmDelete: 'Excluir a ação “{{name}}”?',
+        confirmStatus: 'Abrir o Claude e mudar #{{id}}: Situação {{from}} → {{to}}?',
+        opened: 'Claude aberto para #{{id}}.',
+        statusIgnored: 'O Claude abriu, mas o Redmine não mudou a situação de #{{id}}.',
+        terminalSummary: 'Terminal · {{folder}}',
+        desktopSummary: 'App Claude'
+    },
+    backup: {
+        title: 'Backup das configurações',
+        description:
+            'Um arquivo JSON com quadros, monitores, trâmites, ações do Claude, times, expediente, aparência e preferências. Não leva a conexão (endereço e usuário do Redmine), a API key nem o token do GitHub; a agenda e as horas extras ficam fora.',
+        export: 'Exportar configurações…',
+        exportHint: 'Escolha onde salvar o arquivo.',
+        import: 'Importar…',
+        importHint: 'Substitui as configurações deste computador pelas do arquivo.',
+        confirmImport:
+            'Isso substitui quadros, monitores, automações, times e preferências deste computador pelos do arquivo. A agenda, as horas extras e a conexão não mudam. Continuar?',
+        exported: 'Configurações exportadas.',
+        imported: 'Configurações importadas.'
+    },
+    workTime: {
+        title: 'Cronômetro e expediente',
+        description:
+            'O que acontece ao iniciar o cronômetro e como as horas de um trâmite são calculadas a partir de um momento da tarefa.',
+        timerStatus: 'Ao iniciar o cronômetro, mudar a situação para',
+        timerStatusHint: 'Só muda quando o fluxo do Redmine permite a partir da situação atual.',
+        keepStatus: 'Não alterar',
+        schedule: 'Expediente',
+        scheduleHint:
+            'O tempo dentro destes períodos vira horas normais; o intervalo entre dois períodos (almoço) não conta; o resto (noite, fim de semana) vira hora extra.',
+        addPeriod: 'Adicionar período',
+        removePeriod: 'Remover período',
+        to: 'até'
     },
     automation: {
         title: 'Trâmites',
         hint: 'Botões no detalhe da tarefa que comentam e movem a própria tarefa ou enviam um trâmite para uma tarefa vizinha (ex.: Desenvolvimento → Qualidade). Só aparecem nos tipos e situações escolhidos.',
         empty: 'Nenhum trâmite configurado. O "Novo trâmite" do detalhe da tarefa continua disponível.',
         new: 'Nova regra',
-        defaultName: 'Enviar para QA',
+        namePlaceholder: 'Ex.: Enviar para QA',
         editorTitle: 'Regra de trâmite',
         save: 'Salvar regra',
         delete: 'Excluir regra',
@@ -780,6 +885,7 @@ export const ptBR = {
             same: 'Comenta e muda situação, responsável e versão desta tarefa, com lançamento de horas opcional.'
         },
         name: 'Nome do botão',
+        icon: 'Ícone',
         trackers: 'Mostrar nas tarefas do tipo',
         statuses: 'Mostrar nas tarefas na situação',
         noneMeansAll: 'Nenhum marcado = todos.',
@@ -806,6 +912,11 @@ export const ptBR = {
         addStep: 'Adicionar situação',
         removeStep: 'Tirar'
     },
+    issueMenu: {
+        label: 'Ações da tarefa',
+        open: 'Abrir tarefa',
+        changeStatus: 'Alterar situação'
+    },
     bulk: {
         title: 'Alterar em massa a partir de #{{id}}',
         button: 'Alterar em massa',
@@ -820,6 +931,23 @@ export const ptBR = {
         fields: { statusId: 'situação', assignedToId: 'responsável', fixedVersionId: 'versão' },
         roles: { self: 'Esta tarefa', parent: 'Tarefa pai', related: 'Relacionada', subtask: 'Subtarefa' }
     },
+    markdown: {
+        write: 'Escrever',
+        preview: 'Visualizar',
+        emptyPreview: 'Nada para visualizar.',
+        toolbar: 'Formatação',
+        bold: 'Negrito',
+        italic: 'Itálico',
+        strike: 'Tachado',
+        code: 'Código',
+        heading: 'Título',
+        list: 'Lista',
+        numbered: 'Lista numerada',
+        quote: 'Citação',
+        codeBlock: 'Bloco de código',
+        link: 'Link',
+        pasteHint: 'Cole ou arraste imagens: elas entram como anexo e no texto.'
+    },
     issue: {
         assignToMe: {
             label: 'Atribuir a mim',
@@ -831,6 +959,9 @@ export const ptBR = {
         },
         copy: {
             label: 'Copiar',
+            menu: 'Copiar número, link ou referência',
+            titleAction: 'Copiar o título',
+            descriptionAction: 'Copiar a descrição (Markdown)',
             link: 'Link',
             linkHint: 'Copiar o link da tarefa no Redmine',
             number: 'Número',
@@ -900,6 +1031,10 @@ export const ptBR = {
             noAttachments: 'Nenhum anexo.'
         },
         history: 'Histórico ({{count}})',
+        historyOrder: {
+            newest: 'Mais recentes primeiro',
+            oldest: 'Mais antigas primeiro'
+        },
         commentPlaceholder: 'Adicionar comentário (Markdown)…',
         comment: 'Comentar',
         commentAdded: 'Comentário adicionado',
@@ -1110,7 +1245,8 @@ export const ptBR = {
             notifications: 'Notificações',
             calendar: 'Agenda',
             work: 'Sprints e Início',
-            automations: 'Automações'
+            automations: 'Automações',
+            backup: 'Backup'
         },
         account: 'Conta',
         logout: 'Desconectar',
@@ -1287,7 +1423,7 @@ export const ptBR = {
         previewDanger: 'Erro'
     },
     monitors: {
-        title: 'Monitores',
+        title: 'Seus monitores',
         hint: 'Cada monitor acompanha um conjunto de tarefas e tem as próprias opções de aviso. Alterações feitas por você não notificam.',
         mine: 'Minhas tarefas',
         add: 'Adicionar monitor',
@@ -1313,6 +1449,17 @@ export const ptBR = {
         board: 'Quadro',
         boardHint: 'Também dá para ligar direto no editor do quadro.',
         events: 'Notificar quando',
+        movedHint: 'Os monitores agora têm uma tela própria no menu lateral, logo acima dos quadros.',
+        open: 'Abrir Monitores',
+        count: {
+            title: 'Quantidade de tarefas',
+            below: 'Menos de',
+            above: 'Mais de',
+            issues: 'tarefas',
+            hint: 'Avisa uma vez quando ficar com menos ou mais tarefas que o limite (ex.: a fila de alguém acabando).',
+            summaryBelow: 'avisa com menos de {{value}}',
+            summaryAbove: 'avisa com mais de {{value}}'
+        },
         event: {
             new_issue: 'Nova tarefa',
             assigned: 'Atribuída a mim',

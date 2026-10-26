@@ -1,5 +1,7 @@
+import type { ClaudeAction } from '../automation/claude-action'
 import type { HandoffRule } from '../automation/handoff'
 import type { Team } from '../time/team'
+import { DEFAULT_WORK_SCHEDULE, type WorkSchedule } from '../time/business-hours'
 import type { Board } from '../board/board'
 import { DEFAULT_CALENDAR_PREFERENCES, type CalendarPreferences } from '../calendar/calendar-event'
 import { createMineMonitor, defaultEvents, withMineMonitor, type MineScopes, type Monitor } from '../monitor/monitor'
@@ -25,6 +27,8 @@ export interface Settings {
     /** Also keep calendar reminders in the notification history (the system notification is always shown). */
     reminderHistory: boolean
     boards: Board[]
+    /** The "Ágil" board was already created once (deleting it must not bring it back). */
+    agileBoardSeeded: boolean
     sprints: SprintConventions
     dashboard: { staleDays: number }
     /** Status colors, priority levels and "due soon" window. */
@@ -38,6 +42,12 @@ export interface Settings {
     teams: Team[]
     /** "Trâmite" buttons of the issue detail, in button order. */
     handoffRules: HandoffRule[]
+    /** "Claude Code" buttons of the issue detail and of the cards' menu. */
+    claudeActions: ClaudeAction[]
+    /** Working hours: the time counted for a trâmite is split into normal hours and overtime with them. */
+    workSchedule: WorkSchedule
+    /** Status the issue goes to when the stopwatch starts on it ("In progress"); undefined = keep. */
+    timerStartStatusId?: number
     /** Last version whose "What's new" was shown. */
     lastSeenVersion?: string
     /** Diagnostics: the activity log is hidden from the sidebar unless the user turns it on. */
@@ -86,6 +96,7 @@ export const DEFAULT_SETTINGS: Settings = {
     monitors: [createMineMonitor(DEFAULT_SCOPES)],
     reminderHistory: true,
     boards: [],
+    agileBoardSeeded: false,
     sprints: DEFAULT_SPRINT_CONVENTIONS,
     dashboard: { staleDays: 5 },
     issueStyle: DEFAULT_ISSUE_STYLE,
@@ -96,6 +107,8 @@ export const DEFAULT_SETTINGS: Settings = {
     workspace: { tabs: true, restoreTabs: true },
     teams: [],
     handoffRules: [],
+    claudeActions: [],
+    workSchedule: DEFAULT_WORK_SCHEDULE,
     showLog: false
 }
 
@@ -167,6 +180,7 @@ export function withDefaults(loaded: Partial<Settings> & LegacySettings): Settin
         issueStyle: withIssueStyleDefaults(loaded.issueStyle),
         updates: withUpdateDefaults(loaded.updates),
         workspace: { ...defaults.workspace, ...loaded.workspace },
+        workSchedule: { ...defaults.workSchedule, ...loaded.workSchedule },
         showLog: loaded.showLog === true,
         calendar: { ...defaults.calendar, ...loaded.calendar, layers: calendarLayers }
     }

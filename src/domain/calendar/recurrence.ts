@@ -79,8 +79,18 @@ function nthWeekdayDay(year: number, month: number, weekday: number, nth: number
     return day > lastDay ? null : day
 }
 
+/** Last Monday–Friday of the month (holidays are not known). */
+export function lastWorkdayOfMonth(year: number, month: number): number {
+    const lastDay = daysInMonth(year, month)
+    const weekday = new Date(year, month, lastDay).getDay()
+    if (weekday === 0) return lastDay - 2
+    if (weekday === 6) return lastDay - 1
+    return lastDay
+}
+
 /** Day of the occurrence in the given month, or null when the month has no occurrence. */
 function monthlyDay(recurrence: Recurrence, start: Date, year: number, month: number): number | null {
+    if (recurrence.monthlyMode === 'lastWorkday') return lastWorkdayOfMonth(year, month)
     if (recurrence.monthlyMode === 'weekday') {
         const nth = recurrence.monthlyNth ?? nthWeekdayOf(start).nth
         return nthWeekdayDay(year, month, start.getDay(), nth)

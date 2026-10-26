@@ -2,6 +2,7 @@ import { useCallback, useState, type ReactNode } from 'react'
 import type { SettingsView } from '@contracts/api'
 import type { Board } from '@domain/board/board'
 import { resolveLocale } from '@shared/i18n/index'
+import { useSeedAgileBoard } from '@/hooks/boards'
 import { useAppEventsSync } from '@/hooks/notifications'
 import { useSession, useSettings } from '@/hooks/session'
 import { useWorkspaceTabs } from '@/hooks/workspace'
@@ -15,6 +16,7 @@ import BoardPage from '@/pages/BoardPage'
 import CalendarPage from '@/pages/CalendarPage'
 import HomePage from '@/pages/HomePage'
 import LogPage from '@/pages/LogPage'
+import MonitorsPage from '@/pages/MonitorsPage'
 import NotificationsPage from '@/pages/NotificationsPage'
 import OvertimePage from '@/pages/OvertimePage'
 import OnboardingPage from '@/pages/OnboardingPage'
@@ -60,6 +62,7 @@ function AuthenticatedApp() {
     const closeSearch = useCallback(() => setSearching(false), [])
     useModifierShortcut('k', openSearch)
     useTabShortcuts(workspace.enabled, workspace.step, workspace.selectPosition)
+    useSeedAgileBoard()
 
     const openEmptyBoardEditor = () => setNewBoard({})
     const closeBoardEditor = () => setNewBoard(undefined)
@@ -195,6 +198,8 @@ function PageView({ route, navigate, onNewBoard, onCreateBoard }: { route: Route
             return <OvertimePage />
         case 'team':
             return <TeamTimePage />
+        case 'monitors':
+            return <MonitorsPage />
         case 'settings':
             return <SettingsPage key={route.tab} tab={route.tab} />
     }

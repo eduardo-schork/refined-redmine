@@ -46,7 +46,7 @@ export async function notifyJournals(
     if (!detail) return
     const statusName = (statusId: number) => cycle.statusName(statusId)
 
-    for (const journal of cycle.journalsToNotify(detail)) {
+    for (const journal of cycle.journalsToNotify(detail, monitor.id)) {
         const interpreted = interpretJournal(journal, cycle.me, statusName)
         if (!interpreted) continue
         const kind = enabledKind(interpreted.kinds, monitor)

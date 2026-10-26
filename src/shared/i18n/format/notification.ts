@@ -126,6 +126,11 @@ function formatQueryChanged(payload: PayloadOf<'queryChanged'>, t: TFunction): N
     }
 }
 
+function formatQueryCount(payload: PayloadOf<'queryCount'>, t: TFunction): NotificationText {
+    const rule = t(`notification.query.${payload.op}`, { value: payload.value })
+    return { title: payload.queryName, body: t('notification.query.countReached', { count: payload.count, rule }) }
+}
+
 function describeReminderDay(start: Date, now: Date, t: TFunction, dates: DateFormatter): string {
     const dayDifference = Math.round((startOfDay(start).getTime() - startOfDay(now).getTime()) / MILLISECONDS_PER_DAY)
     if (dayDifference === 0) return t('notification.reminder.today')
@@ -163,7 +168,7 @@ function formatReminder(
 export function describeSources(notification: AppNotification, t: TFunction): string | undefined {
     const payload = notification.payload
     // An entry/exit notification is already titled with the monitor name.
-    const titleName = payload.type === 'queryChanged' ? payload.queryName : undefined
+    const titleName = 'queryName' in payload ? payload.queryName : undefined
     const names = (notification.sources ?? [])
         .filter((source) => source.monitorId !== MINE_MONITOR_ID)
         .map((source) => source.name)
@@ -191,6 +196,8 @@ export function formatNotification(
             return formatQueueExitHidden(payload, t)
         case 'queryChanged':
             return formatQueryChanged(payload, t)
+        case 'queryCount':
+            return formatQueryCount(payload, t)
         case 'reminder':
             return formatReminder(payload, t, dates, now)
         case 'legacy':

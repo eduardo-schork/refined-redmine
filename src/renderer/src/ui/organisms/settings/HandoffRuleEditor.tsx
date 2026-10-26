@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { Plus, X } from 'lucide-react'
+import { Plus, Send, X } from 'lucide-react'
 import type { ClosingStep, HandoffRule } from '@domain/automation/handoff'
 import type { Named } from '@domain/redmine/entities'
 import { useIssueEditOptions } from '@/hooks/issues'
@@ -12,6 +12,7 @@ import { Input, Select, Textarea } from '../../atoms/fields'
 import { IconButton } from '../../atoms/IconButton'
 import { Dialog } from '../../molecules/Dialog'
 import { Field, ToggleField } from '../../molecules/Field'
+import { IconChoice } from '../../molecules/IconChoice'
 import { PickList } from '../../molecules/PickList'
 import { SegmentedControl } from '../../molecules/SegmentedControl'
 
@@ -59,8 +60,16 @@ export function HandoffRuleEditor({
                 />
                 <p className="-mt-2 text-xs text-muted">{t(`automation.modeHints.${draft.mode}`)}</p>
                 <Field label={t('automation.name')}>
-                    <Input value={draft.name} onChange={(event) => change({ name: event.target.value })} />
+                    <Input
+                        autoFocus
+                        value={draft.name}
+                        placeholder={t('automation.namePlaceholder')}
+                        onChange={(event) => change({ name: event.target.value })}
+                    />
                 </Field>
+                <Labeled label={t('automation.icon')}>
+                    <IconChoice value={draft.icon} fallback={Send} onChange={(icon) => change({ icon })} />
+                </Labeled>
                 <VisibilityFields draft={draft} change={change} />
                 <DefaultsFields draft={draft} change={change} />
                 <TemplateFields draft={draft} change={change} />
@@ -78,7 +87,7 @@ export function HandoffRuleEditor({
 }
 
 /** Toggle chips: none checked means "all". */
-function ChipChoice({
+export function ChipChoice({
     options,
     chosen,
     onChange
@@ -112,7 +121,7 @@ function ChipChoice({
 }
 
 /** Not in a <Field>: its <label> would turn clicks on the chips into clicks on the first one. */
-function Labeled({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+export function Labeled({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
     return (
         <div className="flex flex-col gap-1">
             <span className="text-xs font-medium text-muted">{label}</span>
@@ -209,15 +218,17 @@ function AssigneeField({ draft, change }: { draft: HandoffRule; change: Change }
                 />
             </Labeled>
             <Field label={t('automation.defaultAssignee')}>
-                <Select value={draft.assigneeId ?? NONE} onChange={(event) => choose(event.target.value)}>
-                    <option value={NONE}>{t('bulk.keep')}</option>
-                    {known && <option value={draft.assigneeId}>{draft.assigneeName}</option>}
-                    {people.map((person) => (
-                        <option key={person.id} value={person.id}>
-                            {person.name}
-                        </option>
-                    ))}
-                </Select>
+                <PickList
+                    value={draft.assigneeId === undefined ? NONE : String(draft.assigneeId)}
+                    options={[
+                        { value: NONE, label: t('bulk.keep') },
+                        ...(known ? [{ value: String(draft.assigneeId), label: draft.assigneeName ?? '' }] : []),
+                        ...people.map((person) => ({ value: String(person.id), label: person.name }))
+                    ]}
+                    searchPlaceholder={t('issue.edit.searchPerson')}
+                    noMatches={t('issue.edit.noPerson')}
+                    onPick={(option) => choose(option.value)}
+                />
             </Field>
         </div>
     )

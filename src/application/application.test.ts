@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import type { Board } from '@domain/board/board'
 import { createMineMonitor, defaultEvents, type Monitor } from '@domain/monitor/monitor'
-import type { Version } from '@domain/redmine/entities'
+import type { Journal, Version } from '@domain/redmine/entities'
 import { AppError } from '@domain/shared/errors'
 import { MonitorService } from './services/monitor-service'
 import { LoginUseCase } from './use-cases/session'
-import { BoardFilterResolver, DeleteBoardUseCase, MoveIssueToColumnUseCase, SaveBoardUseCase } from './use-cases/boards'
+import {
+    BoardFilterResolver,
+    DeleteBoardUseCase,
+    MoveIssueToColumnUseCase,
+    SaveBoardUseCase,
+    SuggestBoardColumnsUseCase
+} from './use-cases/boards'
 import { ListSprintsUseCase } from './use-cases/sprints'
 import { CreateIssueUseCase, EditIssueFieldsUseCase, IssueQueries } from './use-cases/issues'
 import { ReminderDispatcher, SaveCalendarEventUseCase } from './use-cases/calendar'
@@ -188,6 +194,29 @@ describe('MonitorService', () => {
         expect(shown).toHaveLength(2)
     })
 
+    it('count rule: notifies once when the query drops below the limit', async () => {
+        const setup = monitorSetup()
+        setup.state.watermark = SINCE
+        const countMonitor: Monitor = {
+            id: 'q2',
+            name: 'Alice queue',
+            enabled: true,
+            source: { type: 'query', queryId: 72 },
+            events: { ...defaultEvents('query'), entered: false, status: false, comment: false, mention: false },
+            count: { op: 'below', value: 2 }
+        }
+        setMonitors(setup, [mineWithoutQueue(), countMonitor])
+        setup.state.snapshots.set('q2', { count: 2, ids: [1, 2] })
+        setup.gateway.byFilter.set(JSON.stringify({ queryId: 72 }), [issue(1)])
+
+        await setup.monitor.runNow()
+        await setup.monitor.runNow()
+
+        const counts = setup.notifier.shown.filter((notification) => notification.payload.type === 'queryCount')
+        expect(counts).toHaveLength(1)
+        expect(counts[0].payload).toMatchObject({ queryName: 'Alice queue', count: 1, op: 'below', value: 2 })
+    })
+
     it('board: a status change that moves the card shows the columns', async () => {
         const setup = monitorSetup()
         setup.state.watermark = SINCE
@@ -240,6 +269,152 @@ describe('MonitorService', () => {
         expect(setup.log.entries.some((entry) => entry.type === 'monitor' && entry.event === 'cycleFinished')).toBe(
             true
         )
+    })
+
+    it('saved query without "left": a colleague changing the status of an issue that leaves is still reported', async () => {
+        const run = async (left: boolean) => {
+            const setup = monitorSetup()
+            setup.state.watermark = SINCE
+            const events = { ...defaultEvents('query'), left }
+            const queryMonitor: Monitor = {
+                id: 'q3',
+                name: 'Review',
+                enabled: true,
+                source: { type: 'query', queryId: 73 },
+                events
+            }
+            setMonitors(setup, [{ ...mineWithoutQueue(), enabled: false }, queryMonitor])
+            setup.state.snapshots.set('q3', { count: 2, ids: [1, 4], subjects: { 4: 'Checkout' } })
+            setup.gateway.byFilter.set(JSON.stringify({ queryId: 73 }), [issue(1)])
+            const departed = issue(4, {
+                updated_on: '2026-09-28T14:20:00Z',
+                status: { id: 5, name: 'Finalizada', is_closed: true }
+            })
+            const statusJournal: Journal = {
+                id: 31,
+                user: LUCAS,
+                created_on: '2026-09-28T14:20:00Z',
+                details: [{ property: 'attr', name: 'status_id', old_value: '2', new_value: '5' }]
+            }
+            setup.gateway.details.set(4, detail(departed, { journals: [statusJournal] }))
+            await setup.monitor.runNow()
+            return setup.notifier.shown
+        }
+
+        const withoutLeft = await run(false)
+        expect(withoutLeft.map((notification) => [notification.kind, notification.issueId])).toEqual([['status', 4]])
+        const withLeft = await run(true)
+        expect(withLeft.map((notification) => notification.payload.type)).toEqual(['queryChanged'])
+    })
+
+    it('each monitor has its own watermark: a change made after it listed is not skipped', async () => {
+        const setup = monitorSetup()
+        setup.state.watermark = SINCE
+        const queryMonitor = (id: string, queryId: number): Monitor => ({
+            id,
+            name: id,
+            enabled: true,
+            source: { type: 'query', queryId },
+            events: defaultEvents('query')
+        })
+        setMonitors(setup, [{ ...mineWithoutQueue(), enabled: false }, queryMonitor('qa', 75), queryMonitor('qb', 76)])
+        setup.state.snapshots.set('qa', { count: 1, ids: [1] })
+        setup.state.snapshots.set('qb', { count: 1, ids: [2] })
+        const comment = (id: number, createdOn: string) => ({
+            id,
+            user: LUCAS,
+            created_on: createdOn,
+            notes: 'Ok',
+            details: []
+        })
+
+        // Cycle 1: "qa" lists before issue 1 is commented; "qb" lists later and sees a newer change.
+        setup.gateway.byFilter.set(JSON.stringify({ queryId: 75 }), [issue(1)])
+        const later = issue(2, { updated_on: '2026-09-28T14:50:00Z' })
+        setup.gateway.byFilter.set(JSON.stringify({ queryId: 76 }), [later])
+        setup.gateway.details.set(2, detail(later, { journals: [comment(52, '2026-09-28T14:50:00Z')] }))
+        await setup.monitor.runNow()
+
+        // Cycle 2: the comment on issue 1 (14:30) is older than what "qb" saw, but newer than what "qa" listed.
+        const commented = issue(1, { updated_on: '2026-09-28T14:30:00Z' })
+        setup.gateway.byFilter.set(JSON.stringify({ queryId: 75 }), [commented])
+        setup.gateway.details.set(1, detail(commented, { journals: [comment(51, '2026-09-28T14:30:00Z')] }))
+        await setup.monitor.runNow()
+
+        expect(setup.notifier.shown.map((notification) => notification.issueId)).toEqual([2, 1])
+        expect(setup.state.monitorWatermarks).toEqual({ qa: '2026-09-28T14:30:00Z', qb: '2026-09-28T14:50:00Z' })
+    })
+
+    it('a change already notified by one monitor is not notified again when another one sees it later', async () => {
+        const setup = monitorSetup()
+        setup.state.watermark = SINCE
+        const queryMonitor = (id: string, queryId: number): Monitor => ({
+            id,
+            name: id,
+            enabled: true,
+            source: { type: 'query', queryId },
+            events: defaultEvents('query')
+        })
+        // "qb" is checked first, before the comment; "qa" after it.
+        setMonitors(setup, [{ ...mineWithoutQueue(), enabled: false }, queryMonitor('qb', 76), queryMonitor('qa', 75)])
+        setup.state.snapshots.set('qa', { count: 1, ids: [7] })
+        setup.state.snapshots.set('qb', { count: 1, ids: [7] })
+        const commented = issue(7, { updated_on: '2026-09-28T14:30:00Z' })
+        const journal = { id: 61, user: LUCAS, created_on: '2026-09-28T14:30:00Z', notes: 'Ok', details: [] }
+        setup.gateway.details.set(7, detail(commented, { journals: [journal] }))
+        setup.gateway.byFilter.set(JSON.stringify({ queryId: 76 }), [issue(7)])
+        setup.gateway.byFilter.set(JSON.stringify({ queryId: 75 }), [commented])
+        await setup.monitor.runNow()
+
+        setup.gateway.byFilter.set(JSON.stringify({ queryId: 76 }), [commented])
+        await setup.monitor.runNow()
+
+        expect(setup.notifier.shown.map((notification) => notification.key)).toEqual(['journal:61'])
+    })
+
+    it('big board: only the count and the issues changed since the watermark, until it fits again', async () => {
+        const setup = monitorSetup()
+        setup.state.watermark = SINCE
+        const board: Board = {
+            id: 'b2',
+            name: 'Everything of mine',
+            source: { type: 'mine' },
+            swimlanes: 'none',
+            columns: [{ id: 'all', name: 'All', statusIds: [1, 5] }]
+        }
+        const boardMonitor: Monitor = {
+            id: 'board:b2',
+            name: 'Everything of mine',
+            enabled: true,
+            source: { type: 'board', boardId: 'b2' },
+            events: defaultEvents('board')
+        }
+        setMonitors(setup, [{ ...mineWithoutQueue(), enabled: false }, boardMonitor], [board])
+        const boardFilter = { assignedTo: 'me', status: [1, 5], sort: 'priority' } as const
+        setup.state.snapshots.set('board:b2', { count: 1200, ids: [1, 2, 3] })
+        let total = 1201
+        setup.gateway.countIssues = async () => total
+        const commented = issue(9, { updated_on: '2026-09-28T14:30:00Z' })
+        const changedKey = JSON.stringify({ ...boardFilter, sort: 'updatedDesc', updatedSince: SINCE })
+        setup.gateway.byFilter.set(changedKey, [commented])
+        const journal = { id: 71, user: LUCAS, created_on: '2026-09-28T14:30:00Z', notes: 'Ok', details: [] }
+        setup.gateway.details.set(9, detail(commented, { journals: [journal] }))
+
+        await setup.monitor.runNow()
+
+        expect(setup.gateway.filters).toEqual([{ ...boardFilter, updatedSince: SINCE, sort: 'updatedDesc' }])
+        const shown = setup.notifier.shown.map((notification) => [notification.payload.type, notification.issueId])
+        expect(shown).toEqual([
+            ['queryChanged', undefined],
+            ['issueChanged', 9]
+        ])
+        expect(setup.state.snapshots.get('board:b2')?.count).toBe(1201)
+
+        // Down to a size that can be compared: the whole result is listed again.
+        total = 2
+        setup.gateway.byFilter.set(JSON.stringify(boardFilter), [issue(1), issue(2)])
+        await setup.monitor.runNow()
+        expect(setup.state.snapshots.get('board:b2')).toMatchObject({ count: 2, ids: [1, 2] })
     })
 
     it('disabling a monitor drops its snapshot, so switching it back on does not flood', async () => {
@@ -321,6 +496,20 @@ describe('LoginUseCase', () => {
 })
 
 describe('boards', () => {
+    it('suggests columns from the open issues of a new "mine" board', async () => {
+        const gateway = new FakeGateway()
+        const settings = new MemorySettings()
+        const doing = { id: 2, name: 'Doing', is_closed: false }
+        gateway.issues = [issue(1), issue(2, { status: doing }), issue(3, { status: doing })]
+        const resolver = new BoardFilterResolver(new ListSprintsUseCase(gateway, settings, new FixedClock(new Date())))
+        const board: Board = { id: 'new', name: '', source: { type: 'mine' }, columns: [], swimlanes: 'none' }
+
+        const suggestion = await new SuggestBoardColumnsUseCase(gateway, resolver).execute(board)
+
+        expect(gateway.filters[0]).toMatchObject({ assignedTo: 'me', status: 'open' })
+        expect(suggestion).toEqual({ statusIds: [1, 2], total: 3 })
+    })
+
     it('moves the card to the column status that is allowed', async () => {
         const settings = new MemorySettings()
         const gateway = new FakeGateway()

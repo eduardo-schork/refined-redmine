@@ -115,6 +115,8 @@ export function MonitorEditor({
                         sourceType={draft.source.type}
                         events={draft.events}
                         onChange={(events) => patch({ events })}
+                        count={draft.count}
+                        onCountChange={isMine ? undefined : (count) => patch({ count })}
                     />
                 </div>
 

@@ -1,6 +1,8 @@
 import { type FormEvent, useState } from 'react'
+import { isEmptyChange, type BulkChange } from '@domain/redmine/issue-tree'
 import { addDays, toLocalDate, type LocalDate } from '@domain/shared/date'
 import { defaultActivityId, parseHours, type TimeEntryActivity, type TimeEntryDraft } from '@domain/time/time-entry'
+import { useCommentAndChange, useIssue, useIssueEditOptions } from '@/hooks/issues'
 import { useAddOvertime } from '@/hooks/overtime'
 import { useEditTime, useLogTime, useTimeActivities } from '@/hooks/time'
 import { useI18n } from '@/lib/i18n'
@@ -9,7 +11,9 @@ import { Button } from '../../atoms/Button'
 import { Input, Select, Textarea } from '../../atoms/fields'
 import { Dialog } from '../../molecules/Dialog'
 import { Field } from '../../molecules/Field'
+import { PickList } from '../../molecules/PickList'
 import { useToast } from '../../molecules/Toast'
+import { ignoredNames } from '../handoff/TramiteDialog'
 
 export interface TimeEntryDialogProps {
     issue: { id: number; subject?: string }
@@ -45,24 +49,120 @@ function useSaveEntry(props: TimeEntryDialogProps) {
     const log = useLogTime()
     const edit = useEditTime()
     const addOvertime = useAddOvertime()
-    /** `overtime`: the part of the hours worked as overtime, also kept in the app's overtime bank. */
-    const save = (draft: TimeEntryDraft, overtime?: number) => {
-        const done = () => {
-            rememberActivity(draft.activityId)
-            if (overtime) {
-                const entry = { day: draft.spentOn, hours: overtime, issueId: draft.issueId, note: draft.comments }
-                addOvertime.mutate(entry, { onError: (bankError) => toast(error(bankError), 'error') })
+    const commentAndChange = useCommentAndChange()
+
+    /** Status or assignee chosen in the dialog, applied after the time is logged. */
+    const applyChange = async (issueId: number, change: BulkChange) => {
+        try {
+            const result = await commentAndChange.mutateAsync({ id: issueId, change, uploads: [] })
+            if (result.outcome === 'partial') {
+                toast(t('bulk.ignored', { fields: ignoredNames(result.ignored, t) }), 'error')
             }
-            const message = props.entryId ? 'time.updated' : 'time.logged'
-            toast(t(message, { hours: dates.hours(draft.hours), id: draft.issueId }))
-            props.onSaved?.()
-            props.onClose()
+        } catch (changeError) {
+            toast(error(changeError), 'error')
         }
-        const failed = (saveError: unknown) => toast(error(saveError), 'error')
-        if (props.entryId) edit.mutate({ id: props.entryId, draft }, { onSuccess: done, onError: failed })
-        else log.mutate(draft, { onSuccess: done, onError: failed })
     }
-    return { save, saving: log.isPending || edit.isPending }
+
+    /** `overtime`: the part of the hours worked as overtime, also kept in the app's overtime bank. */
+    const save = async (draft: TimeEntryDraft, overtime: number, change: BulkChange) => {
+        try {
+            if (props.entryId) await edit.mutateAsync({ id: props.entryId, draft })
+            else await log.mutateAsync(draft)
+        } catch (saveError) {
+            toast(error(saveError), 'error')
+            return
+        }
+        rememberActivity(draft.activityId)
+        if (overtime) {
+            const entry = { day: draft.spentOn, hours: overtime, issueId: draft.issueId, note: draft.comments }
+            addOvertime.mutate(entry, { onError: (bankError) => toast(error(bankError), 'error') })
+        }
+        const message = props.entryId ? 'time.updated' : 'time.logged'
+        toast(t(message, { hours: dates.hours(draft.hours), id: draft.issueId }))
+        if (!isEmptyChange(change)) await applyChange(draft.issueId, change)
+        props.onSaved?.()
+        props.onClose()
+    }
+    return { save, saving: log.isPending || edit.isPending || commentAndChange.isPending }
+}
+
+const NOBODY = 'nobody'
+
+/** Undefined keeps the assignee; null leaves the issue with nobody. */
+function assigneeChange(assignee: string | undefined): number | null | undefined {
+    if (assignee === undefined) return undefined
+    if (assignee === NOBODY) return null
+    return Number(assignee)
+}
+
+/**
+ * Status and assignee to set together with the time ("stopped the stopwatch and it goes back to Ana"). Both start
+ * at the issue's current values, which change nothing.
+ */
+function useIssueChange(issueId: number, enabled: boolean) {
+    const issue = useIssue(issueId, enabled).data
+    const people = useIssueEditOptions(issue?.project.id ?? 0, Boolean(issue)).data?.assignees ?? []
+    const [statusId, setStatusId] = useState<number>()
+    const [assignee, setAssignee] = useState<string>()
+    const currentAssignee = issue?.assigned_to ? String(issue.assigned_to.id) : NOBODY
+    const change: BulkChange = { statusId, assignedToId: assigneeChange(assignee) }
+    return {
+        issue,
+        people,
+        statusId: statusId ?? issue?.status.id,
+        setStatusId,
+        assignee: assignee ?? currentAssignee,
+        setAssignee,
+        change
+    }
+}
+
+function IssueChangeFields({ change }: { change: ReturnType<typeof useIssueChange> }) {
+    const { t } = useI18n()
+    const issue = change.issue
+    if (!issue) return null
+    const statuses = issue.allowed_statuses.some((status) => status.id === issue.status.id)
+        ? issue.allowed_statuses
+        : [issue.status, ...issue.allowed_statuses]
+    const people = [
+        { value: NOBODY, label: t('issue.edit.nobody') },
+        ...change.people.map((person) => ({ value: String(person.id), label: person.name })),
+        ...(issue.assigned_to && !change.people.some((person) => person.id === issue.assigned_to?.id)
+            ? [{ value: String(issue.assigned_to.id), label: issue.assigned_to.name }]
+            : [])
+    ]
+    return (
+        <div className="flex flex-col gap-2 border-t border-line pt-3">
+            <div>
+                <h3 className="text-xs font-medium text-muted">{t('time.alsoChange')}</h3>
+                <p className="text-xs text-muted">{t('time.alsoChangeHint')}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+                <Field label={t('issue.status')}>
+                    <Select
+                        value={change.statusId ?? ''}
+                        onChange={(event) => change.setStatusId(Number(event.target.value))}
+                    >
+                        {statuses.map((status) => (
+                            <option key={status.id} value={status.id}>
+                                {status.name}
+                            </option>
+                        ))}
+                    </Select>
+                </Field>
+                <div className="flex flex-col gap-1">
+                    <span className="text-xs font-medium text-muted">{t('issue.assignee')}</span>
+                    <PickList
+                        value={change.assignee}
+                        options={people}
+                        searchPlaceholder={t('issue.edit.searchPerson')}
+                        noMatches={t('issue.edit.noPerson')}
+                        onPick={(option) => change.setAssignee(option.value)}
+                    />
+                </div>
+            </div>
+        </div>
+    )
 }
 
 /** The part of the hours that was overtime: optional, never more than the hours. */
@@ -159,13 +259,15 @@ export function TimeEntryDialog(props: TimeEntryDialogProps) {
     const { issue, initial, entryId, onClose } = props
     const form = useEntryForm(initial)
     const { save, saving } = useSaveEntry(props)
+    const issueChange = useIssueChange(issue.id, !entryId)
     const canSave = form.complete && !saving
 
     function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault()
         if (!canSave || form.hours === null) return
         const { spentOn, hours, activityId, comments } = form
-        save({ issueId: issue.id, spentOn, hours, activityId, comments }, form.overtime ?? 0)
+        const change = entryId ? {} : issueChange.change
+        void save({ issueId: issue.id, spentOn, hours, activityId, comments }, form.overtime ?? 0, change)
     }
 
     const title = entryId ? t('time.editTitle', { id: issue.id }) : t('time.logTitle', { id: issue.id })
@@ -209,6 +311,7 @@ export function TimeEntryDialog(props: TimeEntryDialogProps) {
                         onChange={(event) => form.setComments(event.target.value)}
                     />
                 </Field>
+                {!entryId && <IssueChangeFields change={issueChange} />}
                 <div className="flex justify-end gap-2">
                     <Button onClick={onClose}>{t('common.cancel')}</Button>
                     <Button variant="primary" type="submit" disabled={!canSave}>

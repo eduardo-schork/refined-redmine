@@ -1,14 +1,24 @@
-import { useState } from 'react'
+import { useState, type KeyboardEvent } from 'react'
 import type { IssueDetail } from '@domain/redmine/entities'
-import { subtreeIds, toggleSubtree, type BulkChange, type IssueTreeNode } from '@domain/redmine/issue-tree'
+import {
+    subtreeIds,
+    toggleSubtree,
+    treeGuides,
+    type BulkChange,
+    type IssueTreeNode,
+    type TreeGuide
+} from '@domain/redmine/issue-tree'
 import { useBulkEdit, useIssueEditOptions, useIssueTree } from '@/hooks/issues'
 import { useStatuses } from '@/hooks/reference'
+import { cn } from '@/lib/cn'
 import { useI18n } from '@/lib/i18n'
-import { useSteps, type Step, type StepOutcome } from '@/lib/steps'
+import { stepProblems, useSteps, type Step, type StepOutcome } from '@/lib/steps'
 import { Select } from '../atoms/fields'
 import { Dialog } from '../molecules/Dialog'
 import { Field } from '../molecules/Field'
+import { PickList } from '../molecules/PickList'
 import { StepIcon } from '../molecules/StepIcon'
+import { StepProblems } from '../molecules/StepProblems'
 import { StepsFooter } from '../molecules/StepsFooter'
 import { Alert } from '../molecules/surfaces'
 import { useToast } from '../molecules/Toast'
@@ -73,6 +83,11 @@ export function BulkEditDialog({ issue, onClose }: { issue: IssueDetail; onClose
             }
         }))
     const pendingCount = steps.pending(plannedSteps).length
+    const labelOf = (key: string) => {
+        const id = Number(key.split(':')[0])
+        const node = nodes.find((candidate) => candidate.issue.id === id)
+        return node ? `#${id} ${node.issue.subject}` : `#${id}`
+    }
 
     const apply = async () => {
         const clean = await steps.run(plannedSteps)
@@ -107,6 +122,7 @@ export function BulkEditDialog({ issue, onClose }: { issue: IssueDetail; onClose
                     choiceKey={choiceKey}
                     onToggle={(id) => setChecked(toggleSubtree(nodes, selected, id))}
                 />
+                <StepProblems problems={stepProblems(plannedSteps, steps.outcomes, labelOf)} />
             </div>
         </Dialog>
     )
@@ -139,26 +155,34 @@ export function ChoiceFields({
                 </Select>
             </Field>
             <Field label={t('issue.assignee')}>
-                <Select value={choices.assignee} onChange={(event) => update({ assignee: event.target.value })}>
-                    <option value={KEEP}>{t('bulk.keep')}</option>
-                    <option value={CLEAR}>{t('issue.edit.nobody')}</option>
-                    {(options?.assignees ?? []).map((person) => (
-                        <option key={person.id} value={person.id}>
-                            {person.name}
-                        </option>
-                    ))}
-                </Select>
+                <PickList
+                    value={choices.assignee}
+                    options={[
+                        { value: KEEP, label: t('bulk.keep') },
+                        { value: CLEAR, label: t('issue.edit.nobody') },
+                        ...(options?.assignees ?? []).map((person) => ({
+                            value: String(person.id),
+                            label: person.name
+                        }))
+                    ]}
+                    searchPlaceholder={t('issue.edit.searchPerson')}
+                    noMatches={t('issue.edit.noPerson')}
+                    onPick={(option) => update({ assignee: option.value })}
+                />
             </Field>
             <Field label={t('issue.version')}>
-                <Select value={choices.version} onChange={(event) => update({ version: event.target.value })}>
-                    <option value={KEEP}>{t('bulk.keep')}</option>
-                    <option value={CLEAR}>{t('issue.edit.noVersion')}</option>
-                    {(options?.versions ?? []).map((version) => (
-                        <option key={version.id} value={version.id}>
-                            {version.name}
-                        </option>
-                    ))}
-                </Select>
+                <PickList
+                    value={choices.version}
+                    options={[
+                        { value: KEEP, label: t('bulk.keep') },
+                        { value: CLEAR, label: t('issue.edit.noVersion') },
+                        ...(options?.versions ?? []).map((version) => ({
+                            value: String(version.id),
+                            label: version.name
+                        }))
+                    ]}
+                    onPick={(option) => update({ version: option.value })}
+                />
             </Field>
         </div>
     )
@@ -184,28 +208,54 @@ export function TreeTable({
     onToggle: (id: number) => void
 }) {
     const { t } = useI18n()
+    const guides = treeGuides(nodes)
     return (
         <div className="overflow-hidden rounded-lg border border-line">
             <table className="w-full text-sm">
                 <tbody>
-                    {nodes.map((node) => {
+                    {nodes.map((node, index) => {
                         const issue = node.issue
+                        const isChecked = checked.has(issue.id)
+                        // The whole row checks the issue: the box alone was too small a target.
+                        const toggleOnKey = (event: KeyboardEvent) => {
+                            if (event.key !== ' ' && event.key !== 'Enter') return
+                            event.preventDefault()
+                            onToggle(issue.id)
+                        }
                         return (
-                            <tr key={issue.id} className="border-b border-line last:border-b-0">
+                            <tr
+                                key={issue.id}
+                                role="checkbox"
+                                aria-checked={isChecked}
+                                tabIndex={0}
+                                onClick={() => onToggle(issue.id)}
+                                onKeyDown={toggleOnKey}
+                                className={cn(
+                                    'cursor-pointer border-b border-line outline-none last:border-b-0 hover:bg-panel-2 focus-visible:bg-panel-2',
+                                    isChecked && 'bg-accent-soft/40'
+                                )}
+                            >
                                 <td className="w-8 py-1.5 pl-3">
                                     <input
                                         type="checkbox"
-                                        aria-label={`#${issue.id}`}
-                                        checked={checked.has(issue.id)}
-                                        onChange={() => onToggle(issue.id)}
+                                        tabIndex={-1}
+                                        aria-hidden
+                                        readOnly
+                                        checked={isChecked}
+                                        className="pointer-events-none"
                                     />
                                 </td>
                                 <td className="w-28 py-1.5 text-xs text-muted">{roleLabel(node, t)}</td>
-                                <td className="py-1.5 pr-3" style={{ paddingLeft: node.depth * 16 }}>
-                                    <span className="text-muted">
-                                        {issue.tracker?.name} #{issue.id}
-                                    </span>{' '}
-                                    {issue.subject}
+                                <td className="py-1.5 pr-3">
+                                    <span className="flex items-baseline">
+                                        <TreeBranch depth={node.depth} guide={guides[index]} />
+                                        <span className="min-w-0">
+                                            <span className="text-muted">
+                                                {issue.tracker?.name} #{issue.id}
+                                            </span>{' '}
+                                            {issue.subject}
+                                        </span>
+                                    </span>
                                 </td>
                                 <td className="w-32 py-1.5 text-xs">{issue.status.name}</td>
                                 <td className="w-36 truncate py-1.5 text-xs">{issue.assigned_to?.name ?? '—'}</td>
@@ -220,4 +270,12 @@ export function TreeTable({
             </table>
         </div>
     )
+}
+
+/** "│  ├─ " before a subtask: which issue it hangs from, like a folder tree. */
+function TreeBranch({ depth, guide }: { depth: number; guide: TreeGuide }) {
+    if (depth === 0) return null
+    const levels = guide.lines.map((continues) => (continues ? '│  ' : '   ')).join('')
+    const branch = guide.last ? '└─ ' : '├─ '
+    return <span className="shrink-0 whitespace-pre font-mono text-muted">{`${levels}${branch}`}</span>
 }

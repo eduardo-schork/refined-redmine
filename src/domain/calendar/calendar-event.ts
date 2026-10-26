@@ -7,7 +7,7 @@ export interface Recurrence {
     freq: RecurrenceFreq
     interval: number
     byWeekday?: number[] // weekly: 0 = Sunday … 6 = Saturday
-    monthlyMode?: 'day' | 'weekday' // monthly: on day N | on the Nth <weekday>
+    monthlyMode?: 'day' | 'weekday' | 'lastWorkday' // monthly: on day N | on the Nth <weekday> | last Mon–Fri
     monthlyNth?: number // 1..4 or -1 (last)
     until?: LocalDate // inclusive
     count?: number

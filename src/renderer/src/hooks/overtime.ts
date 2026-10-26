@@ -15,6 +15,8 @@ function useBankMutation<Input>(change: (input: Input) => Promise<OvertimeBank>)
 }
 
 export const useAddOvertime = () => useBankMutation((draft: OvertimeDraft) => api.overtime.add(draft))
+export const useUpdateOvertime = () =>
+    useBankMutation(({ id, draft }: { id: string; draft: OvertimeDraft }) => api.overtime.update(id, draft))
 export const useRemoveOvertime = () => useBankMutation((id: string) => api.overtime.remove(id))
 export const useSetMonthPaid = () =>
     useBankMutation(({ month, paid }: { month: string; paid: boolean }) => api.overtime.setPaid(month, paid))

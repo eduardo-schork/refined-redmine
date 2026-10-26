@@ -41,6 +41,20 @@ export interface AppEventsPublisher {
 }
 
 /** Hands a downloaded file to the operating system's default app for its type. */
+/** Opens links of other apps (Claude) and copies text, in the operating system. */
+export interface ExternalLauncher {
+    openUrl(url: string): Promise<void>
+    copyText(text: string): void
+}
+
+/** Native save/open dialogs for a text file the user picks. */
+export interface FileDialogs {
+    /** False when the user cancelled. */
+    saveText(suggestedName: string, text: string): Promise<boolean>
+    /** Null when the user cancelled. */
+    openText(maxBytes: number): Promise<string | null>
+}
+
 export interface FileOpener {
     open(fileName: string, bytes: Uint8Array): Promise<void>
 }

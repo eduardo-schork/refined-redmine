@@ -40,9 +40,10 @@ export async function checkMine(
 ): Promise<void> {
     const source: NotificationSource = { monitorId: monitor.id, name: monitor.name }
     await checkQueueExits(monitor, source, cycle, deps)
-    const issues = await fetchChangedIssues(scopeFilters(scopes), cycle, deps.gateway)
+    const since = cycle.sinceOf(monitor.id)
+    const issues = await fetchChangedIssues(scopeFilters(scopes), since, deps.gateway)
     for (const issue of issues) {
-        cycle.sawUpdate(issue)
+        cycle.sawUpdate(monitor.id, issue)
         await notifyIssue(issue, monitor, source, cycle)
     }
 }
@@ -94,14 +95,10 @@ async function notifyQueueExit(issueId: number, source: NotificationSource, cycl
 }
 
 /** Issues from all scopes, deduplicated, most recently updated first. */
-async function fetchChangedIssues(
-    filters: IssueFilter[],
-    cycle: MonitorCycle,
-    gateway: RedmineGateway
-): Promise<Issue[]> {
+async function fetchChangedIssues(filters: IssueFilter[], since: string, gateway: RedmineGateway): Promise<Issue[]> {
     const changed = new Map<number, Issue>()
     for (const scope of filters) {
-        const filter: IssueFilter = { ...scope, status: '*', updatedSince: cycle.since, sort: 'updatedDesc' }
+        const filter: IssueFilter = { ...scope, status: '*', updatedSince: since, sort: 'updatedDesc' }
         const page = await gateway.listIssues(filter, MAX_CHANGED_ISSUES_PER_SCOPE)
         for (const issue of page.items) changed.set(issue.id, issue)
     }
@@ -114,9 +111,10 @@ async function notifyIssue(
     source: NotificationSource,
     cycle: MonitorCycle
 ): Promise<void> {
-    if (!cycle.isNew(issue)) return
+    if (!cycle.isNew(issue, monitor.id)) return
 
-    const createdBySomeoneElse = issue.created_on > cycle.since && issue.author.id !== cycle.me.id
+    const createdSince = issue.created_on > cycle.sinceOf(monitor.id)
+    const createdBySomeoneElse = createdSince && issue.author.id !== cycle.me.id
     if (createdBySomeoneElse) {
         if (!isEventEnabled(monitor, 'new_issue')) return
         const payload: NotificationPayload = {

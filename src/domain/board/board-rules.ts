@@ -38,12 +38,52 @@ export function columnsFromStatuses(statuses: IssueStatus[], newId: () => string
     return [...openColumns, closedColumn]
 }
 
+/**
+ * "Ágil": every open issue assigned to me, one column per open status. Created once for each user; after that it is
+ * an ordinary board (renamed, changed or deleted at will).
+ */
+export function createAgileBoard(statuses: IssueStatus[], id: string, name: string): Board {
+    const openStatuses = statuses.filter((status) => !status.is_closed)
+    const columns = openStatuses.map((status) => ({
+        id: `${id}-${status.id}`,
+        name: status.name,
+        statusIds: [status.id]
+    }))
+    return { id, name, source: { type: 'mine' }, columns, swimlanes: 'none' }
+}
+
+/**
+ * Issues that suggest the columns of a new board: "mine" and project boards look at the open issues, a sprint at all
+ * of them (closed ones too), saved queries and copied filters at what Redmine returns for them.
+ */
+export function columnSuggestionFilter(source: BoardSource, filter: IssueFilter): IssueFilter {
+    if (source.type === 'mine' || source.type === 'project') return { ...filter, status: 'open' }
+    if (source.type === 'sprint') return { ...filter, status: '*' }
+    return filter
+}
+
+/** Statuses the issues are in, in Redmine's order (the columns of `columnsFromStatuses` follow them). */
+export function suggestedStatuses(statuses: IssueStatus[], presentStatusIds: number[]): IssueStatus[] {
+    const present = new Set(presentStatusIds)
+    return statuses.filter((status) => present.has(status.id))
+}
+
 function assertValidSource(source: BoardSource): void {
     if (source.type === 'project' && !source.projectId) throw new AppError('board.projectRequired')
     if (source.type === 'query' && !source.queryId) throw new AppError('board.queryRequired')
     if (source.type === 'filter' && !source.url.trim()) throw new AppError('board.filterRequired')
     if (source.type === 'filter') parseIssuesUrl(source.url)
     if (source.type === 'sprint' && !source.versionId && !source.auto) throw new AppError('board.sprintRequired')
+}
+
+/** The source has everything it needs (project, query, address or sprint chosen). */
+export function isCompleteSource(source: BoardSource): boolean {
+    try {
+        assertValidSource(source)
+        return true
+    } catch {
+        return false
+    }
 }
 
 /** Throws the first error found. */

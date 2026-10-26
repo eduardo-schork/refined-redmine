@@ -1,3 +1,4 @@
+import { assertValidClaudeActions } from '@domain/automation/claude-action'
 import { assertValidRules } from '@domain/automation/handoff'
 import { assertValidTeam } from '@domain/time/team'
 import { withIssueStyleDefaults } from '@domain/redmine/issue-style'
@@ -39,6 +40,11 @@ function cleanTeams(patch: SettingsPatch): SettingsPatch {
     return { ...patch, teams }
 }
 
+function cleanClaudeActions(patch: SettingsPatch): SettingsPatch {
+    if (patch.claudeActions === undefined) return patch
+    return { ...patch, claudeActions: assertValidClaudeActions(patch.claudeActions) }
+}
+
 /** Rules are checked and tidied before saving (names, default templates, incomplete closing steps). */
 function cleanHandoffRules(patch: SettingsPatch): SettingsPatch {
     if (patch.handoffRules === undefined) return patch
@@ -66,7 +72,9 @@ export class UpdateSettingsUseCase {
 
     execute(patch: SettingsPatch): SettingsView {
         const previous = this.settings.get()
-        const cleanPatch = cleanHandoffRules(cleanTeams(cleanUpdates(cleanIssueStyle(clampPollSeconds(patch)))))
+        const cleanPatch = cleanClaudeActions(
+            cleanHandoffRules(cleanTeams(cleanUpdates(cleanIssueStyle(clampPollSeconds(patch)))))
+        )
         this.settings.save({ ...previous, ...cleanPatch })
 
         const { openAtLogin, language } = cleanPatch

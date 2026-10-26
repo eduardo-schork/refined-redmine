@@ -1,7 +1,7 @@
 import { type FormEvent, useState } from 'react'
-import { Landmark, Plus, Timer, Trash2, Wallet } from 'lucide-react'
+import { Landmark, Pencil, Plus, Timer, Trash2, Wallet } from 'lucide-react'
 import { parseIssueSearch } from '@domain/redmine/issue-search'
-import { toLocalDate } from '@domain/shared/date'
+import { parseLocal, toLocalDate, type LocalDate } from '@domain/shared/date'
 import { parseHours } from '@domain/time/time-entry'
 import {
     bankBalance,
@@ -12,9 +12,11 @@ import {
     overtimeMonths,
     paidHoursInYear,
     type OvertimeBank,
+    type OvertimeDraft,
+    type OvertimeEntry,
     type OvertimeMonth
 } from '@domain/time/overtime'
-import { useAddOvertime, useOvertime, useRemoveOvertime, useSetMonthPaid } from '@/hooks/overtime'
+import { useAddOvertime, useOvertime, useRemoveOvertime, useSetMonthPaid, useUpdateOvertime } from '@/hooks/overtime'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/cn'
 import { Button } from '@/ui/atoms/Button'
@@ -39,15 +41,18 @@ function useMonthLabel() {
     }
 }
 
-/** Overtime kept in the app: the bank balance, months kept or paid out, and each entry. */
+/**
+ * Overtime kept in the app: the bank balance, months kept or paid out, and each entry. Clicking a month (chart or
+ * list) filters the entries, like a cell of Tempo do time; the chip clears it.
+ */
 export default function OvertimePage() {
     const { t } = useI18n()
     const bank = useOvertime().data ?? EMPTY_BANK
     const currentMonth = monthOf(toLocalDate(new Date()))
-    const [selectedMonth, setSelectedMonth] = useState(currentMonth)
-    const [adding, setAdding] = useState(false)
+    const [filterMonth, setFilterMonth] = useState<string>()
+    const [editing, setEditing] = useState<OvertimeEntry | 'new'>()
     const actions = (
-        <Button variant="primary" onClick={() => setAdding(true)}>
+        <Button variant="primary" onClick={() => setEditing('new')}>
             <Plus size={14} /> {t('overtime.add')}
         </Button>
     )
@@ -55,12 +60,17 @@ export default function OvertimePage() {
         <PageLayout title={t('nav.overtime')} actions={actions} width="xl">
             <p className="-mt-2 text-sm text-muted">{t('overtime.intro')}</p>
             <OvertimeStats bank={bank} currentMonth={currentMonth} />
-            <MonthChart bank={bank} currentMonth={currentMonth} onPick={setSelectedMonth} />
-            <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4">
-                <MonthList bank={bank} selected={selectedMonth} onPick={setSelectedMonth} />
-                <MonthEntries bank={bank} month={selectedMonth} />
-            </div>
-            {adding && <OvertimeDialog onClose={() => setAdding(false)} />}
+            <MonthChart bank={bank} currentMonth={currentMonth} selected={filterMonth} onPick={setFilterMonth} />
+            <MonthList bank={bank} selected={filterMonth} onPick={setFilterMonth} />
+            <OvertimeEntries
+                bank={bank}
+                month={filterMonth}
+                onClear={() => setFilterMonth(undefined)}
+                onEdit={setEditing}
+            />
+            {editing && (
+                <OvertimeDialog entry={editing === 'new' ? undefined : editing} onClose={() => setEditing(undefined)} />
+            )}
         </PageLayout>
     )
 }
@@ -94,10 +104,12 @@ const CHART_HEIGHT_PX = 96
 function MonthChart({
     bank,
     currentMonth,
+    selected,
     onPick
 }: {
     bank: OvertimeBank
     currentMonth: string
+    selected?: string
     onPick: (month: string) => void
 }) {
     const { t, dates } = useI18n()
@@ -112,7 +124,10 @@ function MonthChart({
                         key={month.month}
                         onClick={() => onPick(month.month)}
                         title={`${monthLabel(month.month, 'long')}: ${dates.hours(month.hours)}`}
-                        className="flex flex-1 cursor-default flex-col items-center gap-1"
+                        className={cn(
+                            'flex flex-1 cursor-default flex-col items-center gap-1 rounded-md p-1 hover:outline hover:outline-1 hover:outline-accent/50',
+                            month.month === selected && 'outline outline-2 outline-accent'
+                        )}
                     >
                         <div className="flex w-full items-end" style={{ height: CHART_HEIGHT_PX }}>
                             <div
@@ -134,7 +149,7 @@ function MonthList({
     onPick
 }: {
     bank: OvertimeBank
-    selected: string
+    selected?: string
     onPick: (month: string) => void
 }) {
     const { t } = useI18n()
@@ -190,28 +205,52 @@ function MonthRow({
     )
 }
 
-function MonthEntries({ bank, month }: { bank: OvertimeBank; month: string }) {
+/** Entries of the filtered month, or of every month (newest first, with the year) without a filter. */
+function OvertimeEntries({
+    bank,
+    month,
+    onClear,
+    onEdit
+}: {
+    bank: OvertimeBank
+    month?: string
+    onClear: () => void
+    onEdit: (entry: OvertimeEntry) => void
+}) {
     const { t, dates, error } = useI18n()
     const toast = useToast()
     const monthLabel = useMonthLabel()
     const openIssue = useOpenIssue()
     const remove = useRemoveOvertime()
-    const entries = bank.entries
-        .filter((entry) => monthOf(entry.day) === month)
-        .sort((first, second) => second.day.localeCompare(first.day))
+    const inScope = month ? bank.entries.filter((entry) => monthOf(entry.day) === month) : bank.entries
+    const entries = [...inScope].sort((first, second) => second.day.localeCompare(first.day))
+    const emptyText = month ? t('overtime.noEntries') : t('overtime.empty')
+    const dayLabel = (day: LocalDate) =>
+        month ? dates.date(day) : dates.format(parseLocal(day), { day: '2-digit', month: '2-digit', year: 'numeric' })
     const confirmRemove = (id: string) => {
         if (!confirm(t('overtime.confirmRemove'))) return
         remove.mutate(id, { onError: (removeError) => toast(error(removeError), 'error') })
     }
+    const filterChip = month ? (
+        <Button variant="ghost" className="h-7 px-2 text-xs" onClick={onClear}>
+            {monthLabel(month, 'long')} ✕
+        </Button>
+    ) : undefined
     return (
-        <Panel title={t('overtime.entriesOf', { month: monthLabel(month, 'long') })} count={entries.length}>
-            {entries.length === 0 && <EmptyRow>{t('overtime.noEntries')}</EmptyRow>}
+        <Panel title={t('overtime.entries')} count={entries.length} action={filterChip}>
+            {entries.length === 0 && <EmptyRow>{emptyText}</EmptyRow>}
             {entries.map((entry) => (
                 <div key={entry.id} className="flex items-center gap-3 border-t border-line px-4 py-2 text-sm">
-                    <span className="w-14 text-muted">{dates.date(entry.day)}</span>
+                    <span className={cn('text-muted', month ? 'w-14' : 'w-24')}>{dayLabel(entry.day)}</span>
                     <span className="w-14 font-medium tabular-nums">{dates.hours(entry.hours)}</span>
                     <IssueLink issueId={entry.issueId} onOpen={openIssue} />
                     <span className="min-w-0 flex-1 truncate text-muted">{entry.note}</span>
+                    <IconButton
+                        label={t('overtime.edit')}
+                        icon={<Pencil size={14} />}
+                        size="sm"
+                        onClick={() => onEdit(entry)}
+                    />
                     <IconButton
                         label={t('overtime.remove')}
                         icon={<Trash2 size={14} />}
@@ -234,32 +273,62 @@ function IssueLink({ issueId, onOpen }: { issueId?: number; onOpen: (id: number)
     )
 }
 
-/** Overtime without logging time in Redmine (the time entry may already exist, or be logged elsewhere). */
-function OvertimeDialog({ onClose }: { onClose: () => void }) {
-    const { t, error } = useI18n()
+/** Logs a new entry, or changes `entry`. */
+function useSaveOvertime(entry: OvertimeEntry | undefined, onSaved: () => void) {
+    const { error } = useI18n()
     const toast = useToast()
     const add = useAddOvertime()
-    const [day, setDay] = useState(toLocalDate(new Date()))
-    const [typedHours, setTypedHours] = useState('')
-    const [typedIssue, setTypedIssue] = useState('')
-    const [note, setNote] = useState('')
-    const hours = parseHours(typedHours)
-    const reference = parseIssueSearch(typedIssue)
+    const update = useUpdateOvertime()
+    const save = (draft: OvertimeDraft) => {
+        const callbacks = { onSuccess: onSaved, onError: (saveError: Error) => toast(error(saveError), 'error') }
+        if (entry) {
+            update.mutate({ id: entry.id, draft }, callbacks)
+            return
+        }
+        add.mutate(draft, callbacks)
+    }
+    return { save, saving: add.isPending || update.isPending }
+}
+
+/** What the form starts with: today for a new entry, the entry's values when changing one. */
+function initialForm(entry?: OvertimeEntry) {
+    if (!entry) return { day: toLocalDate(new Date()), hours: undefined, issue: '', note: '' }
+    const issue = entry.issueId ? `#${entry.issueId}` : ''
+    return { day: entry.day, hours: entry.hours, issue, note: entry.note }
+}
+
+/** The issue is optional; when typed, it must be an issue number ("#1234" or "1234"). */
+function typedIssueId(typed: string) {
+    const reference = parseIssueSearch(typed)
     const issueId = reference.type === 'id' ? reference.id : undefined
-    const issueValid = !typedIssue.trim() || issueId !== undefined
-    const canSave = hours !== null && hours > 0 && issueValid && !add.isPending
+    return { issueId, valid: !typed.trim() || issueId !== undefined }
+}
+
+/**
+ * Logs overtime without logging time in Redmine (the time entry may already exist, or be logged elsewhere), or
+ * changes an entry of the bank.
+ */
+function OvertimeDialog({ entry, onClose }: { entry?: OvertimeEntry; onClose: () => void }) {
+    const { t, dates } = useI18n()
+    const { save, saving } = useSaveOvertime(entry, onClose)
+    const [initial] = useState(() => initialForm(entry))
+    const [day, setDay] = useState(initial.day)
+    const [typedHours, setTypedHours] = useState(dates.hoursInput(initial.hours))
+    const [typedIssue, setTypedIssue] = useState(initial.issue)
+    const [note, setNote] = useState(initial.note)
+    const hours = parseHours(typedHours)
+    const { issueId, valid: issueValid } = typedIssueId(typedIssue)
+    const canSave = hours !== null && hours > 0 && issueValid && !saving
+    const title = entry ? t('overtime.edit') : t('overtime.add')
 
     const submit = (event: FormEvent) => {
         event.preventDefault()
         if (!canSave || hours === null) return
-        add.mutate(
-            { day, hours, issueId, note },
-            { onSuccess: onClose, onError: (saveError) => toast(error(saveError), 'error') }
-        )
+        save({ day, hours, issueId, note })
     }
 
     return (
-        <Dialog title={t('overtime.add')} onClose={onClose}>
+        <Dialog title={title} onClose={onClose}>
             <form onSubmit={submit} className="flex flex-col gap-4">
                 <div className="grid grid-cols-3 gap-4">
                     <Field label={t('time.date')}>

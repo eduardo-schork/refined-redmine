@@ -9,35 +9,45 @@ import {
     type ReactNode,
     type RefObject
 } from 'react'
-import { ExternalLink, Pencil, X } from 'lucide-react'
+import { ArrowDownUp, Copy, ExternalLink, Pencil, X } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import type { CustomFieldValue, IssueDetail, Journal, JournalDetail } from '@domain/redmine/entities'
+import { COPY_FORMATS, copyText } from '@domain/redmine/issue-copy'
 import { MAX_SUBJECT_LENGTH, subtaskDefaults, type NewIssueDefaults } from '@domain/redmine/issue-edit'
 import { RedmineLinks } from '@domain/redmine/links'
-import { useChangeIssueStatus, useCommentOnIssue, useIssue } from '@/hooks/issues'
+import { useChangeIssueStatus, useCommentAndChange, useIssue } from '@/hooks/issues'
 import { useStatuses } from '@/hooks/reference'
 import { useSettings } from '@/hooks/session'
 import { api } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
+import { loadJournalOrder, saveJournalOrder, type JournalOrder } from '@/lib/journal-order'
+import { qk } from '@/lib/query-keys'
 import { rememberIssue } from '@/lib/recent-issues'
 import { SUBMIT_SHORTCUT, useModifierShortcut } from '@/lib/shortcuts'
 import { useIsActiveTab } from '@/lib/workspace-tabs'
 import { Avatar } from '../atoms/Avatar'
 import { Button } from '../atoms/Button'
-import { Input, Select, Textarea } from '../atoms/fields'
+import { Input, Select } from '../atoms/fields'
 import { IconButton } from '../atoms/IconButton'
+import { LoadingBar } from '../atoms/LoadingBar'
 import { Overline } from '../atoms/misc'
 import { ClampedContent } from '../molecules/ClampedContent'
+import { CopyButton, useCopy } from '../molecules/CopyButton'
 import { Dialog } from '../molecules/Dialog'
 import { Markdown } from '../molecules/Markdown'
+import { Menu } from '../molecules/Menu'
+import { RefreshButton } from '../molecules/RefreshButton'
 import { inlineAttachmentRenderer } from './attachments/InlineAttachment'
 import { Alert, Property } from '../molecules/surfaces'
 import { useToast } from '../molecules/Toast'
-import { IssueCreateDialog } from './IssueCreateDialog'
+import { IssueCreateDialog, useChosenFiles } from './IssueCreateDialog'
+import { MarkdownEditor } from './MarkdownEditor'
 import { IssueFieldEditors, useSaveField } from './IssueFieldEditors'
 import { DueChip, PriorityChip, TrackerLabel, VersionChip } from '../molecules/issue-chips'
 import { IssueDetailTabs } from './IssueDetailTabs'
 import { IssueQuickActions } from './IssueQuickActions'
 import { SendNoteButton } from './handoff/HandoffButtons'
+import { CommentWithFiles } from './handoff/HandoffParts'
 import { StatusTag } from '../molecules/StatusTag'
 
 type Translate = ReturnType<typeof useI18n>['t']
@@ -169,7 +179,8 @@ function IssueModal({ id, onClose, canGoBack }: { id: number; onClose: () => voi
     const issueQuery = useIssue(id)
     const statuses = useStatuses()
     const changeStatus = useChangeIssueStatus(id)
-    const comment = useCommentOnIssue(id)
+    const comment = useCommentAndChange()
+    const queryClient = useQueryClient()
     const issue = issueQuery.data
     useEffect(() => {
         if (issue) rememberIssue({ id: issue.id, subject: issue.subject, project: issue.project.name })
@@ -183,6 +194,12 @@ function IssueModal({ id, onClose, canGoBack }: { id: number; onClose: () => voi
         renderImage: issue ? inlineAttachmentRenderer(issue.attachments, links) : undefined
     }
 
+    // Agents may change the issue in Redmine: this reads it again (with its related issues and hours).
+    const refresh = () => {
+        void queryClient.invalidateQueries({ queryKey: qk.issue(id) })
+        void queryClient.invalidateQueries({ queryKey: qk.issueTime(id) })
+    }
+
     const handleStatusChange = (statusId: number) => {
         changeStatus.mutate(statusId, {
             onSuccess: () => toast(t('issue.statusChanged', { status: statusName.get(statusId) ?? statusId })),
@@ -191,7 +208,7 @@ function IssueModal({ id, onClose, canGoBack }: { id: number; onClose: () => voi
     }
 
     return (
-        <Dialog onClose={onClose} size="xl" bare title={issue?.subject}>
+        <Dialog onClose={onClose} size="xl" bare title={issue?.subject} resizeKey="issue">
             <IssueHeader
                 id={id}
                 issue={issue}
@@ -200,6 +217,8 @@ function IssueModal({ id, onClose, canGoBack }: { id: number; onClose: () => voi
                 onClose={onClose}
                 issueUrl={links.issue(id)}
                 onOpenInRedmine={() => openExternal(links.issue(id))}
+                refreshing={issueQuery.isFetching}
+                onRefresh={refresh}
             />
 
             {issueQuery.isError && <Alert className="m-5">{error(issueQuery.error)}</Alert>}
@@ -215,8 +234,12 @@ function IssueModal({ id, onClose, canGoBack }: { id: number; onClose: () => voi
                             onOpenIssue={openIssue}
                             onNewSubtask={() => openNewIssue(subtaskDefaults(issue))}
                         />
-                        <History issue={issue} statusName={statusName} {...markdownLinks} />
-                        <CommentBox comment={comment} saving={saving} />
+                        <History
+                            issue={issue}
+                            statusName={statusName}
+                            composer={<CommentBox issue={issue} comment={comment} saving={saving} />}
+                            {...markdownLinks}
+                        />
                     </div>
 
                     <IssueSidebar issue={issue} saving={saving} onStatus={handleStatusChange} />
@@ -233,7 +256,9 @@ function IssueHeader({
     canGoBack,
     onClose,
     issueUrl,
-    onOpenInRedmine
+    onOpenInRedmine,
+    refreshing,
+    onRefresh
 }: {
     id: number
     issue?: IssueDetail
@@ -242,6 +267,8 @@ function IssueHeader({
     onClose: () => void
     issueUrl: string
     onOpenInRedmine: () => void
+    refreshing: boolean
+    onRefresh: () => void
 }) {
     const { t } = useI18n()
     const openIssue = useOpenIssue()
@@ -249,7 +276,8 @@ function IssueHeader({
     const placeholderTitle = isError ? t('issue.loadError') : t('common.loading')
 
     return (
-        <header className="flex items-start gap-3 border-b border-line px-5 py-3">
+        <header className="relative flex items-start gap-3 border-b border-line px-5 py-3">
+            <LoadingBar active={refreshing} className="absolute inset-x-0 -bottom-px" />
             <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 text-xs text-muted">
                     {canGoBack && (
@@ -259,6 +287,7 @@ function IssueHeader({
                     )}
                     {issue && <TrackerLabel tracker={issue.tracker} />}
                     <span className="font-medium">#{id}</span>
+                    {issue && <CopyMenu issue={issue} url={issueUrl} />}
                     {issue && <span>· {issue.project.name}</span>}
                     {parent && (
                         <button className="hover:text-fg" onClick={() => openIssue(parent.id)}>
@@ -279,14 +308,26 @@ function IssueHeader({
                         <VersionChip issue={issue} />
                     </div>
                 )}
-                {issue && <IssueQuickActions issue={issue} url={issueUrl} />}
+                {issue && <IssueQuickActions issue={issue} />}
             </div>
+            <RefreshButton spinning={refreshing} onClick={onRefresh} />
             <Button variant="primary" onClick={onOpenInRedmine}>
                 <ExternalLink size={14} /> {t('common.openInRedmine')}
             </Button>
             <IconButton label={t('common.close')} icon={<X size={16} />} onClick={onClose} />
         </header>
     )
+}
+
+/** Next to the number: copy it, the link, "#1234 Title" or a Markdown link. */
+function CopyMenu({ issue, url }: { issue: IssueDetail; url: string }) {
+    const { t } = useI18n()
+    const copy = useCopy()
+    const entries = COPY_FORMATS.filter((format) => format !== 'title').map((format) => ({
+        label: t(`issue.copy.${format}`),
+        onSelect: () => void copy(copyText(format, issue, url))
+    }))
+    return <Menu label={t('issue.copy.menu')} icon={<Copy />} entries={entries} className="-my-1" />
 }
 
 function IssueTitle({ issue }: { issue: IssueDetail }) {
@@ -302,6 +343,11 @@ function IssueTitle({ issue }: { issue: IssueDetail }) {
                 label={t('issue.edit.titleAction')}
                 icon={<Pencil />}
                 onClick={() => setEditing(true)}
+            />
+            <CopyButton
+                className="mt-0.5 shrink-0 text-muted"
+                text={issue.subject}
+                label={t('issue.copy.titleAction')}
             />
         </div>
     )
@@ -352,9 +398,18 @@ function DescriptionSection({ issue, ...markdownLinks }: { issue: IssueDetail } 
         <section>
             <div className="mb-1.5 flex items-center justify-between">
                 <Overline>{t('issue.description')}</Overline>
-                <Button variant="ghost" className="h-7 px-2 text-xs" onClick={() => setEditing(true)}>
-                    <Pencil size={13} /> {t('common.edit')}
-                </Button>
+                <div className="flex items-center gap-1">
+                    {issue.description?.trim() && (
+                        <CopyButton
+                            className="text-muted"
+                            text={issue.description}
+                            label={t('issue.copy.descriptionAction')}
+                        />
+                    )}
+                    <Button variant="ghost" className="h-7 px-2 text-xs" onClick={() => setEditing(true)}>
+                        <Pencil size={13} /> {t('common.edit')}
+                    </Button>
+                </div>
             </div>
             <Description issue={issue} {...markdownLinks} />
         </section>
@@ -395,12 +450,13 @@ function DescriptionEditor({ issue, onClose }: { issue: IssueDetail; onClose: ()
     return (
         <section>
             <Overline className="mb-1.5">{t('issue.description')}</Overline>
-            <Textarea
+            <MarkdownEditor
                 autoFocus
-                className="min-h-96 font-mono text-xs leading-relaxed"
+                className="min-h-96"
                 value={draft}
+                attachments={issue.attachments}
                 disabled={saving}
-                onChange={(event) => setDraft(event.target.value)}
+                onChange={setDraft}
                 onKeyDown={handleKeyDown}
             />
             <div className="mt-2 flex items-center justify-end gap-2">
@@ -418,30 +474,68 @@ function DescriptionEditor({ issue, onClose }: { issue: IssueDetail; onClose: ()
     )
 }
 
-function CommentBox({ comment, saving }: { comment: ReturnType<typeof useCommentOnIssue>; saving: boolean }) {
+/** Comment with Markdown preview and attachments (picked, dropped or pasted into the text). */
+function CommentBox({
+    issue,
+    comment,
+    saving
+}: {
+    issue: IssueDetail
+    comment: ReturnType<typeof useCommentAndChange>
+    saving: boolean
+}) {
+    // A new key after sending starts an empty form (text and chosen files).
+    const [formKey, setFormKey] = useState(0)
+    return (
+        <CommentForm
+            key={formKey}
+            issue={issue}
+            comment={comment}
+            saving={saving}
+            onSent={() => setFormKey((key) => key + 1)}
+        />
+    )
+}
+
+function CommentForm({
+    issue,
+    comment,
+    saving,
+    onSent
+}: {
+    issue: IssueDetail
+    comment: ReturnType<typeof useCommentAndChange>
+    saving: boolean
+    onSent: () => void
+}) {
     const { t, error } = useI18n()
     const toast = useToast()
     const [draft, setDraft] = useState('')
+    const files = useChosenFiles()
 
     const submit = () => {
-        comment.mutate(draft, {
-            onSuccess: () => {
-                setDraft('')
-                toast(t('issue.commentAdded'))
-            },
-            onError: (mutationError) => toast(error(mutationError), 'error')
-        })
+        comment.mutate(
+            { id: issue.id, change: { notes: draft }, uploads: files.uploads },
+            {
+                onSuccess: () => {
+                    toast(t('issue.commentAdded'))
+                    onSent()
+                },
+                onError: (mutationError) => toast(error(mutationError), 'error')
+            }
+        )
     }
 
     return (
-        <div className="mt-5 rounded-lg border border-line">
-            <Textarea
-                className="rounded-b-none border-0 bg-transparent"
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
+        <div className="mt-5 flex flex-col gap-2">
+            <CommentWithFiles
+                comment={draft}
+                onComment={setDraft}
+                files={files}
+                attachments={issue.attachments}
                 placeholder={t('issue.commentPlaceholder')}
             />
-            <div className="flex justify-end border-t border-line px-2 py-1.5">
+            <div className="flex justify-end">
                 <Button variant="primary" disabled={!draft.trim() || saving} onClick={submit}>
                     {t('issue.comment')}
                 </Button>
@@ -533,15 +627,6 @@ function IssueSidebar({
     )
 }
 
-function Block({ title, children }: { title: string; children: ReactNode }) {
-    return (
-        <section className="mt-7">
-            <Overline className="mb-2">{title}</Overline>
-            {children}
-        </section>
-    )
-}
-
 function fieldLabel(name: string, t: Translate) {
     return t(`fields.${name}` as 'fields.subject', { defaultValue: name })
 }
@@ -577,12 +662,29 @@ function hasJournalContent(journal: Journal) {
 function History({
     issue,
     statusName,
+    composer,
     ...markdownLinks
-}: { issue: IssueDetail; statusName: Map<number, string> } & MarkdownLinkProps) {
+}: { issue: IssueDetail; statusName: Map<number, string>; composer: ReactNode } & MarkdownLinkProps) {
     const { t } = useI18n()
-    const journals = issue.journals.filter(hasJournalContent)
+    const [order, setOrder] = useState<JournalOrder>(loadJournalOrder)
+    const withContent = issue.journals.filter(hasJournalContent)
+    const newestFirst = order === 'newest'
+    const journals = newestFirst ? [...withContent].reverse() : withContent
+    const toggleOrder = () => {
+        const next = newestFirst ? 'oldest' : 'newest'
+        setOrder(next)
+        saveJournalOrder(next)
+    }
     return (
-        <Block title={t('issue.history', { count: journals.length })}>
+        <section className="mt-7">
+            <div className="mb-2 flex items-center justify-between">
+                <Overline>{t('issue.history', { count: journals.length })}</Overline>
+                <Button variant="ghost" className="h-7 px-2 text-xs" onClick={toggleOrder}>
+                    <ArrowDownUp size={13} /> {t(`issue.historyOrder.${order}`)}
+                </Button>
+            </div>
+            {/* The comment box stays next to the newest notes. */}
+            {newestFirst && <div className="mb-5">{composer}</div>}
             <ol className="flex flex-col gap-4">
                 {journals.map((journal) => (
                     <JournalItem
@@ -594,7 +696,8 @@ function History({
                     />
                 ))}
             </ol>
-        </Block>
+            {!newestFirst && composer}
+        </section>
     )
 }
 

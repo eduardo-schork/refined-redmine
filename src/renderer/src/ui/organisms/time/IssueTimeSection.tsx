@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import type { IssueDetail } from '@domain/redmine/entities'
+import { hoursByPersonAndActivity } from '@domain/time/team'
 import type { TimeEntry } from '@domain/time/time-entry'
 import { useSettings } from '@/hooks/session'
 import { useDeleteTime, useIssueTime } from '@/hooks/time'
@@ -33,6 +34,7 @@ export function IssueTimeSection({ issue }: { issue: IssueDetail }) {
                     <Plus size={13} /> {t('time.log')}
                 </Button>
             </div>
+            {entries.length > 1 && <HoursByPerson entries={entries} />}
             {entries.length > 0 && (
                 <ul className="overflow-hidden rounded-lg border border-line">
                     {entries.map((entry) => (
@@ -61,6 +63,61 @@ export function IssueTimeSection({ issue }: { issue: IssueDetail }) {
                 />
             )}
         </section>
+    )
+}
+
+/** Who spent how long on what, so nobody has to add up the entries by hand. */
+function HoursByPerson({ entries }: { entries: TimeEntry[] }) {
+    const { t, dates } = useI18n()
+    const matrix = hoursByPersonAndActivity(entries)
+    const cell = 'px-3 py-1.5 text-right tabular-nums'
+    return (
+        <div className="mb-4 overflow-x-auto rounded-lg border border-line">
+            <table className="w-full text-sm">
+                <thead className="bg-panel-2 text-2xs font-semibold uppercase tracking-wide text-muted">
+                    <tr>
+                        <th className="px-3 py-1.5 text-left">{t('time.summary.person')}</th>
+                        {matrix.activities.map((activity) => (
+                            <th key={activity} className={cell}>
+                                {activity}
+                            </th>
+                        ))}
+                        <th className={cell}>{t('time.summary.total')}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {matrix.rows.map((row) => (
+                        <tr key={row.person.id} className="border-t border-line">
+                            <td className="px-3 py-1.5">
+                                <span className="flex items-center gap-2">
+                                    <Avatar name={row.person.name} />
+                                    {row.person.name}
+                                </span>
+                            </td>
+                            {matrix.activities.map((activity) => (
+                                <td key={activity} className={cn(cell, !row.byActivity[activity] && 'text-muted')}>
+                                    {row.byActivity[activity] ? dates.hours(row.byActivity[activity]) : '—'}
+                                </td>
+                            ))}
+                            <td className={cn(cell, 'font-semibold')}>{dates.hours(row.total)}</td>
+                        </tr>
+                    ))}
+                </tbody>
+                {matrix.rows.length > 1 && (
+                    <tfoot className="border-t border-line bg-panel-2 font-semibold">
+                        <tr>
+                            <td className="px-3 py-1.5">{t('time.summary.total')}</td>
+                            {matrix.activities.map((activity) => (
+                                <td key={activity} className={cell}>
+                                    {dates.hours(matrix.activityTotals[activity])}
+                                </td>
+                            ))}
+                            <td className={cell}>{dates.hours(matrix.total)}</td>
+                        </tr>
+                    </tfoot>
+                )}
+            </table>
+        </div>
     )
 }
 

@@ -7,8 +7,8 @@ import {
     type Recurrence,
     type RecurrenceFreq
 } from '@domain/calendar/calendar-event'
-import { eventBounds, nthWeekdayOf } from '@domain/calendar/recurrence'
-import { addDays, addMinutes, parseLocal, toLocalDate, toLocalDateTime } from '@domain/shared/date'
+import { eventBounds, lastWorkdayOfMonth, nthWeekdayOf } from '@domain/calendar/recurrence'
+import { addDays, addMinutes, parseLocal, startOfDay, toLocalDate, toLocalDateTime } from '@domain/shared/date'
 import { describeRecurrence, onNth } from '@shared/i18n/format/recurrence'
 import { useIssueTitle } from '@/hooks/issues'
 import { useSettings } from '@/hooks/session'
@@ -21,7 +21,16 @@ import { ColorPicker, ReminderPicker, WeekdayPicker } from '../../molecules/pick
 import { Alert } from '../../molecules/surfaces'
 
 type Preset =
-    'none' | 'daily' | 'workdays' | 'weekly' | 'monthly-day' | 'monthly-nth' | 'monthly-last' | 'yearly' | 'custom'
+    | 'none'
+    | 'daily'
+    | 'workdays'
+    | 'weekly'
+    | 'monthly-day'
+    | 'monthly-nth'
+    | 'monthly-last'
+    | 'monthly-last-workday'
+    | 'yearly'
+    | 'custom'
 
 const UNIT_KEYS = { daily: 'unitDay', weekly: 'unitWeek', monthly: 'unitMonth', yearly: 'unitYear' } as const
 const WORKDAYS = [1, 2, 3, 4, 5]
@@ -39,6 +48,7 @@ function weeklyPreset(recurrence: Recurrence, start: Date): Preset {
 }
 
 function monthlyPreset(recurrence: Recurrence): Preset {
+    if (recurrence.monthlyMode === 'lastWorkday') return 'monthly-last-workday'
     if (recurrence.monthlyMode !== 'weekday') return 'monthly-day'
     if (recurrence.monthlyNth === -1) return 'monthly-last'
     return 'monthly-nth'
@@ -81,6 +91,8 @@ function recurrenceFor(preset: Preset, start: Date, current?: Recurrence): Recur
             }
         case 'monthly-last':
             return { freq: 'monthly', interval: 1, monthlyMode: 'weekday', monthlyNth: -1 }
+        case 'monthly-last-workday':
+            return { freq: 'monthly', interval: 1, monthlyMode: 'lastWorkday' }
         case 'yearly':
             return { freq: 'yearly', interval: 1 }
         case 'custom':
@@ -216,10 +228,28 @@ export function EventEditor({
 
     function handlePresetChange(selectedPreset: Preset) {
         setCustomOpen(selectedPreset === 'custom')
+        if (selectedPreset === 'monthly-last-workday') moveToLastWorkday()
         patch({
             recurrence: recurrenceFor(selectedPreset, start, draft.recurrence),
             exceptions: selectedPreset === 'none' ? undefined : draft.exceptions
         })
+    }
+
+    // The series starts on an occurrence: the last weekday of this month (or of the next one, if it has passed).
+    function moveToLastWorkday() {
+        const thisMonth = new Date(
+            start.getFullYear(),
+            start.getMonth(),
+            lastWorkdayOfMonth(start.getFullYear(), start.getMonth())
+        )
+        const nextMonthStart = new Date(start.getFullYear(), start.getMonth() + 1, 1)
+        const nextMonth = new Date(
+            nextMonthStart.getFullYear(),
+            nextMonthStart.getMonth(),
+            lastWorkdayOfMonth(nextMonthStart.getFullYear(), nextMonthStart.getMonth())
+        )
+        const target = thisMonth >= startOfDay(start) ? thisMonth : nextMonth
+        setStartDate(toLocalDate(target))
     }
 
     function save() {
@@ -247,7 +277,7 @@ export function EventEditor({
         const standardPresets: Preset[] = ['none', 'daily', 'workdays', 'weekly', 'monthly-day']
         if (nth.nth <= MAX_NTH_WEEKDAY) standardPresets.push('monthly-nth')
         if (nth.isLast) standardPresets.push('monthly-last')
-        standardPresets.push('yearly')
+        standardPresets.push('monthly-last-workday', 'yearly')
         const options = standardPresets.map((option) => {
             const label = describeRecurrence(recurrenceFor(option, start), start, t, dates)
             return [option, label] as const
@@ -492,6 +522,13 @@ function CustomRecurrence({
     )
 }
 
+const LAST_WORKDAY = 'lastWorkday'
+
+function monthlyModeValue(recurrence: Recurrence, startNth: number): string {
+    if (recurrence.monthlyMode === 'weekday') return String(recurrence.monthlyNth ?? startNth)
+    return recurrence.monthlyMode ?? 'day'
+}
+
 function MonthlyModeSelect({
     recurrence,
     start,
@@ -504,11 +541,11 @@ function MonthlyModeSelect({
     const { t, dates } = useI18n()
     const nth = nthWeekdayOf(start)
     const weekday = start.getDay()
-    const selectedValue = recurrence.monthlyMode === 'weekday' ? String(recurrence.monthlyNth ?? nth.nth) : 'day'
+    const selectedValue = monthlyModeValue(recurrence, nth.nth)
 
     function handleChange(value: string) {
-        if (value === 'day') {
-            onChange({ ...recurrence, monthlyMode: 'day', monthlyNth: undefined })
+        if (value === 'day' || value === LAST_WORKDAY) {
+            onChange({ ...recurrence, monthlyMode: value, monthlyNth: undefined })
             return
         }
         onChange({ ...recurrence, monthlyMode: 'weekday', monthlyNth: Number(value) })
@@ -521,6 +558,7 @@ function MonthlyModeSelect({
                 <option value={nth.nth}>{capitalize(onNth(nth.nth, weekday, t, dates))}</option>
             )}
             {nth.isLast && <option value="-1">{capitalize(onNth(-1, weekday, t, dates))}</option>}
+            <option value={LAST_WORKDAY}>{capitalize(t('recurrence.onLastWorkday'))}</option>
         </Select>
     )
 }

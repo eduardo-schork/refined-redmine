@@ -7,8 +7,10 @@ import type { IssueUpload } from '@domain/redmine/issue-upload'
 import { api } from '@/lib/api'
 import { qk } from '@/lib/query-keys'
 
-export const useIssue = (id: number, enabled = true) =>
-    useQuery({ queryKey: qk.issue(id), queryFn: () => api.issues.get(id), enabled })
+/** The full issue (journals, attachments, relations): also loaded ahead with `queryClient.fetchQuery`. */
+export const issueQuery = (id: number) => ({ queryKey: qk.issue(id), queryFn: () => api.issues.get(id) })
+
+export const useIssue = (id: number, enabled = true) => useQuery({ ...issueQuery(id), enabled })
 
 /** Subtasks and related issues of `issueId`, by number. */
 export const useLinkedIssues = (issueId: number, ids: number[]) =>

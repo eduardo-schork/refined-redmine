@@ -57,6 +57,9 @@ describe('formatters (pt-BR)', () => {
                 dates
             )
         ).toBe('Mensal no primeiro sábado')
+        expect(describeRecurrence({ freq: 'monthly', interval: 1, monthlyMode: 'lastWorkday' }, start, t, dates)).toBe(
+            'Mensal no último dia útil'
+        )
         expect(describeRecurrence({ freq: 'daily', interval: 1, until: '2026-10-02' }, start, t, dates)).toBe(
             'Todos os dias, até 02/10/2026'
         )
@@ -115,6 +118,21 @@ describe('formatters (pt-BR)', () => {
         expect(systemNotificationText(notification, t, dates, new Date())).toEqual({
             title: 'Sprint',
             body: '3 → 3 (0)\nEntraram: #7 Novo\nSaíram: #5 Antigo\nvia Bugs'
+        })
+    })
+
+    it('count alert of a query', () => {
+        const notification: AppNotification = {
+            id: 'n2',
+            kind: 'query',
+            createdAt: '2026-09-28T12:00:00Z',
+            read: false,
+            target: { type: 'url', url: 'https://redmine.example.com/issues' },
+            payload: { type: 'queryCount', queryName: 'Fila da Ana', count: 1, op: 'below', value: 2 }
+        }
+        expect(systemNotificationText(notification, t, dates, new Date())).toEqual({
+            title: 'Fila da Ana',
+            body: 'Agora com 1 tarefa (menos de 2)'
         })
     })
 

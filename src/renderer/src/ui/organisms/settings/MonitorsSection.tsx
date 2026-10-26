@@ -50,7 +50,7 @@ export function MonitorsSection() {
                 </Button>
             }
         >
-            <div className="flex flex-col gap-2">
+            <div className="grid gap-2 @min-[64rem]/page:grid-cols-2 @min-[110rem]/page:grid-cols-3">
                 {monitors.map((monitor) => (
                     <MonitorRow
                         key={monitor.id}
@@ -133,7 +133,13 @@ function MonitorRow({
     const isMine = monitor.id === MINE_MONITOR_ID
     const name = isMine ? t('monitors.mine') : monitor.name
     const enabledEvents = availableEvents(monitor.source.type).filter((event) => monitor.events[event])
-    const eventsSummary = enabledEvents.map((event) => t(`monitors.event.${event}`)).join(', ')
+    const eventNames = enabledEvents.map((event) => t(`monitors.event.${event}`))
+    const countSummary =
+        monitor.count &&
+        t(`monitors.count.${monitor.count.op === 'below' ? 'summaryBelow' : 'summaryAbove'}`, {
+            value: monitor.count.value
+        })
+    const eventsSummary = [...eventNames, ...(countSummary ? [countSummary] : [])].join(', ')
 
     return (
         <div className="flex items-center gap-3 rounded-lg border border-line px-3 py-2.5">

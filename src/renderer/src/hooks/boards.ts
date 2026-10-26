@@ -1,9 +1,15 @@
+import { useEffect, useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { BoardIssues, BoardNotifications } from '@contracts/api'
 import type { Board } from '@domain/board/board'
+import { createAgileBoard, isCompleteSource } from '@domain/board/board-rules'
 import type { IssueStatus } from '@domain/redmine/entities'
 import { api } from '@/lib/api'
+import { useI18n } from '@/lib/i18n'
+import { localId } from '@/lib/ids'
 import { qk } from '@/lib/query-keys'
+import { useStatuses } from './reference'
+import { useSettings, useUpdateSettings } from './session'
 
 export const useBoardIssues = (boardId: string) =>
     useQuery({ queryKey: qk.boardIssues(boardId), queryFn: () => api.boards.issues(boardId), refetchInterval: 60_000 })
@@ -58,4 +64,31 @@ export function useMoveIssue(boardId: string) {
             void queryClient.invalidateQueries({ queryKey: key })
         }
     })
+}
+
+/** Statuses and number of issues of a board being created, to suggest its columns (only with a complete source). */
+export function useColumnSuggestion(board: Board) {
+    return useQuery({
+        queryKey: ['board-column-suggestion', JSON.stringify(board.source)],
+        queryFn: () => api.boards.suggestColumns({ ...board, columns: [] }),
+        enabled: isCompleteSource(board.source),
+        staleTime: 60_000
+    })
+}
+
+/** Puts the "Ágil" board first in the list, once per user (also for those who already have boards). */
+export function useSeedAgileBoard() {
+    const { t } = useI18n()
+    const settings = useSettings()
+    const statuses = useStatuses().data
+    const updateSettings = useUpdateSettings()
+    const seeding = useRef(false)
+    const mustSeed = !settings.agileBoardSeeded && Boolean(statuses?.length)
+
+    useEffect(() => {
+        if (!mustSeed || !statuses || seeding.current) return
+        seeding.current = true
+        const agile = createAgileBoard(statuses, localId(), t('board.agile'))
+        updateSettings.mutate({ boards: [agile, ...settings.boards], agileBoardSeeded: true })
+    }, [mustSeed, statuses, settings.boards, updateSettings, t])
 }
