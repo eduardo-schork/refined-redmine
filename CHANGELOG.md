@@ -2,7 +2,7 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
-## Próxima versão
+## 0.12.0
 
 - **Quadro Ágil**: um quadro com todas as suas tarefas abertas, uma coluna por situação, aparece no topo da lista. Depois é um quadro como os outros: renomeie, mude as colunas ou exclua (ele não volta).
 - **Reordenar quadros**: arraste os quadros na barra lateral.
