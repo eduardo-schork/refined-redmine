@@ -69,6 +69,10 @@ Fechar a janela não encerra o app: ele continua na bandeja (barra de menus no m
 
 O painel resume o seu dia:
 
+- **A organização acompanha a largura**: saudação, busca, indicadores e sprints ocupam a largura toda; embaixo, os cartões ficam em grade. Numa janela estreita vem um embaixo do outro; a partir de uma largura média, duas colunas (Minha fila | Paradas e Prazos, com a agenda de hoje e as últimas notificações lado a lado na linha seguinte); em telas largas, três colunas (Minha fila | Paradas e Prazos | agenda e notificações). As outras telas também aproveitam a largura: Monitores mostra os monitores em colunas, Notificações passa os tipos para uma coluna à esquerda, e Sprints, Minhas horas e Tempo do time ficam mais largas.
+
+![Início numa tela larga](images/home-wide.png)
+
 - **Barra de busca**, logo abaixo da saudação: a mesma [busca rápida](#busca-rápida), direto na tela. Clique nela (ou use `Tab`) e digite; os resultados abrem logo abaixo.
 - **Indicadores**: tarefas na sua fila, de prioridade alta, paradas, atrasadas e notificações não lidas. Os números ficam amarelos ou vermelhos quando pedem atenção; clique em um para ir ao painel correspondente.
 - As listas mostram a **prioridade** (quando não é Normal) e a versão de cada tarefa.
@@ -102,10 +106,18 @@ Aperte `⌘K` (Mac) ou `Ctrl+K` (Windows), em qualquer tela, ou clique em **Busc
 
 Os quadros ficam na barra lateral, em **Quadros**. Cada coluna agrupa um ou mais status do Redmine.
 
+- **Ágil**: na primeira abertura desta versão o app cria o quadro **Ágil**, com todas as suas tarefas abertas e uma coluna por situação, no topo da lista (como o quadro "Ágil" do redmine-adapter). Depois ele é um quadro como os outros: dá para renomear, mudar as colunas ou excluir, e ele não volta.
+- **Ordem dos quadros**: arraste um quadro na barra lateral para cima ou para baixo.
+- **Arrastar um card**: a cópia do card acompanha o ponteiro do mouse.
+
 - **Arrastar um card para outra coluna muda o status no Redmine.** O app só permite soltar onde a transição é aceita pelo fluxo de trabalho da tarefa.
 - No topo, **Quadro | Lista | Resumo** troca a forma de ver o quadro (veja [Lista](#lista) e [Resumo do quadro](#resumo-do-quadro)).
 - **Nova tarefa**, no topo, cria uma tarefa já no projeto do quadro e, no quadro de uma sprint, já na versão da sprint (veja [Criar uma tarefa](#criar-uma-tarefa)).
 - Os ícones no canto superior direito atualizam, editam e excluem o quadro.
+- **Menu ⋮ de cada card** (aparece ao passar o mouse; na Lista, no fim da linha): **Abrir tarefa**, **Alterar situação** (só as permitidas pelo fluxo, a atual marcada), **Alterar em massa**, os trâmites e as ações do Claude que valem para aquela tarefa, **Novo trâmite** e **Abrir no Redmine**. Enquanto a tarefa carrega para abrir uma ação, o ⋮ fica girando.
+- Uma linha animada embaixo do título mostra quando o quadro está carregando ou atualizando (o mesmo vale para Início, Sprints, Minhas horas, Tempo do time e o detalhe da tarefa).
+
+![Menu ⋮ do card](images/board-menu.png)
 
 ### Filtros rápidos
 
@@ -141,7 +153,7 @@ A barra verde embaixo é o percentual concluído.
 
 **Lista** mostra as tarefas do quadro em linhas, como a lista de tarefas do Redmine: número, tipo, situação, prioridade, título, responsável, versão e previsão (vermelha se venceu, amarela se vence em breve).
 
-- **Agrupar por** (à direita dos filtros): versão (padrão), situação, responsável, tipo ou nenhum. Cada grupo mostra quantas tarefas tem; clique no nome do grupo para recolher ou abrir. Versões seguem a ordem das versões (3.9 antes de 3.10), situações a ordem do Redmine, e o grupo "Sem versão" ou "Sem responsável" fica por último.
+- **Agrupar por** (à direita dos filtros): versão (padrão), situação, responsável, tipo ou nenhum. Cada grupo começa com uma faixa destacada (fundo, barra colorida à esquerda e espaço antes), com quantas tarefas tem; clique no nome do grupo para recolher ou abrir. Versões seguem a ordem das versões (3.9 antes de 3.10), situações a ordem do Redmine, e o grupo "Sem versão" ou "Sem responsável" fica por último.
 - **Cabeçalho fixo**: ao rolar a lista, os nomes das colunas continuam visíveis no topo, e dá para ordenar sem voltar para cima.
 - **Ordenar**: clique no nome de uma coluna; clique de novo para inverter. A seta mostra a coluna e o sentido. O padrão é por prioridade, da mais urgente para a mais baixa. Tarefas sem responsável, sem versão ou sem previsão ficam no fim em qualquer sentido; empates mostram primeiro a atualizada mais recentemente.
 - Clique em uma linha para abrir o detalhe da tarefa.
@@ -161,26 +173,26 @@ A barra verde embaixo é o percentual concluído.
 - **Por pessoa**: abertas, fechadas, progresso (fechadas ÷ total), atrasadas, de prioridade alta, paradas e horas estimadas de cada responsável. **Clique em uma pessoa** para voltar ao quadro com o filtro de responsável dela.
 - **Por tipo** e **Por prioridade**: quantas tarefas de cada tipo e de cada prioridade (da mais urgente para a mais baixa).
 
-### Raias por responsável
+### Agrupar o quadro (raias)
 
 ![Quadro da sprint com raias](images/sprintboard.png)
 
-Com **Raias por responsável** ativado, o quadro ganha uma linha por pessoa. No exemplo, o quadro **Sprint atual** acompanha automaticamente a sprint em desenvolvimento (**3.78 · automática**).
+No modo **Quadro**, o **Agrupar por** à direita dos filtros divide os cards em linhas (raias): por **versão**, **situação**, **responsável**, **tipo** ou **sem grupos**, as mesmas opções da Lista. Cada raia mostra o nome e quantas tarefas tem; arrastar um card continua mudando só a coluna. A escolha fica guardada por quadro neste computador (quadros que tinham "Raias por responsável" começam agrupados por responsável). No exemplo, o quadro **Sprint atual** acompanha automaticamente a sprint em desenvolvimento (**3.78 · automática**).
 
 ### Criar ou editar um quadro
 
 ![Editor de quadro](images/board-editor.png)
 
-Clique no **+** ao lado de **Quadros**.
+Clique no **+** ao lado de **Quadros**. Primeiro escolha a origem das tarefas; o **Nome** vem sugerido por ela (o nome da consulta salva, do projeto ou da sprint) e muda junto enquanto você não digitar outro.
 
-- **Nome**: como o quadro aparece na barra lateral.
 - **Origem das tarefas**:
   - **Atribuídas a mim**: a sua fila.
   - **Projeto**: todas as tarefas de um projeto (com ou sem subprojetos).
-  - **Consulta salva**: usa os filtros de uma consulta do Redmine. Aparecem as consultas públicas e as suas (inclusive as privadas). Criou uma agora no Redmine? Clique no botão de recarregar ao lado da lista.
+  - **Consulta salva**: usa os filtros de uma consulta do Redmine. Aparecem as consultas públicas e as suas (inclusive as privadas); digite para filtrar a lista. Criou uma agora no Redmine? Clique no botão de recarregar ao lado da lista.
   - **Filtro do Redmine (URL)**: filtre as tarefas na tela de tarefas do Redmine, copie o endereço da página e cole aqui. **Testar** mostra quantas tarefas o filtro traz. Serve para qualquer combinação de filtros, sem precisar salvar uma consulta.
   - **Sprint**: uma versão fixa, ou a sprint da fase escolhida (em desenvolvimento, em homologação ou correção), que troca sozinha quando a sprint muda. Pode mostrar só as suas tarefas.
-- **Colunas**: **Uma por status** cria uma coluna por status para começar rápido; depois remova ou junte as que não precisar. **+ Coluna** cria uma coluna vazia.
+- **Nome**: como o quadro aparece na barra lateral.
+- **Colunas**: ao escolher a origem, o app olha as tarefas dela e já sugere uma coluna para cada situação em que elas estão (as fechadas juntas em "Fechadas"), com "Sugestão a partir das N tarefas da origem". Enquanto você não mexer nas colunas, elas acompanham a origem; **Sugerir pelas tarefas** refaz a sugestão. **Uma por status** cria uma coluna para cada status do Redmine; depois remova ou junte as que não precisar. **+ Coluna** cria uma coluna vazia.
 
 ### Notificações do quadro
 
@@ -192,7 +204,9 @@ No fim do editor, ligue **Notificar sobre este quadro** para ser avisado do que 
 - **Mudança de status**: quando o card troca de coluna, o aviso diz "moveu de _Em andamento_ para _Em aprovação_".
 - **Novo comentário**, **Menção**, **Atribuída a mim** e **Outras alterações**, como nos outros monitores.
 
-O quadro passa a aparecer também em **Configurações → Notificações → Monitores**, onde dá para ajustar as mesmas opções. Excluir o quadro exclui o monitor dele.
+O quadro passa a aparecer também na tela **Monitores** (barra lateral), onde dá para ajustar as mesmas opções. Excluir o quadro exclui o monitor dele.
+
+Listas longas (consultas salvas, projetos, sprints, versões, pessoas) têm um campo para filtrar ao abrir, aqui e no resto do app; a lista abre por cima da janela, sem criar rolagem dentro do formulário, e fecha ao clicar em outro lugar, ao ir para outro campo ou ao trocar de janela (o mesmo vale para os menus ⋮ e de copiar).
 
 ## 4. Detalhe da tarefa
 
@@ -200,12 +214,15 @@ O quadro passa a aparecer também em **Configurações → Notificações → Mo
 
 Clicar em uma tarefa, em qualquer tela, abre o detalhe sem sair do app. As tarefas abertas ficam na lista de recentes da [busca rápida](#busca-rápida).
 
-- **Título**: o lápis ao lado do título abre a edição. `Enter` salva e `Esc` cancela.
+- **Título**: o lápis ao lado do título abre a edição. `Enter` salva e `Esc` cancela. O ícone de copiar ao lado copia só o título.
+- **Copiar**: o ícone ao lado do número (`#1234`) abre o menu de cópia: **Link** da tarefa no Redmine, **Número** (`#1234`), **#Número e título** (`#1234 Título`, para mensagens e commits) e link em **Markdown** (`[#1234 Título](link)`). Ao lado de **Editar** da descrição, o ícone copia a descrição em Markdown. Um aviso mostra o que foi copiado.
+- **Atualizar** (setas circulares, ao lado de **Abrir no Redmine**) lê a tarefa de novo no Redmine, com as relacionadas e as horas. Útil quando um agente ou outra pessoa acabou de mudar a tarefa.
+- **Tamanho**: o detalhe ocupa 85% da área da aba, e dá para arrastar o canto inferior direito para redimensionar. O tamanho escolhido fica guardado como proporção da área, para as próximas tarefas e para janelas de outros tamanhos. As outras janelas também usam uma parte da área, com limite em telas muito largas: formulários pequenos ~40%, editores ~60%, trâmites, alterar em massa e tarefas da sprint ~80%.
 - **Descrição**, com formatação (listas, tabelas, negrito, links).
   - Descrição longa aparece **cortada em 25 linhas**, esmaecendo no fim, para as abas logo abaixo ficarem visíveis sem rolar. **Mostrar tudo** abre o resto; **Mostrar menos** volta.
-  - **Editar**, ao lado de "Descrição", troca o texto por um editor com o Markdown da tarefa, como no Redmine. **Salvar** ou ⌘ + Enter (Ctrl + Enter no Windows) salva; **Cancelar** descarta. O `Esc` não fecha a tarefa enquanto você edita, para o texto não se perder.
+  - **Editar**, ao lado de "Descrição", troca o texto pelo editor de Markdown (veja [Editor de comentários](#editor-de-comentários)). **Salvar** ou ⌘ + Enter (Ctrl + Enter no Windows) salva; **Cancelar** descarta. O `Esc` não fecha a tarefa enquanto você edita, para o texto não se perder.
 - **Abas abaixo da descrição**: **Tarefas relacionadas** (aberta por padrão), **Anexos** e **Horas**, uma de cada vez. Ao lado do nome, cada aba mostra quantas tarefas ou anexos tem, ou as horas lançadas. As setas do teclado trocam de aba.
-- **Histórico**, abaixo das abas: comentários e mudanças de campos.
+- **Histórico**, abaixo das abas: comentários e mudanças de campos. O botão à direita do título alterna entre **Mais antigas primeiro** (como no Redmine) e **Mais recentes primeiro**; a escolha fica guardada. Com as mais recentes primeiro, a caixa de comentário vai para o topo do histórico.
 - **Tarefas relacionadas**: as **Subtarefas** e as **Relações**. Cada tarefa aparece em uma linha com o **número** (clique na linha para abrir), o **título**, o **status** e o **responsável**. Passe o mouse no título para ver o tipo. Tarefas fechadas ficam com o número riscado.
   - As subtarefas mostram quantas já foram fechadas ("1 de 3 fechadas") com uma barra de progresso.
   - As relações ficam agrupadas pelo tipo, com o que segura a tarefa primeiro: **Bloqueada por**, **Bloqueia**, **Precede**, **Segue**, **Relacionada a**, **Duplica**, **Duplicada por**, **Copiada de** e **Copiada para**.
@@ -214,9 +231,9 @@ Clicar em uma tarefa, em qualquer tela, abre o detalhe sem sair do app. As taref
 - **Ações rápidas**, logo abaixo:
   - **Atribuir a mim** passa a tarefa para você no Redmine, com um clique. Só aparece quando a tarefa não é sua; um aviso confirma, ou diz se o Redmine não aplicou (o fluxo pode não deixar você ser responsável naquela etapa).
   - **Lançar horas** abre o formulário de lançamento (veja [Horas](#lançar-horas)) e **Iniciar cronômetro** começa a contar o tempo nesta tarefa.
-  - Os outros botões copiam para a área de transferência o **Link** da tarefa no Redmine, o **Número** (`#1234`), o **Título**, o **#Número e título** (`#1234 Título`, para mensagens e commits) ou um link em **Markdown** (`[#1234 Título](link)`). Um aviso mostra o que foi copiado.
+  - Na mesma linha, na ordem: os trâmites configurados, as [ações do Claude Code](#ações-do-claude-code), **Novo trâmite**, Atribuir a mim, Lançar horas, cronômetro e **Alterar em massa**. As ações de copiar saíram daqui e foram para perto do número, do título e da descrição.
 - **Status**: troque direto pelo seletor; só aparecem os status permitidos para a tarefa.
-- **Adicionar comentário**: aceita Markdown e é publicado no Redmine.
+- **Comentário**, no fim do histórico: editor de Markdown com **Visualizar** e anexos (escolher, arrastar ou colar uma imagem), publicado no Redmine.
 - **Campos editáveis na lateral**: tipo, prioridade, responsável, versão, início, previsão, % concluído, estimado e tarefa pai. Cada mudança é salva no Redmine na hora e confirmada com um aviso.
   - **Tipo**: os tipos habilitados no projeto da tarefa (Desenvolvimento, Defeito…).
   - **Estimado** e **Tarefa pai**: salvos ao sair do campo ou com `Enter`; apague para limpar. Texto que não é hora (ou número de tarefa) é recusado com um aviso.
@@ -230,6 +247,16 @@ Clicar em uma tarefa, em qualquer tela, abre o detalhe sem sair do app. As taref
 - **Abrir no Redmine** abre a tarefa no navegador.
 
 ![Abas do detalhe, com as tarefas relacionadas](images/issue-links.png)
+
+### Editor de comentários
+
+![Editor de comentários](images/markdown-editor.png)
+
+O comentário do histórico, o Novo trâmite, o envio para outra tarefa e a edição da descrição usam o mesmo editor, como o do site do Redmine:
+
+- **Escrever** e **Visualizar**: a visualização mostra o texto formatado, com os links de tarefas e as imagens.
+- **Barra de formatação**: negrito, itálico, tachado, código, título, lista, lista numerada, citação, bloco de código e link. Com texto selecionado, a formatação vai em volta dele.
+- **Colar uma imagem** (⌘V, por exemplo uma captura de tela): ela entra como anexo e o texto ganha `![](clipboard-….png)` numa linha própria, no lugar do cursor; a visualização já mostra a imagem. Outros arquivos colados ou arrastados entram só como anexo.
 
 ### Criar uma tarefa
 
@@ -260,13 +287,17 @@ Os botões de trâmite ficam na linha de ações do detalhe da tarefa:
   - **Enviar para outra tarefa**: o app procura nas tarefas ligadas (pai, subtarefas, relacionadas e as delas) a do tipo de destino (ex.: Qualidade) e já a escolhe quando só há uma; dá para informar outra pelo número. Marque as **notas citadas** (as três últimas de cada tarefa aparecem; "Mostrar todas" abre o resto): o comentário é montado com os links (`#1201#note-3`) pelo modelo da regra e pode ser editado. Situação, responsável e versão mudam na tarefa de destino; as horas vão para esta tarefa. Se a regra tiver **fechamento**, as tarefas ligadas do tipo escolhido mudam de situação depois (marcadas por padrão: esta tarefa e as que tiveram notas citadas).
 - No **Histórico**, cada nota tem um ícone de envio (**Enviar este trâmite**) que abre o envio já com aquela nota marcada.
 - **Horas**: vazio não lança nada. "Hora extra (destas horas)" separa a parte que foi hora extra, que vai também para o [banco de horas extras](#horas-extras).
+- **Contar as horas desde**: preenche as horas sozinho.
+  - Com o **cronômetro** rodando nesta tarefa, as horas vêm dele; depois de enviar, o cronômetro é zerado (o tempo já foi lançado).
+  - Sem cronômetro, escolha um momento da tarefa: um trâmite do histórico (situação alterada, comentário, alterações, com quem e quando), um lançamento de horas ou a criação. Nos botões configurados vem marcado o **seu último trâmite** na tarefa (ou a última mudança de situação); o **Novo trâmite** começa vazio, mas a lista está lá.
+  - O tempo até agora é dividido pelo **expediente** (Configurações → Automações, padrão seg–sex 8h–12h e 13h–18h): o que cai dentro vira horas normais, o almoço entre dois períodos não conta e o resto (noite, fim de semana) vira **hora extra**. Os campos continuam editáveis.
 - O envio acontece em passos (comentário, cada tarefa a mais, horas, hora extra, fechamento). Se algum falhar, os que deram certo ficam marcados e **Tentar de novo** repete só o resto, sem comentar duas vezes. Se o Redmine não aplicar uma mudança (workflow ou sem permissão), aparece um aviso.
 
 ### Alterar em massa
 
 ![Alterar em massa](images/bulk-edit.png)
 
-**Alterar em massa**, na linha de ações do detalhe, mostra a tarefa com a pai, as relacionadas e as subtarefas (até 3 níveis). Escolha a situação, o responsável e/ou a versão (cada um começa em "Manter") e marque as tarefas: marcar uma marca as subtarefas dela, e a tarefa aberta com as subtarefas já vem marcada. Por exemplo, levar uma história e as tarefas dela do backlog para a sprint. Só é enviado o que muda em cada tarefa; cada linha mostra ✓, ⚠ (o Redmine não aplicou algo, com o motivo ao parar o mouse) ou ✗, e **Tentar de novo** repete só as que falharam.
+**Alterar em massa**, na linha de ações do detalhe, mostra a tarefa com a pai, as relacionadas e as subtarefas (até 3 níveis), em árvore: cada subtarefa aparece recuada com `├─`/`└─` embaixo da tarefa de que é filha. Escolha a situação, o responsável e/ou a versão (cada um começa em "Manter") e marque as tarefas clicando em qualquer ponto da linha (ou Espaço): marcar uma marca as subtarefas dela, e a tarefa aberta com as subtarefas já vem marcada. A mesma árvore aparece em **Aplicar também em**, no Novo trâmite. Por exemplo, levar uma história e as tarefas dela do backlog para a sprint. Só é enviado o que muda em cada tarefa; cada linha mostra ✓, ⚠ (o Redmine não aplicou algo) ou ✗, e um aviso no fim lista cada tarefa que não foi aplicada por completo com o motivo (ex.: "#1213 Frete grátis… — O Redmine não aplicou: versão (workflow ou sem permissão)"). **Tentar de novo** repete só as que falharam. Os trâmites mostram o mesmo aviso.
 
 ### Anexos
 
@@ -295,7 +326,9 @@ Por segurança, o app nunca entrega ao sistema arquivos que podem executar algo 
 
 ![Horas no detalhe da tarefa](images/time-issue.png)
 
-A aba **Horas** do detalhe mostra o total lançado contra o estimado ("13 h de 16 h estimadas") e todos os lançamentos da tarefa. Os seus aparecem destacados, com os botões para editar e excluir.
+A aba **Horas** do detalhe mostra o total lançado contra o estimado ("13 h de 16 h estimadas"), um **resumo por pessoa e atividade** (quem gastou quanto em Desenvolvimento, Testes, Reunião…, com os totais) e todos os lançamentos da tarefa. Os seus aparecem destacados, com os botões para editar e excluir.
+
+![Resumo de horas por pessoa e atividade](images/time-summary.png)
 
 ![Lançar horas](images/time-dialog.png)
 
@@ -305,10 +338,11 @@ Em **Lançar horas**, informe:
 - **Horas**: do jeito que for mais fácil, como `1,5`, `1:30`, `1h30` ou `90m`. Ao lado aparece como o app entendeu ("= 1,5 h").
 - **Atividade**: o tipo de trabalho no Redmine (Desenvolvimento, Reunião…), que não é a tarefa. Vem marcada a última que você usou; se o Redmine tiver uma só, o campo nem aparece.
 - **Comentário**: obrigatório, com o que foi feito.
+- **Também mudar a tarefa** (só ao lançar, não ao editar): **Status** e **Responsável** começam com os atuais; troque se, por exemplo, acabou o trabalho e a tarefa volta para outra pessoa. Só vai para o Redmine o que mudou, depois do lançamento.
 
 ### Cronômetro
 
-**Iniciar cronômetro**, nas ações rápidas, começa a contar o tempo na tarefa. O cronômetro aparece na barra lateral, e no macOS também na barra de menus (⏱ 0:42).
+**Iniciar cronômetro**, nas ações rápidas, começa a contar o tempo na tarefa. O cronômetro aparece na barra lateral, e no macOS também na barra de menus (⏱ 0:42). Em Configurações → Automações → **Cronômetro e expediente** dá para escolher uma situação para a tarefa ir ao iniciar (por exemplo **Em andamento**); ela só muda se o fluxo do Redmine permitir a partir da situação atual.
 
 - **Pausar e retomar** pela barra lateral ou pelo menu da bandeja.
 - **Parar e lançar** abre o formulário com as horas contadas. Ao lançar, o cronômetro some. Se cancelar, ele fica pausado.
@@ -321,7 +355,10 @@ Em **Lançar horas**, informe:
 
 ![Horas extras](images/overtime.png)
 
-**Horas extras**, no menu, é um banco de horas que fica só no app (o Redmine não tem isso). Mostra as horas extras do mês, o **saldo em banco** e as pagas no ano, um gráfico dos últimos 12 meses e a lista de meses: cada mês fica no **Banco** ou é marcado como **Paga** (sai do saldo). Clique num mês para ver os lançamentos; a lixeira exclui um.
+**Horas extras**, no menu, é um banco de horas que fica só no app (o Redmine não tem isso). Mostra as horas extras do mês, o **saldo em banco** e as pagas no ano, um gráfico dos últimos 12 meses, a lista de meses (cada mês fica no **Banco** ou é marcado como **Paga**, e sai do saldo) e os lançamentos, um bloco embaixo do outro.
+
+- **Filtrar por mês**: clique num mês do gráfico ou da lista. Como no Tempo do time, o mês fica contornado, os lançamentos mostram só aquele mês e o nome dele aparece com um **✕** no canto, que volta a mostrar todos (sem filtro, a data vem com o ano).
+- **Alterar** um lançamento: o lápis abre a mesma janela do lançamento, já preenchida (data, horas, tarefa e descrição). A lixeira exclui.
 
 Horas extras entram de três jeitos: **Lançar hora extra** nesta tela (data, horas, tarefa opcional e descrição), o campo **Hora extra (destas horas)** ao lançar horas numa tarefa, e o mesmo campo nos trâmites. Nos dois últimos, as horas vão inteiras para o Redmine e a parte extra vai também para o banco.
 
@@ -331,7 +368,7 @@ Horas extras entram de três jeitos: **Lançar hora extra** nesta tela (data, ho
 
 **Tempo do time**, no menu, mostra as horas lançadas por várias pessoas: **Meu tempo** vem pronto e **Novo time** monta um time com pessoas de um ou mais projetos (escolha o projeto, filtre e marque; não precisa ser administrador). Os times ficam só no app.
 
-- Período: hoje, esta semana, semana passada, este mês ou um período escolhido.
+- Período: hoje, esta semana, semana passada, este mês ou um período escolhido. As semanas vão de segunda a domingo.
 - Indicadores: total do time, média por pessoa (contando quem não lançou) e por pessoa por dia útil (segunda a sexta, sem feriados), e quantos lançamentos e de quantas pessoas.
 - **Horas por pessoa**: uma linha por pessoa e uma coluna por dia, com o total; clique numa pessoa, num dia ou numa célula para filtrar o detalhe.
 - **Detalhe** por tarefa ou por atividade, das que têm mais horas para as que têm menos; clique para ver cada lançamento e no número para abrir a tarefa.
@@ -375,6 +412,8 @@ Cada sprint recebe uma fase:
 | **Em produção**         | A última sprint fechada já publicada                        |
 | **Correção**            | Versão `X.Y.Z` aberta                                       |
 
+Uma versão é reconhecida como **correção** pelo nome: o padrão `X.Y.Z` (ex.: `3.77.1`), que pode ser trocado em **Configurações → Sprints e Início** (expressão regular). Campos personalizados da versão ainda não são usados para isso.
+
 As datas vêm dos campos personalizados da versão (prazo dos devs e data de publicação), detectados automaticamente. Os cartões mostram quantas tarefas estão fechadas, abertas e quantas são suas. **Publicadas recentemente** lista as sprints já entregues.
 
 ![Tarefas da sprint](images/sprint-dialog.png)
@@ -408,7 +447,8 @@ A Agenda funciona como o Google Agenda, mas os compromissos ficam salvos só nes
 No editor:
 
 - **Título**, data e horário (ou **Dia inteiro**).
-- **Repetição**: não se repete, todos os dias, dias úteis, semanal, mensal (no dia N ou na N-ésima semana), anual ou **Personalizar…** (intervalo, dias da semana, término por data ou número de vezes).
+- **Repetição**: não se repete, todos os dias, dias úteis, semanal, mensal (no dia N, na N-ésima semana ou no **último dia útil**), anual ou **Personalizar…** (intervalo, dias da semana, término por data ou número de vezes).
+  - **Mensal no último dia útil**: o último dia de segunda a sexta de cada mês (ex.: lembrete de emitir a NFS-e). Ao escolher, o início vai para o último dia útil deste mês (ou do próximo, se já passou). Feriados não são considerados.
 - **Lembretes**: quantos quiser (na hora, 5 min, 10 min, 1 h, 1 dia, 1 semana antes ou personalizado).
 - **Cor**, **local**, **descrição** e **vínculo com uma tarefa do Redmine** (`#1201`).
 - `Ctrl`/`⌘` + `Enter` salva.
@@ -438,6 +478,8 @@ Enquanto o app está aberto ou na bandeja, ele verifica o Redmine a cada interva
 | **Filtro do Redmine (URL)**        | O resultado de qualquer filtro copiado da tela de tarefas do Redmine |
 | **Quadro**                         | As tarefas de um quadro do app (ligado pelo editor do quadro)        |
 
+Um monitor não precisa de quadro: para só ser avisado (por exemplo, quando a fila de alguém está acabando), crie o monitor direto na tela **Monitores**.
+
 Cada monitor escolhe sobre o que avisar:
 
 | Aviso                 | Quando                                                                               |
@@ -450,6 +492,7 @@ Cada monitor escolhe sobre o que avisar:
 | **Outras alterações** | Prioridade, versão, datas, anexos… (desligado por padrão)                            |
 | **Tarefa entrou**     | Passou a aparecer no resultado da consulta, filtro ou quadro                         |
 | **Tarefa saiu**       | Deixou de aparecer; em Minhas tarefas, é a saída da sua fila (reatribuída, fechada…) |
+| **Pela quantidade**   | Consulta, filtro ou quadro com **menos de N** ou **mais de N** tarefas (ver abaixo)  |
 
 Regras importantes:
 
@@ -472,12 +515,13 @@ Clicar em um item **abre a tarefa no próprio app** (ou a lista, quando o aviso 
 
 ![Monitores](images/monitors.png)
 
-Em **Configurações → Notificações → Monitores**: o switch liga e desliga cada monitor, o lápis edita e a lixeira exclui. **Adicionar monitor** abre o editor:
+Na tela **Monitores**, na barra lateral logo acima dos quadros (antes ficava em Configurações → Notificações): o switch liga e desliga cada monitor, o lápis edita e a lixeira exclui. **Adicionar monitor** abre o editor:
 
 ![Editor de monitor](images/monitor-editor.png)
 
 - **Nome** e **Origem das tarefas** (consulta salva, filtro por URL ou quadro).
 - **Notificar quando**: os avisos que esse monitor manda.
+- **Quantidade de tarefas** (consulta, filtro ou quadro), na mesma lista de **Notificar quando**: ligue o switch e escolha **Menos de** ou **Mais de** um número logo abaixo. Exemplo: uma consulta "tarefas abertas da Ana" com **menos de 2** avisa quando a fila dela está acabando e é hora de mandar mais trabalho. O aviso vem **uma vez**, quando a quantidade passa a ficar assim (inclusive na primeira verificação de um monitor novo); só avisa de novo depois que a quantidade sair da condição e voltar. Pode ser o único aviso do monitor (desligue os outros).
 - **Horário próprio** (opcional): só verifica esse monitor nos dias e horas escolhidos, além do horário geral.
 
 ## 8. Log
@@ -508,7 +552,33 @@ As configurações ficam divididas em abas, na coluna à esquerda.
 
 ### Automações
 
-Em **Configurações → Automações** ficam as regras dos [trâmites](#trâmites), na ordem em que os botões aparecem (setas para mudar). Cada regra tem: tipo (enviar para outra tarefa ou trâmite na própria tarefa), nome do botão, tipos e situações em que aparece (nenhum marcado = todos), tipo da tarefa de destino, situação e responsável padrão (escolha um projeto para listar as pessoas), modelos de comentário (`{{noteSelecionado}}`, `{{tipoAtividadeComentario}}`, `{{tarefa}}`, `{{titulo}}`), aplicar também em tarefas ligadas, lançar horas (com atividade padrão) e fechamento (tipo → situação).
+![Configurações: aba Automações](images/claude-actions.png)
+
+Em **Configurações → Automações** (as regras novas começam sem nome) ficam as regras dos [trâmites](#trâmites), na ordem em que os botões aparecem (setas para mudar). Cada regra tem: tipo (enviar para outra tarefa ou trâmite na própria tarefa), nome do botão, tipos e situações em que aparece (nenhum marcado = todos), tipo da tarefa de destino, situação e responsável padrão (escolha um projeto para listar as pessoas), modelos de comentário (`{{noteSelecionado}}`, `{{tipoAtividadeComentario}}`, `{{tarefa}}`, `{{titulo}}`), aplicar também em tarefas ligadas, lançar horas (com atividade padrão) e fechamento (tipo → situação). Cada regra pode ter um **ícone**, mostrado no botão e no menu ⋮ dos cards.
+
+#### Ações do Claude Code
+
+Como no redmine-adapter: botões que abrem o Claude Code com um prompt sobre a tarefa, no detalhe (junto dos trâmites) e no menu ⋮ dos cards e da Lista.
+
+- **Abrir em**: **Terminal (Claude Code)** abre o Claude Code na **pasta do projeto** escolhida (link `claude-cli://`); **App Claude** abre um chat novo no app Claude com o prompt, que também vai para a área de transferência (experimental).
+- **Prompt**: `{{tarefa}}` vira `#1234`, `{{numeroAtividade}}` vira `1234` e `{{titulo}}` o título. Ex.: `/review refs {{tarefa}}`.
+- **Situação da tarefa ao abrir** (opcional): o app pergunta "Situação: A → B", abre o Claude e só então muda a situação (avisa se o Redmine não aplicar).
+- **Tipos** e **situações** em que o botão aparece (nenhum marcado = todos) e **ícone**.
+- Se nada abrir, rode `claude` uma vez no terminal (ou abra o app Claude) para o sistema registrar o link.
+
+#### Cronômetro e expediente
+
+- **Ao iniciar o cronômetro, mudar a situação para**: por exemplo **Em andamento** (ou **Não alterar**). Só muda quando o fluxo permite.
+- **Expediente**: dias da semana e períodos (padrão 8h–12h e 13h–18h). Usado pelo **Contar as horas desde** dos trâmites: dentro dos períodos são horas normais, o intervalo entre dois períodos não conta e o resto é hora extra.
+
+### Backup
+
+![Configurações: aba Backup](images/settings-backup.png)
+
+Em **Configurações → Backup**:
+
+- **Exportar configurações…** salva um arquivo JSON (`refined-redmine-settings-AAAA-MM-DD.json`) com quadros, monitores, trâmites, ações do Claude, times, expediente, aparência e preferências. O arquivo não leva a conexão (endereço e usuário do Redmine), a API key nem o token do GitHub; a agenda e as horas extras também ficam de fora.
+- **Importar…** lê um arquivo desses e, depois de confirmar, substitui as configurações deste computador. Serve para levar a configuração para outro computador ou voltar atrás depois de um engano. Arquivos de outro programa, ou de uma versão mais nova do app, são recusados com um aviso.
 
 ### Aparência
 
@@ -552,7 +622,7 @@ A prévia ao lado de cada item muda na hora, e a escolha vale em todo o app.
   - **Notificações do sistema** mostra se a permissão está ativa; **Verificar** confere de novo e **Enviar notificação de teste** testa a entrega.
   - **Intervalo de verificação** (mínimo 30 s), **Som nas notificações** e **Abrir ao iniciar o computador**.
   - **Guardar lembretes da agenda no histórico**: a notificação do sistema aparece de qualquer forma.
-- **Monitores**: veja [Criar e editar monitores](#criar-e-editar-monitores).
+- **Monitores**: agora na tela própria da barra lateral; aqui fica um atalho para ela (veja [Criar e editar monitores](#criar-e-editar-monitores)).
 - **Horário**: monitorar só em dias e horas definidos. Fora da janela o monitor pausa e, ao voltar, as novidades chegam agrupadas.
 
 **Agenda**
@@ -611,7 +681,13 @@ macOS: `~/Library/Application Support/Refined Redmine/`. Windows: `%APPDATA%\Ref
 Clique no botão de recarregar ao lado da lista de consultas (no editor do quadro ou do monitor). Aparecem as consultas públicas e as suas.
 
 **Quero ser avisado de tarefas que não são minhas.**
-Crie um monitor com uma consulta salva ou um filtro por URL (**Configurações → Notificações → Adicionar monitor**), ou ligue **Notificar sobre este quadro** no editor do quadro.
+Crie um monitor com uma consulta salva ou um filtro por URL (tela **Monitores** → **Adicionar monitor**), ou ligue **Notificar sobre este quadro** no editor do quadro.
+
+**Quero saber quando a fila de alguém está acabando.**
+Crie no Redmine uma consulta com as tarefas abertas da pessoa e, na tela **Monitores**, um monitor com essa consulta e **Avisar pela quantidade de tarefas → Menos de 2**. Não precisa de quadro.
+
+**Como o app sabe que uma versão é de correção?**
+Pelo nome: `X.Y.Z` (ex.: `3.77.1`), padrão que pode ser trocado em Configurações → Sprints e Início.
 
 **O app está lento para atualizar ou deu erro de conexão.**
 Veja a tela **Log**: ela mostra cada requisição com o tempo de resposta e o erro, se houve.

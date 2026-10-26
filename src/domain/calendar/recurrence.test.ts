@@ -10,6 +10,21 @@ const days = (event: CalendarEvent, from: string, to: string) =>
     occurrences(event, parseLocal(from), parseLocal(to)).map((occurrence) => occurrence.key)
 
 describe('occurrences', () => {
+    it('last weekday of the month (an NFS-e reminder): weekends move back to Friday', () => {
+        const event = makeEvent({
+            start: '2026-10-30T09:00',
+            end: '2026-10-30T09:15',
+            recurrence: { freq: 'monthly', interval: 1, monthlyMode: 'lastWorkday' }
+        })
+        expect(days(event, '2026-10-01', '2027-03-01')).toEqual([
+            '2026-10-30',
+            '2026-11-30',
+            '2026-12-31',
+            '2027-01-29',
+            '2027-02-26'
+        ])
+    })
+
     it('daily skips ahead to the requested range', () => {
         const event = makeEvent({
             start: '2026-09-28T09:00',

@@ -86,7 +86,7 @@ export function StatTile({
         <button
             onClick={onClick}
             disabled={!onClick}
-            className="flex cursor-default flex-col gap-1 rounded-xl border border-line bg-panel px-4 py-3 text-left enabled:hover:border-muted/60 enabled:hover:bg-panel-2"
+            className="flex cursor-default flex-col justify-between gap-1 rounded-xl border border-line bg-panel px-4 py-3 text-left enabled:hover:border-muted/60 enabled:hover:bg-panel-2"
         >
             <span className="flex items-center gap-1.5 text-xs text-muted">
                 <span className={toneClass}>{icon}</span>
@@ -97,26 +97,24 @@ export function StatTile({
     )
 }
 
+type AlertTone = 'error' | 'warning' | 'info'
+
+const ALERT_TONES: Record<AlertTone, string> = {
+    error: 'bg-accent-soft text-danger',
+    warning: 'bg-warn/10 text-warn',
+    info: 'bg-panel-2 text-muted'
+}
+
 export function Alert({
     children,
     tone = 'error',
     className
 }: {
     children: ReactNode
-    tone?: 'error' | 'info'
+    tone?: AlertTone
     className?: string
 }) {
-    return (
-        <div
-            className={cn(
-                'rounded-lg px-4 py-3 text-sm',
-                tone === 'error' ? 'bg-accent-soft text-danger' : 'bg-panel-2 text-muted',
-                className
-            )}
-        >
-            {children}
-        </div>
-    )
+    return <div className={cn('rounded-lg px-4 py-3 text-sm', ALERT_TONES[tone], className)}>{children}</div>
 }
 
 export function EmptyRow({ children }: { children: ReactNode }) {

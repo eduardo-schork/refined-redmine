@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import {
     Bell,
+    BellRing,
     CalendarDays,
     Clock,
     Flag,
@@ -27,7 +28,7 @@ const SEARCH_DELAY_MS = 250
 
 type PageRoute = Extract<
     Route,
-    { page: 'home' | 'calendar' | 'sprints' | 'time' | 'notifications' | 'log' | 'settings' }
+    { page: 'home' | 'calendar' | 'sprints' | 'time' | 'notifications' | 'monitors' | 'log' | 'settings' }
 >
 
 const PAGES: { route: PageRoute; labelKey: string; icon: LucideIcon }[] = [
@@ -36,6 +37,7 @@ const PAGES: { route: PageRoute; labelKey: string; icon: LucideIcon }[] = [
     { route: { page: 'sprints' }, labelKey: 'nav.sprints', icon: Flag },
     { route: { page: 'time' }, labelKey: 'nav.time', icon: Clock },
     { route: { page: 'notifications' }, labelKey: 'nav.notifications', icon: Bell },
+    { route: { page: 'monitors' }, labelKey: 'nav.monitors', icon: BellRing },
     { route: { page: 'log' }, labelKey: 'nav.log', icon: ScrollText },
     { route: { page: 'settings' }, labelKey: 'nav.settings', icon: SettingsIcon }
 ]

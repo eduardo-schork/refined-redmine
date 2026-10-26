@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query'
+import { useIsFetching, useQueryClient } from '@tanstack/react-query'
 import type { AppNotification } from '@domain/notification/notification'
 import { unreadCount, useNotifications } from '@/hooks/notifications'
 import { useSettings } from '@/hooks/session'
@@ -29,6 +29,7 @@ export default function HomePage() {
     const openIssue = useOpenIssue()
     const settings = useSettings()
     const sprints = useSprints()
+    const queueFetching = useIsFetching({ queryKey: qk.myQueue })
     const notifications = useNotifications().data ?? []
     const hello = greetingKey(new Date().getHours())
     const showSprintSetup = !sprints.configured && !sprints.isLoading
@@ -45,18 +46,22 @@ export default function HomePage() {
 
     return (
         <PageLayout
+            loading={sprints.isFetching || queueFetching > 0}
             title={t('nav.home')}
             width="xl"
             actions={<RefreshButton spinning={sprints.isFetching} onClick={() => void refresh()} />}
         >
-            <div>
-                <h2 className="text-2xl font-semibold">{t(hello, { name: settings.user?.firstname ?? '' })}</h2>
-                <p className="text-sm text-muted first-letter:uppercase">
-                    {dates.format(new Date(), { weekday: 'long', day: 'numeric', month: 'long' })}
-                </p>
+            <div className="flex flex-col gap-4 @min-[64rem]/page:flex-row @min-[64rem]/page:items-end @min-[64rem]/page:justify-between">
+                <div>
+                    <h2 className="text-2xl font-semibold">{t(hello, { name: settings.user?.firstname ?? '' })}</h2>
+                    <p className="text-sm text-muted first-letter:uppercase">
+                        {dates.format(new Date(), { weekday: 'long', day: 'numeric', month: 'long' })}
+                    </p>
+                </div>
+                <div className="@min-[64rem]/page:w-[min(44rem,55%)]">
+                    <HomeSearch />
+                </div>
             </div>
-
-            <HomeSearch />
 
             <QueueTiles
                 unread={unreadCount(notifications)}
@@ -90,13 +95,18 @@ export default function HomePage() {
                 )}
             </section>
 
-            <TodayAgenda />
-            <QueuePanels />
-            <LatestNotifications
-                items={notifications}
-                onOpen={open}
-                onSeeAll={() => navigate({ page: 'notifications' })}
-            />
+            {/* Cards: one column, two (the agenda and notifications share the second row) or three on wide areas. */}
+            <div className="grid items-start gap-4 @min-[64rem]/page:grid-cols-2 @min-[100rem]/page:grid-cols-3">
+                <QueuePanels />
+                <div className="grid min-w-0 items-start gap-4 @min-[64rem]/page:col-span-2 @min-[64rem]/page:grid-cols-2 @min-[100rem]/page:col-span-1 @min-[100rem]/page:grid-cols-1">
+                    <TodayAgenda />
+                    <LatestNotifications
+                        items={notifications}
+                        onOpen={open}
+                        onSeeAll={() => navigate({ page: 'notifications' })}
+                    />
+                </div>
+            </div>
         </PageLayout>
     )
 }

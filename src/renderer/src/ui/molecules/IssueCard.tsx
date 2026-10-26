@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Pause } from 'lucide-react'
 import type { Issue } from '@domain/redmine/entities'
 import { isStale } from '@domain/redmine/queue'
@@ -21,13 +22,24 @@ export interface IssueCardOptions {
  * Kanban card, one kind of information per line: number and priority, title, tags (version, due date, status),
  * then the assignee and how long ago the issue changed.
  */
-export function IssueCard({ issue, overlay, options }: { issue: Issue; overlay?: boolean; options: IssueCardOptions }) {
+export function IssueCard({
+    issue,
+    overlay,
+    options,
+    actions
+}: {
+    issue: Issue
+    overlay?: boolean
+    options: IssueCardOptions
+    /** Menu shown at the top right while the pointer is over the card. */
+    actions?: ReactNode
+}) {
     const now = new Date()
     const accentStyle = cardAccentStyle(issue, useIssueStyle())
     return (
         <div
             className={cn(
-                'tracker-color rounded-lg border border-l-[3px] border-line bg-panel px-3 py-2.5 text-sm shadow-sm hover:border-muted/50',
+                'tracker-color group/card rounded-lg border border-l-[3px] border-line bg-panel px-3 py-2.5 text-sm shadow-sm hover:border-muted/50',
                 overlay && 'rotate-1 cursor-grabbing shadow-xl'
             )}
             style={accentStyle}
@@ -38,6 +50,11 @@ export function IssueCard({ issue, overlay, options }: { issue: Issue; overlay?:
                 <TrackerLabel tracker={issue.tracker} />
                 <span className="ml-auto" />
                 <PriorityChip priority={issue.priority} />
+                {actions && (
+                    <div className="-my-1 -mr-1.5 opacity-0 focus-within:opacity-100 group-hover/card:opacity-100 has-[[aria-expanded=true]]:opacity-100 has-[[data-active]]:opacity-100">
+                        {actions}
+                    </div>
+                )}
             </div>
             <div className="line-clamp-3 font-medium leading-snug">{issue.subject}</div>
             <CardTags issue={issue} now={now} options={options} />

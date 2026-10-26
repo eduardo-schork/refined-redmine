@@ -31,6 +31,22 @@ export function useUpdateSettings() {
     })
 }
 
+/** Settings backup to and from a JSON file (the main process opens the file dialogs). */
+export function useBackup() {
+    const queryClient = useQueryClient()
+    const exportBackup = useMutation({ mutationFn: () => api.settings.exportBackup() })
+    const importBackup = useMutation({
+        mutationFn: () => api.settings.importBackup(),
+        onSuccess: (session) => {
+            if (!session) return
+            queryClient.setQueryData(qk.session, session)
+            void queryClient.invalidateQueries({ queryKey: qk.sprints })
+            void queryClient.invalidateQueries({ queryKey: qk.boardIssuesAll })
+        }
+    })
+    return { exportBackup, importBackup }
+}
+
 type SavedSection = 'appearance' | 'issueStyle'
 
 /**

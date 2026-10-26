@@ -266,11 +266,13 @@ export function IssueFieldEditors({ issue, busy }: { issue: IssueDetail; busy: b
                 />
             </Property>
             <Property label={t('issue.version')}>
-                <SelectField
+                <PickList
                     value={issue.fixed_version ? String(issue.fixed_version.id) : NONE}
                     options={fieldOptions.version}
                     disabled={waitingOptions}
-                    onChange={(value, label) => save({ fixedVersionId: idOrNull(value) }, 'fixedVersionId', label)}
+                    onPick={(option) =>
+                        save({ fixedVersionId: idOrNull(option.value) }, 'fixedVersionId', option.label)
+                    }
                 />
             </Property>
             <Property label={t('issue.start')}>

@@ -4,9 +4,10 @@ import type { IssueDetail } from '@domain/redmine/entities'
 import { toggleSubtree } from '@domain/redmine/issue-tree'
 import { useCommentAndChange, useIssueTree } from '@/hooks/issues'
 import { useI18n } from '@/lib/i18n'
-import { useSteps, type Step } from '@/lib/steps'
+import { stepProblems, useSteps, type Step } from '@/lib/steps'
 import { Dialog } from '../../molecules/Dialog'
 import { StepIcon } from '../../molecules/StepIcon'
+import { StepProblems } from '../../molecules/StepProblems'
 import { StepsFooter } from '../../molecules/StepsFooter'
 import { useToast } from '../../molecules/Toast'
 import { ChoiceFields, choiceKeyOf, KEEP, nothingChosen, toChange, TreeTable, type Choices } from '../BulkEditDialog'
@@ -47,7 +48,7 @@ export function TramiteDialog({
     const [comment, setComment] = useState(() => fillTemplate(rule.template, template))
     const [choices, setChoices] = useState(() => initialChoices(rule))
     const files = useChosenFiles()
-    const hours = useHandoffHours(rule)
+    const hours = useHandoffHours(rule, issue)
     const extras = useExtraIssues(issue, rule.bulk)
     const commentAndChange = useCommentAndChange()
     const steps = useSteps(error)
@@ -88,13 +89,14 @@ export function TramiteDialog({
 
     const title = rule.name || t('handoff.newTramite')
     return (
-        <Dialog title={`${title} · #${issue.id}`} onClose={onClose} size="lg" footer={footer}>
+        <Dialog title={`${title} · #${issue.id}`} onClose={onClose} size="xl" footer={footer}>
             <div className="flex flex-col gap-4">
                 <ChoiceFields projectId={issue.project.id} choices={choices} onChange={setChoices} />
                 <CommentWithFiles
                     comment={comment}
                     onComment={setComment}
                     files={files}
+                    attachments={issue.attachments}
                     placeholder={t('handoff.placeholder')}
                 />
                 <HoursFields hours={hours} />
@@ -139,16 +141,16 @@ export function StepList({
     const started = planned.filter((step) => outcomes[step.key])
     if (!started.length) return null
     return (
-        <ul className="flex flex-col gap-1 rounded-lg border border-line px-3 py-2 text-sm">
-            {started.map((step) => (
-                <li key={step.key} className="flex items-center gap-2">
-                    <StepIcon outcome={outcomes[step.key]} />
-                    <span>{labelOf(step.key)}</span>
-                    {outcomes[step.key]?.message && (
-                        <span className="text-xs text-muted">{outcomes[step.key].message}</span>
-                    )}
-                </li>
-            ))}
-        </ul>
+        <>
+            <ul className="flex flex-col gap-1 rounded-lg border border-line px-3 py-2 text-sm">
+                {started.map((step) => (
+                    <li key={step.key} className="flex items-center gap-2">
+                        <StepIcon outcome={outcomes[step.key]} />
+                        <span>{labelOf(step.key)}</span>
+                    </li>
+                ))}
+            </ul>
+            <StepProblems problems={stepProblems(planned, outcomes, labelOf)} />
+        </>
     )
 }

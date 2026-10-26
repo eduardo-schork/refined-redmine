@@ -47,6 +47,14 @@ function describeWeekly(
     return t('recurrence.weekly', { count, days })
 }
 
+function describeMonthDay(recurrence: Recurrence, start: Date, t: TFunction, dates: DateFormatter): string {
+    if (recurrence.monthlyMode === 'lastWorkday') return t('recurrence.onLastWorkday')
+    if (recurrence.monthlyMode === 'weekday') {
+        return onNth(recurrence.monthlyNth ?? nthWeekdayOf(start).nth, start.getDay(), t, dates)
+    }
+    return t('recurrence.onDay', { day: start.getDate() })
+}
+
 function describeMonthly(
     recurrence: Recurrence,
     count: number,
@@ -54,11 +62,7 @@ function describeMonthly(
     t: TFunction,
     dates: DateFormatter
 ): string {
-    const when =
-        recurrence.monthlyMode === 'weekday'
-            ? onNth(recurrence.monthlyNth ?? nthWeekdayOf(start).nth, start.getDay(), t, dates)
-            : t('recurrence.onDay', { day: start.getDate() })
-    return t('recurrence.monthly', { count, when })
+    return t('recurrence.monthly', { count, when: describeMonthDay(recurrence, start, t, dates) })
 }
 
 function describeFrequency(

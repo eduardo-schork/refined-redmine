@@ -32,12 +32,15 @@ export interface NotificationRepository {
 export interface MonitorStateRepository {
     getWatermark(): string | undefined
     setWatermark(iso: string): void
+    /** Each monitor's own watermark (the newest update of its last listing), by monitor id. */
+    getMonitorWatermarks(): Record<string, string>
+    setMonitorWatermarks(watermarks: Record<string, string>): void
     getSnapshot(id: string): QuerySnapshot | undefined
     setSnapshot(id: string, snapshot: QuerySnapshot): void
     deleteSnapshot(id: string): void
     /** Deletes every snapshot whose id is not in the list. */
     pruneSnapshots(keepIds: string[]): void
-    /** Clears the watermark and snapshots (on logout). */
+    /** Clears the watermarks and snapshots (on logout). */
     reset(): void
     getDelivery(): DeliveryRecord | undefined
     setDelivery(record: DeliveryRecord): void

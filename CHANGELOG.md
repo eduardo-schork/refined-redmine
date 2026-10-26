@@ -2,6 +2,34 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
+## Próxima versão
+
+- **Quadro Ágil**: um quadro com todas as suas tarefas abertas, uma coluna por situação, aparece no topo da lista. Depois é um quadro como os outros: renomeie, mude as colunas ou exclua (ele não volta).
+- **Reordenar quadros**: arraste os quadros na barra lateral.
+- **Agrupar o quadro**: o **Agrupar por** agora vale também no modo Quadro, com raias por versão, situação, responsável ou tipo. Na **Lista**, o começo de cada grupo ficou bem mais visível.
+- **Menu ⋮ nos cards e na Lista**: abrir, alterar situação, alterar em massa, novo trâmite, os seus trâmites e ações do Claude e abrir no Redmine, sem abrir a tarefa. Enquanto a tarefa carrega para abrir uma ação, o ⋮ fica girando.
+- **Editor de quadro**: primeiro a origem das tarefas, depois o nome, que já vem com o nome da consulta salva (ou do projeto, ou da sprint).
+- **Listas com busca**: consultas salvas, projetos, sprints, versões e pessoas têm um campo para filtrar, e a lista abre por cima da janela (corrige a lista de projetos do **Novo time**, que criava rolagem dentro do formulário).
+- **Monitores no menu**: os monitores ganharam tela própria na barra lateral, e um monitor pode avisar **pela quantidade de tarefas** ("menos de 2" na fila de alguém, "mais de 10" defeitos abertos), sem precisar de quadro.
+- **Ações do Claude Code**: botões configuráveis (Configurações → Automações) que abrem o Claude Code na pasta do projeto, ou um chat no app Claude, com um prompt sobre a tarefa (ex.: `/review refs {{tarefa}}`), e podem mudar a situação ao abrir.
+- **Editor de comentários como o do Redmine**: Escrever e Visualizar, barra de formatação e imagem colada (⌘V) entrando como anexo e no texto. Vale para o comentário do histórico (que passou a aceitar anexos), os trâmites e a descrição.
+- **Detalhe da tarefa**: botão **Atualizar** ao lado de "Abrir no Redmine"; copiar número, link, título e descrição direto no campo (os botões de copiar saíram da linha de ações); histórico em ordem crescente ou decrescente, lembrada; em telas grandes o detalhe fica maior e dá para redimensionar arrastando o canto.
+- **Horas**: resumo por pessoa e atividade na aba Horas; **Lançar horas** também troca a situação e o responsável (por padrão continuam os atuais); o cronômetro pode mudar a tarefa para uma situação ao iniciar (ex.: Em andamento).
+- **Horas dos trâmites**: vêm do cronômetro quando ele está rodando na tarefa; sem ele, escolha **contar desde** qual trâmite (padrão: o seu último), e o tempo é dividido pelo expediente em horas normais e hora extra (expediente em Configurações → Automações).
+- **Agenda**: repetição **mensal no último dia útil** (ex.: lembrete da NFS-e).
+- **Colunas sugeridas**: ao criar um quadro, as colunas já vêm com as situações em que as tarefas da origem estão (ex.: só "Nova", "Em andamento" e "Em pausa" para uma consulta de defeitos abertos); **Sugerir pelas tarefas** refaz.
+- **Janelas maiores e proporcionais**: o detalhe da tarefa ocupa 85% da área (e o tamanho que você arrastar fica guardado como proporção); o Novo trâmite, o envio para outra tarefa, Alterar em massa e as tarefas da sprint ficam largos; os outros formulários também crescem com a tela, sem esticar demais em monitores muito largos.
+- **Árvore de tarefas mais fácil**: em Alterar em massa e em "Aplicar também em", clique em qualquer ponto da linha para marcar, e cada subtarefa aparece recuada com `├─`/`└─` embaixo da tarefa pai.
+- **Indicador de carregamento**: uma linha animada sob o título mostra quando Tempo do time, Minhas horas, quadros, Sprints, Início e o detalhe da tarefa estão buscando dados.
+- **Mais organizado**: Novo trâmite depois dos trâmites e ações configurados (no detalhe e no menu ⋮), **Monitores** logo acima dos quadros no menu, muito mais ícones para as automações e o aviso por quantidade como mais um item de "Notificar quando".
+- **Backup das configurações** (Configurações → Backup): exporte quadros, monitores, automações, times, expediente, aparência e preferências num arquivo JSON e importe de volta, em outro computador ou depois de um engano. Não leva a conexão, a API key nem o token do GitHub.
+- **Telas grandes mais bem aproveitadas**: o Início vira uma grade de cartões (Minha fila; Paradas e Prazos; agenda e notificações) com uma, duas ou três colunas conforme a largura, e a saudação divide a linha com a busca, Monitores mostra os monitores em colunas e Notificações passa os tipos para uma coluna à esquerda; Sprints, Minhas horas e Tempo do time ficam mais largas.
+- **Horas extras**: altere um lançamento pelo lápis (data, horas, tarefa e descrição). Clicar num mês do gráfico ou da lista filtra os lançamentos, como uma célula do Tempo do time: o mês fica contornado e o ✕ volta a mostrar todos. A tela fica com um bloco embaixo do outro.
+- **Verificação mais leve em quadros grandes**: um quadro com mais de 500 tarefas (por exemplo, todas as suas, incluindo as fechadas) deixa de baixar 500 tarefas a cada verificação; o app só conta e busca as que mudaram desde a última vez.
+- **Alterar em massa explica o que falhou**: no fim, um aviso lista cada tarefa que não foi aplicada por completo e o motivo (o mesmo nos trâmites).
+- **Automações novas sem nome pronto**: o campo mostra um exemplo em vez de vir preenchido.
+- **Correções**: clicar numa imagem citada na descrição ainda recolhida abria a visualização cortada e sem como fechar; listas com busca e menus (⋮, copiar, filtros do quadro) agora fecham ao clicar fora, inclusive dentro do detalhe da tarefa e dos editores, ao ir para outro campo ou ao trocar de janela; o card arrastado no quadro voltou a ficar junto do ponteiro do mouse; o Tempo do time, Minhas horas, "Horas hoje" e Repetir semana deixavam de fora o primeiro dia do período (a segunda-feira de "Esta semana" e de "Semana passada") por causa do fuso horário no Redmine; quadros, consultas e filtros agora avisam a mudança (situação, comentário, menção) de uma tarefa que **saiu do resultado**, mesmo com "Tarefa saiu" desligado (antes, um colega mudar a situação e tirar a tarefa da consulta não notificava nada), e uma alteração feita enquanto a verificação rodava não se perde mais (cada monitor guarda até onde já viu).
+
 ## 0.11.0 — cores, notificações e modais por aba
 
 - **Cores mais personalizáveis** (Configurações → Aparência → Cores): conjuntos de cores prontos (Padrão, Vívido, Suave e Para daltônicos), cada um com cores para o tema claro e o escuro, e troca de qualquer cor: famílias de status, prioridades, previsão (vencida, hoje, em breve) e mensagens de sucesso, atenção e erro. Prévia com cards de exemplo.

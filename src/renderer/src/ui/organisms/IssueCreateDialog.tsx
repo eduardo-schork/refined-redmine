@@ -274,14 +274,12 @@ function VersionAndParentFields({ form, choices, update }: FieldsProps) {
     return (
         <div className="grid grid-cols-2 gap-4">
             <Field label={t('issue.version')}>
-                <Select
+                <PickList
                     value={idText(form.fixedVersionId)}
+                    options={[{ value: NONE, label: t('issue.edit.noVersion') }, ...choices.versions]}
                     disabled={!choices.loaded}
-                    onChange={(event) => update({ fixedVersionId: optionalId(event.target.value) })}
-                >
-                    <option value={NONE}>{t('issue.edit.noVersion')}</option>
-                    <OptionList options={choices.versions} />
-                </Select>
+                    onPick={(option) => update({ fixedVersionId: optionalId(option.value) })}
+                />
             </Field>
             <Field label={t('issue.parentField')} hint={<ParentHint issueId={lookedUpParent} />}>
                 <Input

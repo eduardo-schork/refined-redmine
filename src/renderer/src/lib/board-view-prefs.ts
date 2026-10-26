@@ -1,11 +1,13 @@
 import { DEFAULT_LIST_SORT, type ListGroupBy, type ListSort } from '@domain/board/issue-list'
 import { EMPTY_QUICK_FILTER, withQuickFilterDefaults, type QuickFilter } from '@domain/board/quick-filter'
 
-/** How a board was last looked at on this computer: view, quick filters, list grouping and sort. */
+/** How a board was last looked at on this computer: view, quick filters, list grouping, card lanes and sort. */
 export interface BoardViewPrefs {
     mode: 'board' | 'summary' | 'list'
     filter: QuickFilter
     groupBy: ListGroupBy
+    /** Lanes of the cards; undefined until chosen here, then the board's own setting (older boards) applies. */
+    laneBy?: ListGroupBy
     sort: ListSort
 }
 
@@ -37,6 +39,7 @@ export function loadViewPrefs(boardId: string): BoardViewPrefs {
             mode: MODES.find((mode) => mode === stored.mode) ?? DEFAULT_VIEW_PREFS.mode,
             filter: withQuickFilterDefaults(stored.filter),
             groupBy: GROUPS.find((groupBy) => groupBy === stored.groupBy) ?? DEFAULT_VIEW_PREFS.groupBy,
+            laneBy: GROUPS.find((laneBy) => laneBy === stored.laneBy),
             sort: validSort(stored.sort)
         }
     } catch {

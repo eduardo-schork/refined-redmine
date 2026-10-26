@@ -65,6 +65,30 @@ export function subtreeIds(nodes: IssueTreeNode[], id: number): number[] {
     return [id, ...below]
 }
 
+/** How a row hangs in the tree: `last` when no sibling comes after it; `lines[k]` when level k+1 still continues. */
+export interface TreeGuide {
+    last: boolean
+    lines: boolean[]
+}
+
+/** Guides to draw the tree like folders ("├─", "└─", "│"), for rows in `buildIssueTree` order. */
+export function treeGuides(nodes: IssueTreeNode[]): TreeGuide[] {
+    const lastById = new Map<number, boolean>()
+    nodes.forEach((node, index) => {
+        const laterSibling = nodes.slice(index + 1).some((other) => other.parentId === node.parentId)
+        lastById.set(node.issue.id, node.parentId === undefined || !laterSibling)
+    })
+    const byId = new Map(nodes.map((node) => [node.issue.id, node]))
+    return nodes.map((node) => {
+        const lines = Array<boolean>(Math.max(0, node.depth - 1)).fill(false)
+        for (let ancestor = byId.get(node.parentId ?? -1); ancestor && ancestor.depth > 0;) {
+            lines[ancestor.depth - 1] = !lastById.get(ancestor.issue.id)
+            ancestor = byId.get(ancestor.parentId ?? -1)
+        }
+        return { last: lastById.get(node.issue.id) ?? true, lines }
+    })
+}
+
 /** Checking or unchecking an issue does the same to its subtasks. */
 export function toggleSubtree(nodes: IssueTreeNode[], checked: Set<number>, id: number): Set<number> {
     const next = new Set(checked)

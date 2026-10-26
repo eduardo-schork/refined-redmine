@@ -74,6 +74,25 @@
     }
 }
 
+/* Indeterminate loading line, like Material's LinearProgressIndicator: a segment sliding back and forth. */
+@keyframes loading-slide {
+    from {
+        left: -30%;
+    }
+    to {
+        left: 100%;
+    }
+}
+.loading-bar::after {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    width: 30%;
+    border-radius: 9999px;
+    background: var(--accent);
+    animation: loading-slide 1.1s ease-in-out infinite alternate;
+}
+
 :root[data-reduce-motion='true'] *,
 :root[data-reduce-motion='true'] *::before,
 :root[data-reduce-motion='true'] *::after {

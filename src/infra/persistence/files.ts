@@ -31,6 +31,7 @@ export interface LegacyNotification {
 /** state.json: monitor state + notification history. */
 export interface StateFile {
     lastCheckAt?: string
+    monitorWatermarks?: Record<string, string>
     notify?: { ok: boolean; at: string; error?: string; app?: AppCopy }
     notifyConfirmation?: DeliveryConfirmation
     events: (AppNotification | LegacyNotification)[]

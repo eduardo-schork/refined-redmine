@@ -1,35 +1,17 @@
 import { useState } from 'react'
-import {
-    Clock,
-    Code2,
-    Hash,
-    Heading,
-    Layers,
-    Link2,
-    MessageSquareText,
-    Timer,
-    UserCheck,
-    type LucideIcon
-} from 'lucide-react'
+import { Clock, Layers, Timer, UserCheck } from 'lucide-react'
 import type { IssueDetail } from '@domain/redmine/entities'
-import { COPY_FORMATS, copyText, type CopyFormat } from '@domain/redmine/issue-copy'
-import { useEditIssue } from '@/hooks/issues'
+import { useChangeIssueStatus, useEditIssue } from '@/hooks/issues'
+import { useStatuses } from '@/hooks/reference'
 import { useSettings } from '@/hooks/session'
 import { useTimer, useTimerActions } from '@/hooks/time'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/cn'
 import { useToast } from '../molecules/Toast'
 import { BulkEditDialog } from './BulkEditDialog'
+import { ClaudeActionButtons } from './ClaudeActions'
 import { HandoffButtons } from './handoff/HandoffButtons'
 import { TimeEntryDialog } from './time/TimeEntryDialog'
-
-const ICONS: Record<CopyFormat, LucideIcon> = {
-    link: Link2,
-    number: Hash,
-    title: Heading,
-    reference: MessageSquareText,
-    markdown: Code2
-}
 
 const ACTION_BUTTON =
     'inline-flex h-7 cursor-default items-center gap-1.5 whitespace-nowrap rounded-md border px-2 text-xs disabled:opacity-50'
@@ -119,13 +101,14 @@ function TimerButton({ issue }: { issue: IssueDetail }) {
     const { t } = useI18n()
     const timer = useTimer().data
     const actions = useTimerActions()
+    const moveOnStart = useStatusOnTimerStart(issue)
     const onThisIssue = timer?.issueId === issue.id
     const running = Boolean(timer?.runningSince)
 
     const start = () => {
         const replacing = timer && !onThisIssue
         if (replacing && !confirm(t('timer.confirmReplace', { id: timer.issueId }))) return
-        actions.start.mutate({ id: issue.id, subject: issue.subject })
+        actions.start.mutate({ id: issue.id, subject: issue.subject }, { onSuccess: moveOnStart })
     }
     const toggle = () => {
         if (running) actions.pause.mutate()
@@ -150,46 +133,37 @@ function TimerButton({ issue }: { issue: IssueDetail }) {
     )
 }
 
-/**
- * Quick actions of the issue detail: take the issue, and copy its link, number, title, "#number title" or a
- * Markdown link.
- */
-export function IssueQuickActions({ issue, url }: { issue: IssueDetail; url: string }) {
-    const { t } = useI18n()
+/** The status chosen in Settings → Automations ("In progress"), set when the stopwatch starts on the issue. */
+function useStatusOnTimerStart(issue: IssueDetail) {
+    const { t, error } = useI18n()
     const toast = useToast()
-
-    async function copy(format: CopyFormat) {
-        const text = copyText(format, issue, url)
-        try {
-            await navigator.clipboard.writeText(text)
-            toast(t('issue.copy.copied', { text }))
-        } catch {
-            toast(t('issue.copy.failed'), 'error')
+    const targetId = useSettings().timerStartStatusId
+    const statusName = useStatuses().data?.find((status) => status.id === targetId)?.name ?? String(targetId)
+    const changeStatus = useChangeIssueStatus(issue.id)
+    return () => {
+        if (!targetId || issue.status.id === targetId) return
+        const allowed = issue.allowed_statuses.some((status) => status.id === targetId)
+        if (!allowed) {
+            toast(t('timer.statusNotAllowed', { id: issue.id, status: statusName }), 'error')
+            return
         }
+        changeStatus.mutate(targetId, {
+            onSuccess: () => toast(t('timer.statusChanged', { id: issue.id, status: statusName })),
+            onError: (changeError) => toast(error(changeError), 'error')
+        })
     }
+}
 
+/** Quick actions of the issue detail: trâmites, take the issue, log time, stopwatch and bulk edit. */
+export function IssueQuickActions({ issue }: { issue: IssueDetail }) {
+    const { t } = useI18n()
     return (
-        <div className="mt-2 flex flex-wrap items-center gap-1" role="toolbar" aria-label={t('issue.copy.label')}>
-            <HandoffButtons issue={issue} />
+        <div className="mt-2 flex flex-wrap items-center gap-1" role="toolbar" aria-label={t('issueMenu.label')}>
+            <HandoffButtons issue={issue} otherActions={<ClaudeActionButtons issue={issue} />} />
             <AssignToMeButton issue={issue} />
             <LogTimeButton issue={issue} />
             <TimerButton issue={issue} />
             <BulkEditButton issue={issue} />
-            {COPY_FORMATS.map((format) => {
-                const Icon = ICONS[format]
-                return (
-                    <button
-                        key={format}
-                        type="button"
-                        title={t(`issue.copy.${format}Hint`)}
-                        onClick={() => void copy(format)}
-                        className={cn(ACTION_BUTTON, 'border-line text-fg/85 hover:bg-panel-2 hover:text-fg')}
-                    >
-                        <Icon size={13} />
-                        {t(`issue.copy.${format}`)}
-                    </button>
-                )
-            })}
         </div>
     )
 }

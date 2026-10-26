@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type KeyboardEvent } from 'react'
 import { ArrowDown, ArrowUp, ChevronDown, ChevronRight } from 'lucide-react'
 import {
     groupIssues,
@@ -17,6 +17,7 @@ import { cn } from '@/lib/cn'
 import { Avatar } from '../atoms/Avatar'
 import { hasPriorityChip, PriorityChip, TrackerLabel, VersionChip } from '../molecules/issue-chips'
 import { StatusTag } from '../molecules/StatusTag'
+import { IssueActionsMenu } from './IssueActionsMenu'
 
 const COLUMNS: { column: ListColumn; labelKey: string }[] = [
     { column: 'id', labelKey: 'board.list.column.id' },
@@ -29,7 +30,7 @@ const COLUMNS: { column: ListColumn; labelKey: string }[] = [
     { column: 'due', labelKey: 'board.list.column.due' }
 ]
 
-const GRID = 'grid grid-cols-[5rem_8.5rem_10rem_7rem_minmax(0,1fr)_11rem_6rem_6.5rem] items-center gap-3 px-4'
+const GRID = 'grid grid-cols-[5rem_8.5rem_10rem_7rem_minmax(0,1fr)_11rem_6rem_6.5rem_1.75rem] items-center gap-3 px-4'
 
 const DUE_TONE: Record<DueState, string> = {
     overdue: 'font-medium text-due-overdue',
@@ -123,6 +124,7 @@ function ListHeader({ sort, onSort }: { sort: ListSort; onSort: (column: ListCol
                     </div>
                 )
             })}
+            <span />
         </div>
     )
 }
@@ -130,6 +132,12 @@ function ListHeader({ sort, onSort }: { sort: ListSort; onSort: (column: ListCol
 const NO_VALUE_LABEL: Partial<Record<ListGroupBy, string>> = {
     version: 'board.filters.noVersion',
     assignee: 'board.noAssignee'
+}
+
+/** Name of a group, with "No version" / "No assignee"… for the group without a value. */
+export function useGroupLabel(group: IssueGroup, groupBy: ListGroupBy): string {
+    const { t } = useI18n()
+    return group.label ?? t((NO_VALUE_LABEL[groupBy] ?? 'board.filters.none') as 'board.filters.none')
 }
 
 function ListGroup({
@@ -147,21 +155,20 @@ function ListGroup({
     onToggle: () => void
     onOpen: (id: number) => void
 }) {
-    const { t } = useI18n()
     const Chevron = collapsed ? ChevronRight : ChevronDown
-    const label = group.label ?? t((NO_VALUE_LABEL[groupBy] ?? 'board.filters.none') as 'board.filters.none')
+    const label = useGroupLabel(group, groupBy)
     return (
-        <section>
+        <section className={cn(showHeader && '[&+&]:mt-4')}>
             {showHeader && (
                 <button
                     type="button"
                     onClick={onToggle}
                     aria-expanded={!collapsed}
-                    className="flex w-full cursor-default items-center gap-2 border-b border-line bg-panel px-4 py-2 text-left hover:bg-panel-2"
+                    className="flex w-full cursor-default items-center gap-2 border-y border-l-[3px] border-line border-l-accent bg-panel-2 px-4 py-2.5 text-left hover:bg-accent-soft"
                 >
-                    <Chevron size={15} className="text-muted" />
-                    <span className="text-sm font-semibold">{label}</span>
-                    <span className="rounded bg-panel-2 px-1.5 text-2xs font-semibold tabular-nums text-muted">
+                    <Chevron size={16} className="text-muted" />
+                    <span className="text-base font-semibold">{label}</span>
+                    <span className="rounded-full bg-panel px-2 text-xs font-semibold tabular-nums text-muted">
                         {group.issues.length}
                     </span>
                 </button>
@@ -175,13 +182,19 @@ function ListRow({ issue, onOpen }: { issue: Issue; onOpen: (id: number) => void
     const { t, dates } = useI18n()
     const due = dueState(issue, new Date(), useIssueStyle().dueSoonDays)
     const assignee = issue.assigned_to?.name
+    const openOnEnter = (event: KeyboardEvent) => {
+        if (event.key === 'Enter') onOpen(issue.id)
+    }
+    // Not a <button>: it holds the actions menu, and a button can't contain another one.
     return (
-        <button
-            type="button"
+        <div
+            role="button"
+            tabIndex={0}
             onClick={() => onOpen(issue.id)}
+            onKeyDown={openOnEnter}
             className={cn(
                 GRID,
-                'w-full cursor-default border-b border-line py-2 text-left text-sm last:border-b-0 hover:bg-panel-2'
+                'group/row w-full cursor-default border-b border-line py-2 text-left text-sm last:border-b-0 hover:bg-panel-2'
             )}
         >
             <span className="font-semibold tabular-nums text-fg/85">#{issue.id}</span>
@@ -207,7 +220,10 @@ function ListRow({ issue, onOpen }: { issue: Issue; onOpen: (id: number) => void
             <span className={cn('tabular-nums', DUE_TONE[due])}>
                 {issue.due_date ? dates.date(issue.due_date) : '—'}
             </span>
-        </button>
+            <span className="opacity-0 focus-within:opacity-100 group-hover/row:opacity-100 has-[[aria-expanded=true]]:opacity-100 has-[[data-active]]:opacity-100">
+                <IssueActionsMenu issue={issue} />
+            </span>
+        </div>
     )
 }
 

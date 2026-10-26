@@ -1,23 +1,25 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowDown, ArrowUp, Plus, Trash2, X } from 'lucide-react'
 import type { BoardNotifications } from '@contracts/api'
 import type { Board, BoardColumn, BoardSource } from '@domain/board/board'
-import { columnsFromStatuses } from '@domain/board/board-rules'
+import { columnsFromStatuses, suggestedStatuses } from '@domain/board/board-rules'
 import { defaultEvents, findBoardMonitor, type Monitor } from '@domain/monitor/monitor'
 import type { IssueStatus } from '@domain/redmine/entities'
 import { compareVersions } from '@domain/sprint/sprint-classifier'
 import type { SprintAutoPick } from '@domain/sprint/sprint'
-import { useSaveBoard } from '@/hooks/boards'
+import { useColumnSuggestion, useSaveBoard } from '@/hooks/boards'
 import { useProjects, useStatuses } from '@/hooks/reference'
 import { useSettings } from '@/hooks/session'
 import { useSprints } from '@/hooks/sprints'
 import { localId } from '@/lib/ids'
+import { moveItem } from '@/lib/move-item'
 import { useI18n } from '@/lib/i18n'
 import { Button } from '../atoms/Button'
 import { AddSelect, Input, Select } from '../atoms/fields'
 import { IconButton } from '../atoms/IconButton'
 import { Dialog } from '../molecules/Dialog'
 import { Field, ToggleField } from '../molecules/Field'
+import { PickList, type PickOption } from '../molecules/PickList'
 import { useToast } from '../molecules/Toast'
 import { FilterUrlField } from './FilterUrlField'
 import { MonitorEventsFields } from './monitors/MonitorEventsFields'
@@ -30,7 +32,8 @@ type SprintSource = Extract<BoardSource, { type: 'sprint' }>
 type ProjectsQuery = ReturnType<typeof useProjects>
 type SprintsQuery = ReturnType<typeof useSprints>
 type StatusesQuery = ReturnType<typeof useStatuses>
-type SourceChange = (source: BoardSource) => void
+/** `suggestedName`: what the board could be called with this source (the saved query's name, the project's…). */
+type SourceChange = (source: BoardSource, suggestedName?: string) => void
 type ColumnsUpdater = (update: (columns: BoardColumn[]) => BoardColumn[]) => void
 
 const EMPTY: Board = { id: '', name: '', source: { type: 'mine' }, columns: [], swimlanes: 'none' }
@@ -43,13 +46,6 @@ const DEFAULT_SOURCES: Record<BoardSource['type'], () => BoardSource> = {
     query: () => ({ type: 'query', queryId: 0 }),
     filter: () => ({ type: 'filter', url: '' }),
     sprint: () => ({ type: 'sprint', auto: 'dev' })
-}
-
-function moveItem<T>(items: T[], index: number, delta: number): T[] {
-    const next = [...items]
-    const [moved] = next.splice(index, 1)
-    next.splice(index + delta, 0, moved)
-    return next
 }
 
 export function BoardEditor({
@@ -75,9 +71,22 @@ export function BoardEditor({
     const [notifications, setNotifications] = useState(() => initialNotifications(existingMonitor))
 
     const source = draft.source
-    const setSource = (nextSource: BoardSource) => setDraft((previous) => ({ ...previous, source: nextSource }))
+    const lastSuggestion = useRef('')
+    // The name follows the source while the user has not typed one of their own.
+    const setSource: SourceChange = (nextSource, suggestedName) =>
+        setDraft((previous) => {
+            const followsSource = !previous.name.trim() || previous.name === lastSuggestion.current
+            const name = suggestedName && followsSource ? suggestedName : previous.name
+            if (suggestedName && followsSource) lastSuggestion.current = suggestedName
+            return { ...previous, source: nextSource, name }
+        })
+    const changeSourceType = (type: BoardSource['type']) => {
+        const suggestion = type === 'mine' ? t('board.editor.sourceMine') : undefined
+        setSource(DEFAULT_SOURCES[type](), suggestion)
+    }
     const updateColumns: ColumnsUpdater = (update) =>
         setDraft((previous) => ({ ...previous, columns: update(previous.columns) }))
+    const suggestion = useSuggestedColumns(draft, statuses, updateColumns)
 
     function submit() {
         const boardNotifications = notificationsToSave(notifications, existingMonitor)
@@ -107,31 +116,19 @@ export function BoardEditor({
             footer={footer}
         >
             <div className="flex flex-col gap-5">
-                <div className="grid grid-cols-2 gap-4">
-                    <Field label={t('board.editor.name')}>
-                        <Input
-                            autoFocus
-                            value={draft.name}
-                            placeholder={t('board.editor.namePlaceholder')}
-                            onChange={(event) => setDraft({ ...draft, name: event.target.value })}
-                        />
-                    </Field>
-                    <Field label={t('board.editor.source')}>
-                        <Select
-                            value={source.type}
-                            onChange={(event) => {
-                                const type = event.target.value as BoardSource['type']
-                                setSource(DEFAULT_SOURCES[type]())
-                            }}
-                        >
-                            <option value="sprint">{t('board.editor.sourceSprint')}</option>
-                            <option value="mine">{t('board.editor.sourceMine')}</option>
-                            <option value="project">{t('board.editor.sourceProject')}</option>
-                            <option value="query">{t('board.editor.sourceQuery')}</option>
-                            <option value="filter">{t('board.editor.sourceFilter')}</option>
-                        </Select>
-                    </Field>
-                </div>
+                <Field label={t('board.editor.source')}>
+                    <Select
+                        autoFocus={!board}
+                        value={source.type}
+                        onChange={(event) => changeSourceType(event.target.value as BoardSource['type'])}
+                    >
+                        <option value="sprint">{t('board.editor.sourceSprint')}</option>
+                        <option value="mine">{t('board.editor.sourceMine')}</option>
+                        <option value="project">{t('board.editor.sourceProject')}</option>
+                        <option value="query">{t('board.editor.sourceQuery')}</option>
+                        <option value="filter">{t('board.editor.sourceFilter')}</option>
+                    </Select>
+                </Field>
 
                 {source.type === 'project' && (
                     <ProjectSourceFields source={source} projects={projects} onChange={setSource} />
@@ -142,14 +139,20 @@ export function BoardEditor({
                     <SprintSourceFields source={source} sprints={sprints} onChange={setSource} />
                 )}
 
-                <ToggleField
-                    checked={draft.swimlanes === 'assignee'}
-                    onChange={(enabled) => setDraft({ ...draft, swimlanes: enabled ? 'assignee' : 'none' })}
-                    label={t('board.editor.swimlanes')}
-                    description={t('board.editor.swimlanesHint')}
-                />
+                <Field label={t('board.editor.name')}>
+                    <Input
+                        value={draft.name}
+                        placeholder={t('board.editor.namePlaceholder')}
+                        onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+                    />
+                </Field>
 
-                <ColumnsEditor columns={draft.columns} statuses={statuses} onUpdate={updateColumns} />
+                <ColumnsEditor
+                    columns={draft.columns}
+                    statuses={statuses}
+                    suggestion={suggestion}
+                    onUpdate={updateColumns}
+                />
 
                 <BoardNotificationsFields value={notifications} onChange={setNotifications} />
             </div>
@@ -168,21 +171,25 @@ function ProjectSourceFields({
 }) {
     const { t } = useI18n()
     const placeholder = projects.isLoading ? t('common.loading') : t('common.select')
+    const options = (projects.data ?? []).map((project) => ({
+        value: String(project.id),
+        label: project.parent ? `${project.parent.name} › ${project.name}` : project.name
+    }))
+    const pick = (option: PickOption) => {
+        const project = projects.data?.find((candidate) => String(candidate.id) === option.value)
+        onChange({ ...source, projectId: Number(option.value) }, project?.name)
+    }
     return (
         <div className="grid grid-cols-2 items-end gap-4">
             <Field label={t('board.editor.project')}>
-                <Select
-                    value={source.projectId || ''}
-                    onChange={(event) => onChange({ ...source, projectId: Number(event.target.value) })}
-                >
-                    <option value="">{placeholder}</option>
-                    {projects.data?.map((project) => (
-                        <option key={project.id} value={project.id}>
-                            {project.parent ? `${project.parent.name} › ` : ''}
-                            {project.name}
-                        </option>
-                    ))}
-                </Select>
+                <PickList
+                    value={source.projectId ? String(source.projectId) : ''}
+                    options={options}
+                    placeholder={placeholder}
+                    searchPlaceholder={t('issue.create.searchProject')}
+                    noMatches={t('issue.create.noProject')}
+                    onPick={pick}
+                />
             </Field>
             <ToggleField
                 checked={source.includeSubprojects}
@@ -199,7 +206,7 @@ function QuerySourceFields({ source, onChange }: { source: QuerySource; onChange
         <Field label={t('board.editor.query')} hint={t('board.editor.queryHint')}>
             <SavedQuerySelect
                 queryId={source.queryId}
-                onChange={(queryId, projectId) => onChange({ type: 'query', queryId, projectId })}
+                onChange={(queryId, projectId, name) => onChange({ type: 'query', queryId, projectId }, name)}
             />
         </Field>
     )
@@ -274,40 +281,42 @@ function SprintSourceFields({
         return undefined
     }
 
-    const selectSprint = (value: string) => {
-        if (value.startsWith(AUTO_PREFIX)) {
-            const auto = value.slice(AUTO_PREFIX.length) as SprintAutoPick
-            onChange({ ...source, auto, versionId: undefined })
-            return
-        }
-        onChange({ ...source, auto: undefined, versionId: Number(value) || undefined })
-    }
-
     const autoPickLabel = (autoPick: SprintAutoPick) => {
         const currentSprint = sprints.pick(autoPick)
         const suffix = currentSprint ? t('board.editor.todayIs', { name: currentSprint.version.name }) : ''
         return `${t(`sprint.auto.${autoPick}`)}${suffix}`
     }
+    const options: PickOption[] = [
+        ...AUTO_PICKS.map((autoPick) => ({
+            value: `${AUTO_PREFIX}${autoPick}`,
+            label: autoPickLabel(autoPick),
+            group: t('board.editor.automaticGroup')
+        })),
+        ...selectableSprints.map((sprint) => ({
+            value: String(sprint.version.id),
+            label: `${sprint.version.name} · ${t(`sprint.phase.${sprint.phase}`)}`,
+            group: t('board.editor.fixedGroup')
+        }))
+    ]
+
+    const selectSprint = (value: string) => {
+        if (value.startsWith(AUTO_PREFIX)) {
+            const auto = value.slice(AUTO_PREFIX.length) as SprintAutoPick
+            onChange({ ...source, auto, versionId: undefined }, t(`sprint.auto.${auto}`))
+            return
+        }
+        const versionName = selectableSprints.find((sprint) => String(sprint.version.id) === value)?.version.name
+        onChange({ ...source, auto: undefined, versionId: Number(value) || undefined }, versionName)
+    }
 
     return (
         <div className="grid grid-cols-2 items-end gap-4">
             <Field label={t('board.editor.sprint')} hint={hint()}>
-                <Select value={selectedValue} onChange={(event) => selectSprint(event.target.value)}>
-                    <optgroup label={t('board.editor.automaticGroup')}>
-                        {AUTO_PICKS.map((autoPick) => (
-                            <option key={autoPick} value={`${AUTO_PREFIX}${autoPick}`}>
-                                {autoPickLabel(autoPick)}
-                            </option>
-                        ))}
-                    </optgroup>
-                    <optgroup label={t('board.editor.fixedGroup')}>
-                        {selectableSprints.map((sprint) => (
-                            <option key={sprint.version.id} value={sprint.version.id}>
-                                {sprint.version.name} · {t(`sprint.phase.${sprint.phase}`)}
-                            </option>
-                        ))}
-                    </optgroup>
-                </Select>
+                <PickList
+                    value={String(selectedValue)}
+                    options={options}
+                    onPick={(option) => selectSprint(option.value)}
+                />
             </Field>
             <ToggleField
                 checked={Boolean(source.onlyMine)}
@@ -318,13 +327,50 @@ function SprintSourceFields({
     )
 }
 
+type Suggestion = ReturnType<typeof useSuggestedColumns>
+
+/**
+ * Columns from the statuses the source's issues are in. They fill an empty board as soon as the source is complete,
+ * and follow the source while the user has not changed them.
+ */
+function useSuggestedColumns(draft: Board, statuses: StatusesQuery, onUpdate: ColumnsUpdater) {
+    const { t } = useI18n()
+    const query = useColumnSuggestion(draft)
+    const lastSuggested = useRef<BoardColumn[] | undefined>(undefined)
+    const closedLabel = t('board.editor.closedColumn')
+    const build = () => {
+        if (!query.data || !statuses.data) return undefined
+        return columnsFromStatuses(suggestedStatuses(statuses.data, query.data.statusIds), localId, closedLabel)
+    }
+    const apply = (onlyIfUntouched: boolean) => {
+        const columns = build()
+        if (!columns?.length) return
+        const untouchedBefore = lastSuggested.current
+        onUpdate((current) => {
+            const untouched = current.length === 0 || current === untouchedBefore
+            return onlyIfUntouched && !untouched ? current : columns
+        })
+        lastSuggested.current = columns
+    }
+
+    useEffect(() => {
+        apply(true)
+        // Only when a new suggestion arrives.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [query.data, statuses.data])
+
+    return { total: query.data?.total, loading: query.isFetching, apply: () => apply(false) }
+}
+
 function ColumnsEditor({
     columns,
     statuses,
+    suggestion,
     onUpdate
 }: {
     columns: BoardColumn[]
     statuses: StatusesQuery
+    suggestion: Suggestion
     onUpdate: ColumnsUpdater
 }) {
     const { t } = useI18n()
@@ -355,8 +401,16 @@ function ColumnsEditor({
                 <div>
                     <h3 className="text-sm font-semibold">{t('board.editor.columns')}</h3>
                     <p className="text-xs text-muted">{t('board.editor.columnsHint')}</p>
+                    {suggestion.total !== undefined && (
+                        <p className="text-xs text-muted">
+                            {t('board.editor.suggestedFrom', { count: suggestion.total })}
+                        </p>
+                    )}
                 </div>
                 <div className="flex gap-2">
+                    <Button onClick={suggestion.apply} disabled={!suggestion.total || suggestion.loading}>
+                        {t('board.editor.suggest')}
+                    </Button>
                     <Button onClick={createOnePerStatus} disabled={!statuses.data}>
                         {t('board.editor.onePerStatus')}
                     </Button>

@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { MessageSquarePlus, Send } from 'lucide-react'
 import { NEW_TRAMITE_RULE, rulesFor, type HandoffRule } from '@domain/automation/handoff'
 import type { IssueDetail, Journal } from '@domain/redmine/entities'
 import { useSettings } from '@/hooks/session'
 import { cn } from '@/lib/cn'
 import { useI18n } from '@/lib/i18n'
+import { ActionIcon } from '../../atoms/ActionIcon'
 import { HandoffDialog } from './HandoffDialog'
 import { TramiteDialog } from './TramiteDialog'
 
@@ -12,14 +13,14 @@ const ACTION_BUTTON =
     'inline-flex h-7 cursor-default items-center gap-1.5 whitespace-nowrap rounded-md border px-2 text-xs disabled:opacity-50'
 
 /** The rules whose button shows on this issue, split by kind. */
-function useIssueRules(issue: IssueDetail) {
+export function useIssueRules(issue: Pick<IssueDetail, 'tracker' | 'status'>) {
     const rules = rulesFor(useSettings().handoffRules, issue)
     return { same: rules.filter((rule) => rule.mode === 'same'), other: rules.filter((rule) => rule.mode === 'other') }
 }
 
-type Opened = { rule: HandoffRule; journalId?: number } | undefined
+export type Opened = { rule: HandoffRule; journalId?: number } | undefined
 
-function OpenedDialog({
+export function OpenedDialog({
     issue,
     opened,
     others,
@@ -43,14 +44,29 @@ function OpenedDialog({
     )
 }
 
-/** "Novo trâmite" (always) and the configured handoff buttons that apply to this issue's tracker and status. */
-export function HandoffButtons({ issue }: { issue: IssueDetail }) {
+/**
+ * The configured handoff buttons that apply to this issue's tracker and status, then `otherActions` (the Claude
+ * actions) and "Novo trâmite" (always) last: the automations are what is used most.
+ */
+export function HandoffButtons({ issue, otherActions }: { issue: IssueDetail; otherActions?: ReactNode }) {
     const { t } = useI18n()
     const rules = useIssueRules(issue)
     const [opened, setOpened] = useState<Opened>()
     const configured = [...rules.same, ...rules.other]
     return (
         <>
+            {configured.map((rule) => (
+                <button
+                    key={rule.id}
+                    type="button"
+                    onClick={() => setOpened({ rule })}
+                    className={cn(ACTION_BUTTON, 'border-accent/40 bg-accent-soft text-accent hover:border-accent')}
+                >
+                    <ActionIcon name={rule.icon} fallback={Send} size={13} />
+                    {rule.name}
+                </button>
+            ))}
+            {otherActions}
             <button
                 type="button"
                 onClick={() => setOpened({ rule: NEW_TRAMITE_RULE })}
@@ -60,17 +76,6 @@ export function HandoffButtons({ issue }: { issue: IssueDetail }) {
                 <MessageSquarePlus size={13} />
                 {t('handoff.newTramite')}
             </button>
-            {configured.map((rule) => (
-                <button
-                    key={rule.id}
-                    type="button"
-                    onClick={() => setOpened({ rule })}
-                    className={cn(ACTION_BUTTON, 'border-accent/40 bg-accent-soft text-accent hover:border-accent')}
-                >
-                    <Send size={13} />
-                    {rule.name}
-                </button>
-            ))}
             <OpenedDialog issue={issue} opened={opened} others={rules.other} onClose={() => setOpened(undefined)} />
         </>
     )

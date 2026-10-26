@@ -44,6 +44,7 @@ export type NotificationPayload =
           added: IssueRef[]
           removed?: IssueRef[]
       }
+    | { type: 'queryCount'; queryName: string; count: number; op: 'below' | 'above'; value: number }
     | {
           type: 'reminder'
           eventId: string
@@ -69,6 +70,8 @@ export interface NotificationSource {
 /** An item of the notification history. */
 export interface AppNotification {
     id: string
+    /** The change it tells ("journal:<id>"): the same change seen again by another monitor is not notified twice. */
+    key?: string
     kind: NotificationKind
     payload: NotificationPayload
     issueId?: number

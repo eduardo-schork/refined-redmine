@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { KanbanSquare, Pencil, Plus, Trash2 } from 'lucide-react'
 import type { Board } from '@domain/board/board'
 import { newIssueDefaults } from '@domain/board/board-rules'
-import { nextSort } from '@domain/board/issue-list'
+import { nextSort, type ListGroupBy } from '@domain/board/issue-list'
 import { EMPTY_QUICK_FILTER, matchesQuickFilter, NONE } from '@domain/board/quick-filter'
 import type { Issue } from '@domain/redmine/entities'
 import type { Sprint } from '@domain/sprint/sprint'
@@ -115,6 +115,7 @@ function BoardView({ board, onDeleted }: { board: Board; onDeleted: () => void }
 
     return (
         <PageLayout
+            loading={boardIssues.isFetching}
             title={board.name}
             subtitle={
                 <BoardSubtitle board={board} data={data} visibleCount={visible.length} totalCount={allIssues.length} />
@@ -228,20 +229,25 @@ function BoardBody({
 }) {
     const openIssue = useOpenIssue()
     const { mode, filter, groupBy, sort } = prefs
+    const laneBy = prefs.laneBy ?? board.swimlanes
     if (mode === 'summary') {
         return <BoardSummary board={board} sprint={sprint} issues={allIssues} onSelectPerson={onSelectPerson} />
     }
+    const isList = mode === 'list'
+    const changeGrouping = (next: ListGroupBy) => update(isList ? { groupBy: next } : { laneBy: next })
     return (
         <>
             <BoardFilters
                 issues={allIssues}
                 filter={filter}
                 onChange={(next) => update({ filter: next })}
-                groupBy={mode === 'list' ? groupBy : undefined}
-                onGroupBy={(next) => update({ groupBy: next })}
+                groupBy={isList ? groupBy : laneBy}
+                onGroupBy={changeGrouping}
             />
             <SignalFilter counts={signal.counts} active={signal.active} onChange={signal.onChange} />
-            {mode === 'board' && <KanbanBoard board={board} issues={visible} loading={loading} onOpen={openIssue} />}
+            {mode === 'board' && (
+                <KanbanBoard board={board} laneBy={laneBy} issues={visible} loading={loading} onOpen={openIssue} />
+            )}
             {mode === 'list' && (
                 <IssueList
                     issues={visible}

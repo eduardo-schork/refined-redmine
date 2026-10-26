@@ -1,4 +1,10 @@
-import { forwardRef, type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
+import {
+    forwardRef,
+    type InputHTMLAttributes,
+    type Ref,
+    type SelectHTMLAttributes,
+    type TextareaHTMLAttributes
+} from 'react'
 import { cn } from '@/lib/cn'
 
 // Default width is 100%, unless the caller passes its own width (w-*).
@@ -48,7 +54,10 @@ export function AddSelect({ className, children, ...props }: SelectHTMLAttribute
     )
 }
 
-export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+export function Textarea({
+    className,
+    ...props
+}: TextareaHTMLAttributes<HTMLTextAreaElement> & { ref?: Ref<HTMLTextAreaElement> }) {
     return (
         <textarea
             {...props}

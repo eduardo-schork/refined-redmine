@@ -109,7 +109,11 @@ function KindChips({
     // Chips with nothing to show stay out of the way, except the one selected.
     const visible = NOTIFICATION_FILTERS.filter((filter) => filter === 'all' || filter === value || counts[filter] > 0)
     return (
-        <div role="group" aria-label={t('notificationsPage.filters')} className="flex flex-wrap gap-1.5">
+        <div
+            role="group"
+            aria-label={t('notificationsPage.filters')}
+            className="flex flex-wrap gap-1.5 @min-[75rem]/page:flex-col @min-[75rem]/page:flex-nowrap"
+        >
             {visible.map((filter) => {
                 const selected = filter === value
                 return (
@@ -119,7 +123,7 @@ function KindChips({
                         aria-pressed={selected}
                         onClick={() => onChange(filter)}
                         className={cn(
-                            'inline-flex h-7 cursor-default items-center gap-1.5 rounded-full border px-2.5 text-xs',
+                            'inline-flex h-7 cursor-default items-center gap-1.5 rounded-full border px-2.5 text-xs @min-[75rem]/page:h-8 @min-[75rem]/page:justify-between @min-[75rem]/page:rounded-md @min-[75rem]/page:text-sm',
                             selected
                                 ? 'border-accent/50 bg-accent-soft font-medium'
                                 : 'border-line text-muted hover:bg-panel-2 hover:text-fg'
@@ -241,40 +245,47 @@ export default function NotificationsPage() {
             actions={headerActions}
             width="md"
         >
-            {items.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2">
-                    <KindChips
-                        value={criteria.filter}
-                        counts={counts}
-                        onChange={(filter) => updateCriteria({ filter })}
-                    />
-                    <div className="ml-auto flex items-center gap-2">
-                        <MonitorSelect
-                            items={items}
-                            value={criteria.monitorId}
-                            onChange={(monitorId) => updateCriteria({ monitorId })}
+            {/* Wide areas: the kinds become a column on the left, like the folders of a mail app. */}
+            <div className="flex flex-col gap-4 @min-[75rem]/page:grid @min-[75rem]/page:grid-cols-[14rem_minmax(0,1fr)] @min-[75rem]/page:items-start">
+                {items.length > 0 && (
+                    <aside className="@min-[75rem]/page:sticky @min-[75rem]/page:top-0">
+                        <KindChips
+                            value={criteria.filter}
+                            counts={counts}
+                            onChange={(filter) => updateCriteria({ filter })}
                         />
-                        <SegmentedControl
-                            value={criteria.onlyUnread ? 'unread' : 'all'}
-                            options={[
-                                { value: 'all', label: t('notificationsPage.filter.all') },
-                                { value: 'unread', label: `${t('notificationsPage.unread')} (${unread})` }
-                            ]}
-                            onChange={(choice) => updateCriteria({ onlyUnread: choice === 'unread' })}
-                        />
-                    </div>
+                    </aside>
+                )}
+                <div className="flex min-w-0 flex-col gap-4 @min-[75rem]/page:col-start-2">
+                    {items.length > 0 && (
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                            <MonitorSelect
+                                items={items}
+                                value={criteria.monitorId}
+                                onChange={(monitorId) => updateCriteria({ monitorId })}
+                            />
+                            <SegmentedControl
+                                value={criteria.onlyUnread ? 'unread' : 'all'}
+                                options={[
+                                    { value: 'all', label: t('notificationsPage.filter.all') },
+                                    { value: 'unread', label: `${t('notificationsPage.unread')} (${unread})` }
+                                ]}
+                                onChange={(choice) => updateCriteria({ onlyUnread: choice === 'unread' })}
+                            />
+                        </div>
+                    )}
+                    {visible.length === 0 && (
+                        <div className="flex py-16">
+                            <EmptyInbox
+                                hasAny={items.length > 0}
+                                criteria={criteria}
+                                onReset={() => setCriteria(ALL_NOTIFICATIONS)}
+                            />
+                        </div>
+                    )}
+                    {visible.length > 0 && <NotificationList items={visible} now={now} actions={actions} />}
                 </div>
-            )}
-            {visible.length === 0 && (
-                <div className="flex py-16">
-                    <EmptyInbox
-                        hasAny={items.length > 0}
-                        criteria={criteria}
-                        onReset={() => setCriteria(ALL_NOTIFICATIONS)}
-                    />
-                </div>
-            )}
-            {visible.length > 0 && <NotificationList items={visible} now={now} actions={actions} />}
+            </div>
         </PageLayout>
     )
 }

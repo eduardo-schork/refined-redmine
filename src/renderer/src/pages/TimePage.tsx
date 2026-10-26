@@ -56,7 +56,7 @@ export default function TimePage() {
     )
 
     return (
-        <PageLayout title={t('nav.time')} subtitle={subtitle} actions={actions} width="xl">
+        <PageLayout title={t('nav.time')} subtitle={subtitle} actions={actions} width="xl" loading={week.isFetching}>
             <DayTotals sheet={sheet} />
             <LogByNumber onPick={(issueId) => setDialog({ issue: { id: issueId } })} />
             {!week.isLoading && entries.length === 0 ? (

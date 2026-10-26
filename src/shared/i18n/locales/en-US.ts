@@ -21,6 +21,10 @@ export const enUS: Resources = {
         no: 'No',
         ok: 'OK',
         search: 'Search',
+        searchList: 'Filter the list…',
+        noMatches: 'Nothing found.',
+        copy: 'Copy',
+        copied: 'Copied',
         add: 'Add',
         notNow: 'Not now',
         someone: 'Someone',
@@ -64,6 +68,7 @@ export const enUS: Resources = {
         'filter.invalidUrl': 'Paste the address of a Redmine issue list (…/issues?…).',
         'monitor.nameRequired': 'Give the monitor a name.',
         'monitor.sourceRequired': 'Choose where the monitor issues come from.',
+        'monitor.countInvalid': 'Enter a whole number of issues for the count alert.',
         'update.unauthorized': 'GitHub refused the token (invalid or expired).',
         'update.notFound':
             "The app's repository is not reachable on GitHub (still private? Then only with a token that has access).",
@@ -83,6 +88,12 @@ export const enUS: Resources = {
         'issue.invalidParent': 'The parent must be another issue, by number (e.g. #1234).',
         'automation.nameRequired': 'Give the handoff button a name.',
         'automation.tooMany': 'Up to {{max}} handoffs.',
+        'claude.folderRequired': 'Choose the project folder of the “{{name}}” action (terminal mode).',
+        'claude.notRegistered':
+            'Claude did not open. Run `claude` once in a terminal (or open the Claude app) to register the link, then try again.',
+        'claude.actionMissing': 'This Claude action no longer exists.',
+        'backup.invalid': 'This file is not a Refined Redmine settings backup.',
+        'backup.newer': 'This backup was made by a newer version of the app. Update the app and try again.',
         'team.nameRequired': 'Give the team a name.',
         'team.noMembers': 'Pick at least one person.',
         'team.tooMany': 'A team can have up to {{max}} people.',
@@ -90,6 +101,7 @@ export const enUS: Resources = {
         'overtime.day': 'Pick the day of the overtime.',
         'overtime.issue': 'The issue goes by number (e.g. #1234).',
         'overtime.month': 'Invalid month.',
+        'overtime.notFound': 'This overtime no longer exists.',
         'issue.tooManyUploads': 'You can attach up to {{max}} files at once.',
         'issue.uploadTooLarge': '“{{name}}” is larger than {{max}} MB. Attach it in Redmine.',
         'time.hours': 'Enter the hours: more than 0 and up to {{max}} (e.g. 1.5 · 1:30 · 1h30 · 90m).',
@@ -156,6 +168,10 @@ export const enUS: Resources = {
         query: {
             added: 'Entered: {{list}}',
             removed: 'Left: {{list}}',
+            countReached_one: 'Now {{count}} issue ({{rule}})',
+            countReached_other: 'Now {{count}} issues ({{rule}})',
+            below: 'fewer than {{value}}',
+            above: 'more than {{value}}',
             more: '(+{{count}})'
         },
         via: 'via {{names}}',
@@ -219,6 +235,7 @@ export const enUS: Resources = {
         yearly_one: 'Annually {{when}}',
         yearly_other: 'Every {{count}} years {{when}}',
         onDay: 'on day {{day}}',
+        onLastWorkday: 'on the last weekday',
         onNth_f: 'on the {{nth}} {{weekday}}',
         onNth_m: 'on the {{nth}} {{weekday}}',
         onDate: 'on {{date}}',
@@ -333,13 +350,14 @@ export const enUS: Resources = {
         balance: 'Bank balance',
         paidInYear: 'Paid in {{year}}',
         chart: 'Last 12 months',
-        chartHint: 'Highlighted: in the bank; gray: paid. Click a month to see its entries.',
+        chartHint: 'Highlighted: in the bank; gray: paid. Click a month to filter the entries.',
         months: 'Months',
         empty: 'No overtime logged.',
         keep: 'Bank',
         paid: 'Paid',
         bankAtEnd: 'Balance at month end: {{hours}}',
-        entriesOf: 'Entries of {{month}}',
+        entries: 'Entries',
+        edit: 'Edit overtime',
         noEntries: 'No overtime this month.',
         remove: 'Delete',
         confirmRemove: 'Delete this overtime from the bank?',
@@ -352,6 +370,7 @@ export const enUS: Resources = {
     nav: {
         overtime: 'Overtime',
         team: 'Team time',
+        monitors: 'Monitors',
         time: 'My hours',
         home: 'Home',
         calendar: 'Calendar',
@@ -463,6 +482,7 @@ export const enUS: Resources = {
     },
     board: {
         emptyTitle: 'No boards yet',
+        agile: 'Agile',
         emptyText: 'Create a board from your issues, a project or a saved query.',
         create: 'Create board',
         automatic: 'automatic',
@@ -604,7 +624,7 @@ export const enUS: Resources = {
             notifications: 'Board notifications',
             notificationsEnabled: 'Notify me about this board',
             notificationsHint:
-                'Tells you when cards enter, leave or change column, and about comments and mentions on the board issues. Also listed in Settings → Notifications → Monitors.',
+                'Tells you when cards enter, leave or change column, and about comments and mentions on the board issues. Also listed in the Monitors screen (sidebar).',
             project: 'Project',
             includeSubprojects: 'Include subprojects',
             query: 'Query',
@@ -616,12 +636,13 @@ export const enUS: Resources = {
             fixedGroup: 'Fixed version',
             todayIs: ' — today: {{name}}',
             onlyMine: 'Only issues assigned to me',
-            swimlanes: 'Swimlanes by assignee',
-            swimlanesHint: 'Groups cards in rows, one per person.',
             columns: 'Columns',
             columnsHint:
                 'Each column groups one or more statuses. Dragging a card to a column changes its status in Redmine.',
             onePerStatus: 'One per status',
+            suggest: 'Suggest from issues',
+            suggestedFrom_one: 'Suggested from {{count}} issue of the source.',
+            suggestedFrom_other: 'Suggested from the {{count}} issues of the source.',
             addColumn: 'Column',
             newColumn: 'New column',
             addStatus: '+ status',
@@ -660,6 +681,8 @@ export const enUS: Resources = {
         log: 'Log time',
         logHint: 'Log time on this issue',
         logTitle: 'Log time on #{{id}}',
+        alsoChange: 'Also change the issue',
+        alsoChangeHint: 'By default the current status and assignee stay.',
         editTitle: 'Edit entry on #{{id}}',
         date: 'Date',
         today: 'Today',
@@ -679,6 +702,10 @@ export const enUS: Resources = {
         confirmDelete: 'Delete the {{hours}} entry of {{date}}? This deletes it in Redmine.',
         spentOfEstimate: '{{spent}} of {{estimate}} estimated',
         spentOnly: '{{spent}} logged',
+        summary: {
+            person: 'Person',
+            total: 'Total'
+        },
         noComment: 'no comment'
     },
     timer: {
@@ -692,6 +719,8 @@ export const enUS: Resources = {
         discard: 'Discard stopwatch',
         confirmDiscard: 'Discard the stopwatch of #{{id}}? The counted time will not be logged.',
         confirmReplace: 'There is a stopwatch on #{{id}}. Discard its time and start on this issue?',
+        statusChanged: 'Stopwatch started and #{{id}} moved to {{status}}.',
+        statusNotAllowed: 'Stopwatch started; the Redmine workflow does not allow moving #{{id}} to {{status}} now.',
         paused: {
             sleep: 'Paused: the computer slept or was locked ({{since}}).',
             idle: 'Paused for inactivity since {{since}}; that time does not count.'
@@ -719,7 +748,11 @@ export const enUS: Resources = {
         repeated_one: '{{count}} entry repeated',
         repeated_other: '{{count}} entries repeated'
     },
-    steps: { retry: 'Try again' },
+    steps: {
+        retry: 'Try again',
+        problems_one: '{{count}} item was not fully applied:',
+        problems_other: '{{count}} items were not fully applied:'
+    },
     handoff: {
         newTramite: 'New handoff',
         newTramiteHint: 'Comment, status, assignee, version and hours of this issue at once',
@@ -751,15 +784,87 @@ export const enUS: Resources = {
             comment: 'Handoff on #{{id}}',
             time: 'Hours on #{{id}}',
             overtime: 'Overtime in the bank',
-            close: 'Status of #{{id}}'
+            close: 'Status of #{{id}}',
+            timer: 'Reset the stopwatch'
+        },
+        countFrom: 'Count the hours from',
+        countFromHint: 'Inside working hours it is normal time; outside, overtime (Settings → Automations).',
+        typeHours: 'Type the hours',
+        fromTimer: 'Stopwatch ({{time}}), reset when sent',
+        since: {
+            status: 'Status changed',
+            comment: 'Comment',
+            changes: 'Changes',
+            timeEntry: 'Time logged ({{hours}})',
+            created: 'Issue created'
         }
+    },
+    claude: {
+        title: 'Claude Code actions',
+        hint: 'Buttons in the issue detail and in the ⋮ menu of the cards that open Claude Code with a prompt about the issue, as in redmine-adapter.',
+        new: 'New action',
+        empty: 'No actions yet. Example: “Code review” with /review refs {{tarefa}}.',
+        editorTitle: 'Claude Code action',
+        namePlaceholder: 'E.g. Code review',
+        name: 'Button name',
+        mode: 'Open in',
+        modes: {
+            terminal: 'Terminal (Claude Code)',
+            desktop: 'Claude app'
+        },
+        modeHints: {
+            terminal: 'Opens Claude Code in the project folder with the prompt (claude-cli:// link).',
+            desktop:
+                'Starts a new chat in the Claude app with the prompt, which also goes to the clipboard (experimental).'
+        },
+        folder: 'Project folder',
+        chooseFolder: 'Choose…',
+        noFolder: 'No folder chosen',
+        template: 'Prompt',
+        templateHint: '{{tarefa}} becomes #1234, {{numeroAtividade}} becomes 1234 and {{titulo}} the issue title.',
+        statusOnOpen: 'Issue status when opening',
+        keep: 'Keep it',
+        delete: 'Delete action',
+        confirmDelete: 'Delete the “{{name}}” action?',
+        confirmStatus: 'Open Claude and change #{{id}}: Status {{from}} → {{to}}?',
+        opened: 'Claude opened for #{{id}}.',
+        statusIgnored: 'Claude opened, but Redmine did not change the status of #{{id}}.',
+        terminalSummary: 'Terminal · {{folder}}',
+        desktopSummary: 'Claude app'
+    },
+    backup: {
+        title: 'Settings backup',
+        description:
+            'A JSON file with boards, monitors, handoffs, Claude actions, teams, working hours, appearance and preferences. It leaves out the connection (Redmine address and user), the API key and the GitHub token; the calendar and overtime are not included.',
+        export: 'Export settings…',
+        exportHint: 'Choose where to save the file.',
+        import: 'Import…',
+        importHint: "Replaces this computer's settings with the ones in the file.",
+        confirmImport:
+            'This replaces the boards, monitors, automations, teams and preferences on this computer with the ones in the file. The calendar, overtime and the connection stay. Continue?',
+        exported: 'Settings exported.',
+        imported: 'Settings imported.'
+    },
+    workTime: {
+        title: 'Stopwatch and working hours',
+        description:
+            'What happens when the stopwatch starts, and how the hours of a trâmite are counted from a moment of the issue.',
+        timerStatus: 'When the stopwatch starts, change the status to',
+        timerStatusHint: 'Only changes when the Redmine workflow allows it from the current status.',
+        keepStatus: 'Keep it',
+        schedule: 'Working hours',
+        scheduleHint:
+            'Time inside these periods is normal time; the break between two periods (lunch) does not count; the rest (night, weekend) is overtime.',
+        addPeriod: 'Add period',
+        removePeriod: 'Remove period',
+        to: 'to'
     },
     automation: {
         title: 'Handoffs',
         hint: 'Buttons in the issue detail that comment on and move the issue itself, or send a handoff to a nearby issue (e.g. Development → Quality). They show only on the chosen trackers and statuses.',
         empty: 'No handoff configured. "New handoff" in the issue detail is still available.',
         new: 'New rule',
-        defaultName: 'Send to QA',
+        namePlaceholder: 'E.g. Send to QA',
         editorTitle: 'Handoff rule',
         save: 'Save rule',
         delete: 'Delete rule',
@@ -774,6 +879,7 @@ export const enUS: Resources = {
             same: 'Comments and changes status, assignee and version of this issue, optionally logging time.'
         },
         name: 'Button name',
+        icon: 'Icon',
         trackers: 'Show on issues of tracker',
         statuses: 'Show on issues with status',
         noneMeansAll: 'None checked = all.',
@@ -800,6 +906,11 @@ export const enUS: Resources = {
         addStep: 'Add status',
         removeStep: 'Remove'
     },
+    issueMenu: {
+        label: 'Issue actions',
+        open: 'Open issue',
+        changeStatus: 'Change status'
+    },
     bulk: {
         title: 'Bulk change from #{{id}}',
         button: 'Bulk change',
@@ -814,6 +925,23 @@ export const enUS: Resources = {
         fields: { statusId: 'status', assignedToId: 'assignee', fixedVersionId: 'version' },
         roles: { self: 'This issue', parent: 'Parent', related: 'Related', subtask: 'Subtask' }
     },
+    markdown: {
+        write: 'Write',
+        preview: 'Preview',
+        emptyPreview: 'Nothing to preview.',
+        toolbar: 'Formatting',
+        bold: 'Bold',
+        italic: 'Italic',
+        strike: 'Strikethrough',
+        code: 'Code',
+        heading: 'Heading',
+        list: 'List',
+        numbered: 'Numbered list',
+        quote: 'Quote',
+        codeBlock: 'Code block',
+        link: 'Link',
+        pasteHint: 'Paste or drop images: they are attached and placed in the text.'
+    },
     issue: {
         assignToMe: {
             label: 'Assign to me',
@@ -825,6 +953,9 @@ export const enUS: Resources = {
         },
         copy: {
             label: 'Copy',
+            menu: 'Copy number, link or reference',
+            titleAction: 'Copy the title',
+            descriptionAction: 'Copy the description (Markdown)',
             link: 'Link',
             linkHint: 'Copy the issue link in Redmine',
             number: 'Number',
@@ -894,6 +1025,10 @@ export const enUS: Resources = {
             noAttachments: 'No attachments.'
         },
         history: 'History ({{count}})',
+        historyOrder: {
+            newest: 'Newest first',
+            oldest: 'Oldest first'
+        },
         commentPlaceholder: 'Add a comment (Markdown)…',
         comment: 'Comment',
         commentAdded: 'Comment added',
@@ -1104,7 +1239,8 @@ export const enUS: Resources = {
             notifications: 'Notifications',
             calendar: 'Calendar',
             work: 'Sprints & Home',
-            automations: 'Automations'
+            automations: 'Automations',
+            backup: 'Backup'
         },
         account: 'Account',
         logout: 'Disconnect',
@@ -1280,7 +1416,7 @@ export const enUS: Resources = {
         previewDanger: 'Error'
     },
     monitors: {
-        title: 'Monitors',
+        title: 'Your monitors',
         hint: 'Each monitor watches a set of issues and has its own notification options. Your own changes do not notify you.',
         mine: 'My issues',
         add: 'Add monitor',
@@ -1306,6 +1442,17 @@ export const enUS: Resources = {
         board: 'Board',
         boardHint: 'You can also switch it on in the board editor.',
         events: 'Notify me when',
+        movedHint: 'Monitors now have their own screen in the sidebar, right above the boards.',
+        open: 'Open Monitors',
+        count: {
+            title: 'Number of issues',
+            below: 'Fewer than',
+            above: 'More than',
+            issues: 'issues',
+            hint: "Alerts once when there are fewer or more issues than the limit (e.g. someone's queue running out).",
+            summaryBelow: 'alerts below {{value}}',
+            summaryAbove: 'alerts above {{value}}'
+        },
         event: {
             new_issue: 'New issue',
             assigned: 'Assigned to me',

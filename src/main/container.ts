@@ -1,7 +1,7 @@
 import { CommentAndChangeUseCase, findNearbyIssues } from '@application/use-cases/handoff'
 import { OvertimeUseCases } from '@application/use-cases/overtime'
 import { BulkEditUseCase, loadIssueTree } from '@application/use-cases/issue-tree'
-import { app, net, shell } from 'electron'
+import { app, dialog, net, shell } from 'electron'
 import { release, type as osType } from 'node:os'
 import { join } from 'node:path'
 import type { AppEventsPublisher } from '@application/ports/system'
@@ -12,7 +12,8 @@ import {
     DeleteBoardUseCase,
     ListBoardIssuesUseCase,
     MoveIssueToColumnUseCase,
-    SaveBoardUseCase
+    SaveBoardUseCase,
+    SuggestBoardColumnsUseCase
 } from '@application/use-cases/boards'
 import {
     DeleteCalendarEventUseCase,
@@ -56,6 +57,10 @@ import {
     JsonTimerRepository
 } from '@infra/persistence/repositories'
 import { TempFileOpener } from '@infra/electron/temp-file-opener'
+import { electronLauncher } from '@infra/electron/external-launcher'
+import { electronFileDialogs } from '@infra/electron/file-dialogs'
+import { BackupUseCases } from '@application/use-cases/backup'
+import { OpenClaudeActionUseCase } from '@application/use-cases/claude'
 import { RedmineHttpClient } from '@infra/redmine/http-client'
 import { HttpRedmineGateway } from '@infra/redmine/http-redmine-gateway'
 import { systemClock, timerScheduler, uuidGenerator } from '@infra/system/system'
@@ -210,6 +215,7 @@ export function createContainer(presentation: () => Presentation) {
     const versionStats = new GetVersionStatsUseCase(gateway)
     const inspectProject = new InspectSprintProjectUseCase(gateway)
     const boardIssues = new ListBoardIssuesUseCase(gateway, settings, boardFilter)
+    const suggestColumns = new SuggestBoardColumnsUseCase(gateway, boardFilter)
     const restartMonitor = () => monitor.start()
     const saveBoard = new SaveBoardUseCase(settings, secrets, restartMonitor)
     const deleteBoard = new DeleteBoardUseCase(settings, secrets, restartMonitor)
@@ -276,6 +282,9 @@ export function createContainer(presentation: () => Presentation) {
         osDescription: () => `${osType()} ${release()}`
     })
 
+    const openClaude = new OpenClaudeActionUseCase(settings, electronLauncher)
+    const backup = new BackupUseCases(settings, electronFileDialogs, updateSettings, clock)
+
     const api: ApiHandlers = {
         session: {
             get: () => session.execute(),
@@ -285,7 +294,11 @@ export function createContainer(presentation: () => Presentation) {
             },
             logout: () => logout.execute()
         },
-        settings: { update: (patch) => updateSettings.execute(patch) },
+        settings: {
+            update: (patch) => updateSettings.execute(patch),
+            exportBackup: () => backup.exportToFile(),
+            importBackup: () => backup.importFromFile()
+        },
         issues: {
             list: (filter, max) => issues.list(filter, max),
             get: (id) => issues.get(id),
@@ -323,6 +336,7 @@ export function createContainer(presentation: () => Presentation) {
         overtime: {
             list: () => overtime.list(),
             add: (draft) => overtime.add(draft),
+            update: (id, draft) => overtime.update(id, draft),
             remove: (id) => overtime.remove(id),
             setPaid: (month, paid) => overtime.setPaid(month, paid)
         },
@@ -342,7 +356,8 @@ export function createContainer(presentation: () => Presentation) {
             issues: (boardId) => boardIssues.execute(boardId),
             save: (board, notifications) => saveBoard.execute(board, notifications),
             remove: (boardId) => deleteBoard.execute(boardId),
-            move: (boardId, issueId, columnId) => moveIssue.execute(boardId, issueId, columnId)
+            move: (boardId, issueId, columnId) => moveIssue.execute(boardId, issueId, columnId),
+            suggestColumns: (board) => suggestColumns.execute(board)
         },
         sprints: {
             list: () => listSprints.execute(),
@@ -385,7 +400,14 @@ export function createContainer(presentation: () => Presentation) {
             openExternal: (url) => openExternal(url),
             info: () => appInfo(),
             openDataFolder: () => void shell.openPath(userDataDir),
-            supportReport: () => supportReport.execute()
+            supportReport: () => supportReport.execute(),
+            pickFolder: async () => {
+                const picked = await dialog.showOpenDialog({ properties: ['openDirectory', 'createDirectory'] })
+                return picked.canceled ? null : (picked.filePaths[0] ?? null)
+            }
+        },
+        claude: {
+            open: (actionId, issue) => openClaude.execute(actionId, issue)
         }
     }
 

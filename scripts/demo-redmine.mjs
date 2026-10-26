@@ -288,18 +288,25 @@ const issues = [
     }),
     issue(1215, 'Lista de desejos compartilhável', { status: 1, assignee: 'lucas', versionId: 379, author: 'marina' }),
     issue(1216, 'Revisar textos da página de trocas', { status: 3, assignee: 'rafael', versionId: 3771, done: 100 }),
-    issue(1220, 'QA: endereço automático pelo CEP no checkout', { tracker: 'qa', status: 1, assignee: 'beatriz', versionId: 378 })
+    issue(1220, 'QA: endereço automático pelo CEP no checkout', {
+        tracker: 'qa',
+        status: 1,
+        assignee: 'beatriz',
+        versionId: 378
+    })
 ]
 const issueById = new Map(issues.map((item) => [item.id, item]))
 
 const savedQueries = [
     { id: 71, name: 'Defeitos abertos da loja', is_public: true, project_id: project.id },
-    { id: 72, name: 'Aguardando minha aprovação', is_public: false, project_id: null }
+    { id: 72, name: 'Aguardando minha aprovação', is_public: false, project_id: null },
+    { id: 73, name: 'Fila do Rafael', is_public: true, project_id: project.id }
 ]
 
 const queryFilters = {
     71: (item) => item.tracker.id === trackers.bug.id && !item.status.is_closed,
-    72: (item) => item.status.id === 44
+    72: (item) => item.status.id === 44,
+    73: (item) => item.assigned_to?.id === people.rafael.id && !item.status.is_closed
 }
 
 function matchesPerson(value, person) {
@@ -794,7 +801,10 @@ const timeEntries = [
     timeEntry(1213, -1, 4, 11, 'Cenários de frete grátis', people.beatriz),
     timeEntry(1210, -2, 3.5, 9, 'Tela de pagamento', people.beatriz),
     timeEntry(1211, -1, 2, 9, 'Formulário da newsletter', people.rafael),
-    timeEntry(1216, 0, 1, 10, 'Revisão de textos com o time', people.rafael)
+    timeEntry(1216, 0, 1, 10, 'Revisão de textos com o time', people.rafael),
+    // Monday of this week: Redmine used to leave it out of "this week" (see listTimeEntries).
+    timeEntry(1203, -((now.getDay() + 6) % 7), 2, 8, 'Levantamento do relatório (segunda)'),
+    timeEntry(1201, -((now.getDay() + 6) % 7), 1.5, 11, 'Testes do CEP (segunda)', people.beatriz)
 ]
 
 const spentOn = (issueId) =>
@@ -802,6 +812,16 @@ const spentOn = (issueId) =>
         timeEntries.filter((entry) => entry.issue?.id === issueId).reduce((sum, entry) => sum + entry.hours, 0) * 100
     ) / 100
 
+const nextDay = (day) => {
+    const date = new Date(`${day}T12:00:00`)
+    date.setDate(date.getDate() + 1)
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+/**
+ * Like a real Redmine whose user is west of UTC (Brazil): the dates of `from`/`to` are moved by the time zone, so
+ * the first day is left out and the day after `to` comes in. The app asks one more day on each side to make up for it.
+ */
 function listTimeEntries(params) {
     const userId = params.get('user_id') === 'me' ? me.id : Number(params.get('user_id') || 0)
     const issueId = Number(params.get('issue_id') || 0)
@@ -811,8 +831,8 @@ function listTimeEntries(params) {
         (entry) =>
             (!userId || entry.user.id === userId) &&
             (!issueId || entry.issue?.id === issueId) &&
-            (!from || entry.spent_on >= from) &&
-            (!to || entry.spent_on <= to)
+            (!from || entry.spent_on > from) &&
+            (!to || entry.spent_on <= nextDay(to))
     )
     const offset = Number(params.get('offset') ?? 0)
     const limit = Number(params.get('limit') ?? 25)
@@ -968,6 +988,18 @@ function demoConfig() {
         sprints: { sprintPattern: '^\\d+\\.\\d+$', hotfixPattern: '^\\d+\\.\\d+\\.\\d+$', projectId: project.id },
         dashboard: { staleDays: 5 },
         teams: [{ id: 't-loja', name: 'Time da loja', members: Object.values(people) }],
+        claudeActions: [
+            {
+                id: 'c-review',
+                name: 'Code review',
+                mode: 'terminal',
+                folder: '/Users/marina/projetos/loja-virtual',
+                template: '/review refs {{tarefa}}',
+                trackerIds: [trackers.dev.id],
+                statusIds: [],
+                icon: 'review'
+            }
+        ],
         handoffRules: [
             {
                 id: 'r-qa',

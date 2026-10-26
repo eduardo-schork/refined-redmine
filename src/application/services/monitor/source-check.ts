@@ -1,6 +1,6 @@
 import type { Board } from '@domain/board/board'
 import type { LogLevel, LogRecord } from '@domain/log/log-entry'
-import { isEventEnabled, type Monitor, type MonitorSource } from '@domain/monitor/monitor'
+import { countRuleReached, isEventEnabled, type Monitor, type MonitorSource } from '@domain/monitor/monitor'
 import {
     diffMembership,
     isComplete,
@@ -14,18 +14,19 @@ import {
     type NotificationSource,
     type NotificationTarget
 } from '@domain/notification/notification'
-import type { Issue } from '@domain/redmine/entities'
+import type { Issue, Page } from '@domain/redmine/entities'
 import type { IssueFilter } from '@domain/redmine/issue-filter'
 import { issuesPageUrl, parseIssuesUrl } from '@domain/redmine/issues-url'
 import type { RedmineGateway } from '../../ports/redmine-gateway'
 import type { MonitorStateRepository } from '../../ports/repositories'
 import type { BoardFilterResolver } from '../../use-cases/boards'
 import { notifyJournals } from './journal-notifications'
-import { issueRef, membershipKey, type MonitorCycle } from './monitor-cycle'
+import { countKey, issueRef, membershipKey, type MonitorCycle } from './monitor-cycle'
 
 /** Largest result compared between cycles; beyond it only the count is compared. */
 export const MAX_MONITOR_ISSUES = 500
 const MAX_CHANGED_BY_ME_CHECKS = 15
+const MAX_CHANGED_ISSUES = 100
 
 type ExternalSource = Exclude<MonitorSource, { type: 'mine' }>
 
@@ -92,8 +93,8 @@ export async function checkSource(
     }
 
     const notificationSource: NotificationSource = { monitorId: monitor.id, name: resolved.board?.name ?? monitor.name }
-    const page = await deps.gateway.listIssues(resolved.filter, MAX_MONITOR_ISSUES)
     const previous = deps.state.getSnapshot(monitor.id)
+    const page = await listSource(resolved.filter, cycle.sinceOf(monitor.id), previous, deps.gateway)
     const current = snapshotOf(page.total, page.items)
     deps.state.setSnapshot(monitor.id, current)
     if (!isComplete(current)) {
@@ -104,11 +105,23 @@ export async function checkSource(
     const change = diffMembership(previous, current)
     if (change && previous) {
         await notifyMembership(change, previous, page.items, monitor, notificationSource, resolved, cycle)
+        if (!isEventEnabled(monitor, 'left')) {
+            await notifyDepartedChanges(change.left, monitor, notificationSource, cycle, resolved.board)
+        }
+    }
+    if (monitor.count && countRuleReached(previous?.count, current.count, monitor.count)) {
+        const payload = {
+            type: 'queryCount' as const,
+            queryName: notificationSource.name,
+            count: current.count,
+            ...monitor.count
+        }
+        cycle.add(countKey(monitor.id), { kind: 'query', payload, target: resolved.listTarget }, notificationSource)
     }
 
-    const changedIssues = page.items.filter((issue) => cycle.isNew(issue))
+    const changedIssues = page.items.filter((issue) => cycle.isNew(issue, monitor.id))
     for (const issue of changedIssues) {
-        cycle.sawUpdate(issue)
+        cycle.sawUpdate(monitor.id, issue)
         await notifyJournals(issue, monitor, notificationSource, cycle, resolved.board)
     }
 
@@ -116,11 +129,54 @@ export async function checkSource(
     deps.log({ type: 'monitor', event: 'monitorChecked', params })
 }
 
+/**
+ * An issue that left the result because someone changed it (usually its status) is no longer listed. Without
+ * "left", the change is still reported by the switched-on events, read from the issue's history.
+ */
+async function notifyDepartedChanges(
+    issueIds: number[],
+    monitor: Monitor,
+    source: NotificationSource,
+    cycle: MonitorCycle,
+    board?: Board
+): Promise<void> {
+    for (const issueId of issueIds) {
+        const departed = await cycle.history(issueId)
+        if (!departed || !cycle.isNew(departed, monitor.id)) continue
+        cycle.sawUpdate(monitor.id, departed)
+        await notifyJournals(departed, monitor, source, cycle, board)
+    }
+}
+
+// Saved queries and copied URLs bring their own filters: Redmine ignores an extra date filter on them.
+const acceptsUpdatedSince = (filter: IssueFilter) => filter.queryId === undefined && filter.rawQuery === undefined
+
+/**
+ * A result bigger than MAX_MONITOR_ISSUES can only be compared by its count. When the previous cycle was like that
+ * and the filter takes a date (a board of "mine", a project or a sprint), the count and the issues changed since the
+ * watermark are enough: two small requests instead of paging through 500 issues every cycle.
+ */
+async function listSource(
+    filter: IssueFilter,
+    since: string,
+    previous: QuerySnapshot | undefined,
+    gateway: RedmineGateway
+): Promise<Page<Issue>> {
+    const wasTooBig = previous !== undefined && !isComplete(previous)
+    if (!wasTooBig || !acceptsUpdatedSince(filter)) return gateway.listIssues(filter, MAX_MONITOR_ISSUES)
+
+    const total = await gateway.countIssues(filter)
+    if (total <= MAX_MONITOR_ISSUES) return gateway.listIssues(filter, MAX_MONITOR_ISSUES)
+    const changedFilter: IssueFilter = { ...filter, updatedSince: since, sort: 'updatedDesc' }
+    const changed = await gateway.listIssues(changedFilter, MAX_CHANGED_ISSUES)
+    return { items: changed.items, total }
+}
+
 /** Own actions do not notify: an issue the user moved in or out themselves is dropped. */
-async function withoutMyChanges(issueIds: number[], cycle: MonitorCycle): Promise<number[]> {
+async function withoutMyChanges(issueIds: number[], monitorId: string, cycle: MonitorCycle): Promise<number[]> {
     const kept: number[] = []
     for (const issueId of issueIds.slice(0, MAX_CHANGED_BY_ME_CHECKS)) {
-        const byMe = await cycle.changedByMe(issueId)
+        const byMe = await cycle.changedByMe(issueId, monitorId)
         if (!byMe) kept.push(issueId)
     }
     return [...kept, ...issueIds.slice(MAX_CHANGED_BY_ME_CHECKS)]
@@ -153,8 +209,8 @@ async function notifyMembership(
     const onlyCountKnown = change.entered.length === 0 && change.left.length === 0
     if (onlyCountKnown && !isWantedCountChange(change, wantsEntered, wantsLeft)) return
 
-    const enteredIds = wantsEntered ? await withoutMyChanges(change.entered, cycle) : []
-    const leftIds = wantsLeft ? await withoutMyChanges(change.left, cycle) : []
+    const enteredIds = wantsEntered ? await withoutMyChanges(change.entered, monitor.id, cycle) : []
+    const leftIds = wantsLeft ? await withoutMyChanges(change.left, monitor.id, cycle) : []
     const nothingToTell = !onlyCountKnown && enteredIds.length === 0 && leftIds.length === 0
     if (nothingToTell) return
 

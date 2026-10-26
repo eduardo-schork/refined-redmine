@@ -128,7 +128,7 @@ export function QueueTiles({ unread, onGoNotifications }: { unread: number; onGo
     const valueOrLoading = (value: number) => (loaded ? value : '…')
     const toneWhen = (value: number, tone: 'warn' | 'danger') => (value > 0 ? tone : undefined)
     return (
-        <div className="grid grid-cols-6 gap-3">
+        <div className="grid grid-cols-3 gap-3 @min-[64rem]/page:grid-cols-6">
             <StatTile
                 label={t('home.tileQueue')}
                 value={valueOrLoading(analysis.total)}
@@ -185,10 +185,11 @@ export function QueuePanels() {
         </div>
     )
 
+    // Two items of the Home grid: the queue, and the stale and deadline panels stacked.
     return (
         <>
-            {mine.isError && <Alert>{error(mine.error)}</Alert>}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="flex min-w-0 flex-col gap-4">
+                {mine.isError && <Alert>{error(mine.error)}</Alert>}
                 <Panel id={PANEL_IDS.queue} title={t('home.queue')} count={analysis.total} header={statusSummary}>
                     {queue.slice(0, QUEUE_PREVIEW_LIMIT).map((issue) => (
                         <IssueRow
@@ -205,42 +206,42 @@ export function QueuePanels() {
                     )}
                     {loaded && !queue.length && <EmptyRow>{t('home.emptyQueue')}</EmptyRow>}
                 </Panel>
+            </div>
 
-                <div className="flex flex-col gap-4">
-                    <Panel
-                        id={PANEL_IDS.stale}
-                        title={t('home.stale')}
-                        count={analysis.stale.length}
-                        hint={t('home.staleHint', { days: staleDays })}
-                    >
-                        {analysis.stale.slice(0, SIDE_PANEL_LIMIT).map((issue) => (
-                            <IssueRow
-                                key={issue.id}
-                                issue={issue}
-                                onOpen={openIssue}
-                                right={<StaleLabel issue={issue} today={today} />}
-                            />
-                        ))}
-                        {loaded && !analysis.stale.length && <EmptyRow>{t('home.nothingStale')}</EmptyRow>}
-                    </Panel>
+            <div className="flex min-w-0 flex-col gap-4">
+                <Panel
+                    id={PANEL_IDS.stale}
+                    title={t('home.stale')}
+                    count={analysis.stale.length}
+                    hint={t('home.staleHint', { days: staleDays })}
+                >
+                    {analysis.stale.slice(0, SIDE_PANEL_LIMIT).map((issue) => (
+                        <IssueRow
+                            key={issue.id}
+                            issue={issue}
+                            onOpen={openIssue}
+                            right={<StaleLabel issue={issue} today={today} />}
+                        />
+                    ))}
+                    {loaded && !analysis.stale.length && <EmptyRow>{t('home.nothingStale')}</EmptyRow>}
+                </Panel>
 
-                    <Panel
-                        id={PANEL_IDS.deadlines}
-                        title={t('home.deadlines')}
-                        count={analysis.dueSoon.length}
-                        hint={t('home.deadlinesHint')}
-                    >
-                        {analysis.dueSoon.slice(0, SIDE_PANEL_LIMIT).map((issue) => (
-                            <IssueRow
-                                key={issue.id}
-                                issue={issue}
-                                onOpen={openIssue}
-                                right={<DeadlineLabel issue={issue} today={today} />}
-                            />
-                        ))}
-                        {loaded && !analysis.dueSoon.length && <EmptyRow>{t('home.noDeadlines')}</EmptyRow>}
-                    </Panel>
-                </div>
+                <Panel
+                    id={PANEL_IDS.deadlines}
+                    title={t('home.deadlines')}
+                    count={analysis.dueSoon.length}
+                    hint={t('home.deadlinesHint')}
+                >
+                    {analysis.dueSoon.slice(0, SIDE_PANEL_LIMIT).map((issue) => (
+                        <IssueRow
+                            key={issue.id}
+                            issue={issue}
+                            onOpen={openIssue}
+                            right={<DeadlineLabel issue={issue} today={today} />}
+                        />
+                    ))}
+                    {loaded && !analysis.dueSoon.length && <EmptyRow>{t('home.noDeadlines')}</EmptyRow>}
+                </Panel>
             </div>
         </>
     )

@@ -20,6 +20,7 @@ import type {
 import type { NewIssue } from '@domain/redmine/issue-edit'
 import type { IssueUpload, UploadedFile } from '@domain/redmine/issue-upload'
 import type { IssueFilter } from '@domain/redmine/issue-filter'
+import { addDays, parseLocal, toLocalDate, type LocalDate } from '@domain/shared/date'
 import type { TimeEntry, TimeEntryActivity, TimeEntryDraft } from '@domain/time/time-entry'
 import type { Params, RedmineHttpClient } from './http-client'
 
@@ -132,6 +133,14 @@ function timeEntryBody(draft: TimeEntryDraft) {
         activity_id: draft.activityId,
         comments: draft.comments
     }
+}
+
+const shiftDay = (day: LocalDate, days: number) => toLocalDate(addDays(parseLocal(day), days))
+
+function isWithinPeriod(day: LocalDate, period: { from?: LocalDate; to?: LocalDate }): boolean {
+    const afterStart = !period.from || day >= period.from
+    const beforeEnd = !period.to || day <= period.to
+    return afterStart && beforeEnd
 }
 
 export class HttpRedmineGateway implements RedmineGateway {
@@ -266,16 +275,20 @@ export class HttpRedmineGateway implements RedmineGateway {
         return response.issue_priorities
     }
 
-    /** Up to 1000 entries: a week or an issue fits easily. */
+    /**
+     * Up to 1000 entries: a week or an issue fits easily. Redmine compares `spent_on` with `from`/`to` moved by the
+     * user's time zone: west of UTC the first day of the period was left out (Monday of "this week") and the day
+     * after came in. So one more day is asked on each side and the result is cut back to the period.
+     */
     async listTimeEntries(query: TimeEntryQuery): Promise<TimeEntry[]> {
         const params: Params = {
             user_id: query.mine ? 'me' : query.userId,
             issue_id: query.issueId,
-            from: query.from,
-            to: query.to
+            from: query.from && shiftDay(query.from, -1),
+            to: query.to && shiftDay(query.to, 1)
         }
         const page = await this.paginate<TimeEntry>('/time_entries.json', 'time_entries', params, MAX_TIME_ENTRIES)
-        return page.items
+        return page.items.filter((entry) => isWithinPeriod(entry.spent_on, query))
     }
 
     async createTimeEntry(draft: TimeEntryDraft): Promise<TimeEntry> {

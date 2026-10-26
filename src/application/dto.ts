@@ -19,6 +19,12 @@ export interface SprintList {
     all: Sprint[]
 }
 
+/** What a board source returns, to suggest its columns: the statuses in it and how many issues. */
+export interface BoardColumnSuggestion {
+    statusIds: number[]
+    total: number
+}
+
 export interface BoardIssues {
     board: Board
     /** Resolved sprint (fixed or automatic), when the source is a sprint. */

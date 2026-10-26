@@ -5,6 +5,7 @@ import {
     buildIssueTree,
     subtreeIds,
     toggleSubtree,
+    treeGuides,
     treeRoots,
     unappliedFields,
     type IssueTreeNode
@@ -63,6 +64,16 @@ describe('buildIssueTree', () => {
         const checked = toggleSubtree(nodes, new Set(), 10)
         expect([...checked]).toEqual([10, 11, 12])
         expect([...toggleSubtree(nodes as IssueTreeNode[], checked, 11)]).toEqual([10])
+    })
+    it('draws the tree: last children close the branch, deeper rows keep the line of unfinished levels', () => {
+        const tree = buildIssueTree([{ issue: issue(10), role: 'self' }], [child(11, 10), child(12, 11), child(13, 10)])
+        expect(tree.map((node) => node.issue.id)).toEqual([10, 11, 12, 13])
+        expect(treeGuides(tree)).toEqual([
+            { last: true, lines: [] },
+            { last: false, lines: [] },
+            { last: true, lines: [true] },
+            { last: true, lines: [] }
+        ])
     })
 })
 

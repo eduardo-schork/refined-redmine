@@ -142,6 +142,23 @@ describe('HttpRedmineGateway', () => {
     })
 })
 
+describe('HttpRedmineGateway.listTimeEntries', () => {
+    it('asks one more day on each side (Redmine shifts the period by time zone) and keeps only the period', async () => {
+        const urls: string[] = []
+        const day = (spentOn: string) => ({ id: spentOn.length, spent_on: spentOn, hours: 1 })
+        const client = new RedmineHttpClient(async (url) => {
+            urls.push(String(url))
+            const entries = [day('2026-10-18'), day('2026-10-19'), day('2026-10-25'), day('2026-10-26')]
+            return json({ time_entries: entries, total_count: 4 })
+        }, credentials)
+        const entries = await new HttpRedmineGateway(client).listTimeEntries({ from: '2026-10-19', to: '2026-10-25' })
+
+        expect(urls[0]).toContain('from=2026-10-18')
+        expect(urls[0]).toContain('to=2026-10-26')
+        expect(entries.map((entry) => entry.spent_on)).toEqual(['2026-10-19', '2026-10-25'])
+    })
+})
+
 describe('HttpRedmineGateway.updateIssue', () => {
     it('clears fields with an empty string and leaves untouched ones out of the body', async () => {
         const bodies: unknown[] = []

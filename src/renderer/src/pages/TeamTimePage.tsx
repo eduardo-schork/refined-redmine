@@ -93,7 +93,7 @@ export default function TeamTimePage() {
     )
 
     return (
-        <PageLayout title={t('nav.team')} actions={actions} width="xl">
+        <PageLayout title={t('nav.team')} actions={actions} width="xl" loading={time.isFetching}>
             <PeriodPicker period={period} onChange={() => setFocus({})} />
             {time.isError && <Alert>{t('team.loadError')}</Alert>}
             <TeamStats sheet={sheet} members={team.members.length} />

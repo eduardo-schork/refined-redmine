@@ -1,12 +1,12 @@
 import { MAX_BOARD_ISSUES, type Board, type BoardColumn } from '@domain/board/board'
-import { assertValidBoard, boardIssueFilter, targetStatus } from '@domain/board/board-rules'
+import { assertValidBoard, boardIssueFilter, columnSuggestionFilter, targetStatus } from '@domain/board/board-rules'
 import { boardMonitorId, findBoardMonitor, type Monitor } from '@domain/monitor/monitor'
 import type { IssueStatus } from '@domain/redmine/entities'
 import type { IssueFilter } from '@domain/redmine/issue-filter'
 import { AppError } from '@domain/shared/errors'
 import { pickSprint } from '@domain/sprint/sprint-classifier'
 import type { Sprint } from '@domain/sprint/sprint'
-import type { BoardIssues, BoardNotifications, SettingsView } from '../dto'
+import type { BoardColumnSuggestion, BoardIssues, BoardNotifications, SettingsView } from '../dto'
 import type { RedmineGateway } from '../ports/redmine-gateway'
 import type { SecretStore, SettingsRepository } from '../ports/repositories'
 import { toView } from './session'
@@ -125,6 +125,23 @@ export class ListBoardIssuesUseCase {
 
         const issues = await this.gateway.listIssues(resolved.filter, MAX_BOARD_ISSUES)
         return { ...base, unresolvedSprint: false, issues }
+    }
+}
+
+/** Reads the issues of a board being created (not saved yet) to suggest its columns. */
+export class SuggestBoardColumnsUseCase {
+    constructor(
+        private readonly gateway: RedmineGateway,
+        private readonly resolver: BoardFilterResolver
+    ) {}
+
+    async execute(board: Board): Promise<BoardColumnSuggestion> {
+        const resolved = await this.resolver.resolve(board)
+        if (!resolved.filter) return { statusIds: [], total: 0 }
+        const filter = columnSuggestionFilter(board.source, resolved.filter)
+        const page = await this.gateway.listIssues(filter, MAX_BOARD_ISSUES)
+        const statusIds = [...new Set(page.items.map((issue) => issue.status.id))]
+        return { statusIds, total: page.total }
     }
 }
 

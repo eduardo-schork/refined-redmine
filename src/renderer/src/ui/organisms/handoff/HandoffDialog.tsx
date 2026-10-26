@@ -82,7 +82,7 @@ export function HandoffDialog({
     const target = useTarget(nearby, rule)
     const [choices, setChoices] = useState<Choices>(() => initialChoices(rule))
     const files = useChosenFiles()
-    const hours = useHandoffHours(rule)
+    const hours = useHandoffHours(rule, source)
     const extras = useTargetExtras(target.issue, rule.bulk)
     const closing = useClosing(rule, source, nearby, notes.picked)
     const commentAndChange = useCommentAndChange()

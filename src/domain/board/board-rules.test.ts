@@ -7,8 +7,11 @@ import {
     boardIssueFilter,
     canDropOn,
     columnOf,
+    columnSuggestionFilter,
     columnsFromStatuses,
+    createAgileBoard,
     newIssueDefaults,
+    suggestedStatuses,
     targetStatus
 } from './board-rules'
 
@@ -25,6 +28,33 @@ const board: Board = {
 }
 
 describe('board rules', () => {
+    it('suggests columns from the statuses the source issues are in, in Redmine order', () => {
+        const statuses = [
+            { id: 1, name: 'New', is_closed: false },
+            { id: 2, name: 'Doing', is_closed: false },
+            { id: 3, name: 'Review', is_closed: false },
+            { id: 5, name: 'Closed', is_closed: true }
+        ]
+        expect(suggestedStatuses(statuses, [5, 2, 2, 1]).map((status) => status.id)).toEqual([1, 2, 5])
+        expect(columnSuggestionFilter({ type: 'mine' }, { assignedTo: 'me', status: [] }).status).toBe('open')
+        expect(columnSuggestionFilter({ type: 'sprint', auto: 'dev' }, { versionId: 3, status: [] }).status).toBe('*')
+        expect(columnSuggestionFilter({ type: 'query', queryId: 7 }, { queryId: 7 })).toEqual({ queryId: 7 })
+    })
+
+    it('creates the agile board with my open issues, one column per open status', () => {
+        const statuses = [
+            { id: 1, name: 'New', is_closed: false },
+            { id: 2, name: 'Doing', is_closed: false },
+            { id: 5, name: 'Closed', is_closed: true }
+        ]
+        const agile = createAgileBoard(statuses, 'agile', 'Agile')
+
+        expect(agile.source).toEqual({ type: 'mine' })
+        expect(agile.columns.map((column) => column.statusIds)).toEqual([[1], [2]])
+        expect(boardIssueFilter(agile)).toMatchObject({ assignedTo: 'me', status: [1, 2] })
+        expect(() => assertValidBoard(agile)).not.toThrow()
+    })
+
     it('finds the column by status', () => {
         expect(columnOf(board, 8)?.id).toBe('doing')
     })

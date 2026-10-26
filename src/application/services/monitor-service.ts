@@ -18,7 +18,7 @@ import type {
 import type { AppEventsPublisher, Cancel, Clock, IdGenerator, Scheduler, SystemNotifier } from '../ports/system'
 import type { BoardFilterResolver } from '../use-cases/boards'
 import { checkMine, QUEUE_SNAPSHOT } from './monitor/mine-check'
-import { MonitorCycle } from './monitor/monitor-cycle'
+import { isOneTimeKey, MonitorCycle, type CycleMemory } from './monitor/monitor-cycle'
 import { checkSource } from './monitor/source-check'
 
 const FIRST_DELAY_MS = 1_000
@@ -140,11 +140,16 @@ export class MonitorService {
         const enabledMonitors = settings.monitors.filter((monitor) => monitor.enabled)
         this.pruneSnapshots(enabledMonitors)
 
-        const cycle = await this.newCycle(settings)
+        const cycle = await this.newCycle(settings, enabledMonitors)
         const dueMonitors = enabledMonitors.filter((monitor) => this.isDue(monitor))
-        for (const monitor of dueMonitors) await this.checkMonitor(monitor, settings, cycle)
+        const checkedIds: string[] = []
+        for (const monitor of dueMonitors) {
+            const checked = await this.checkMonitor(monitor, settings, cycle)
+            if (checked) checkedIds.push(monitor.id)
+        }
 
         this.deps.state.setWatermark(cycle.newestUpdate())
+        this.deps.state.setMonitorWatermarks(cycle.monitorWatermarks(checkedIds))
         if (cycle.journalLimitReached) this.log({ type: 'monitor', event: 'journalLimit' }, 'warn')
 
         const found = cycle.notifications()
@@ -155,12 +160,21 @@ export class MonitorService {
     }
 
     /** Without a watermark (first run), it starts now: nothing older is reported. */
-    private async newCycle(settings: Settings): Promise<MonitorCycle> {
+    private async newCycle(settings: Settings, enabledMonitors: Monitor[]): Promise<MonitorCycle> {
         const since = this.deps.state.getWatermark() ?? this.nowWithoutMilliseconds()
         const links = new RedmineLinks(settings.baseUrl)
         const statuses = await this.statusMap()
         const cycleDeps = { gateway: this.deps.gateway, clock: this.deps.clock, ids: this.deps.ids }
-        return new MonitorCycle(cycleDeps, since, settings.user!, links, statuses)
+        return new MonitorCycle(cycleDeps, since, settings.user!, links, statuses, this.memory(enabledMonitors))
+    }
+
+    /** A monitor switched off loses its watermark, so switching it back on starts from now instead of flooding. */
+    private memory(enabledMonitors: Monitor[]): CycleMemory {
+        const enabledIds = new Set(enabledMonitors.map((monitor) => monitor.id))
+        const stored = Object.entries(this.deps.state.getMonitorWatermarks())
+        const monitorWatermarks = Object.fromEntries(stored.filter(([monitorId]) => enabledIds.has(monitorId)))
+        const keys = this.deps.notifications.list().map((notification) => notification.key ?? '')
+        return { monitorWatermarks, notifiedKeys: new Set(keys.filter(isOneTimeKey)) }
     }
 
     private isDue(monitor: Monitor): boolean {
@@ -177,15 +191,17 @@ export class MonitorService {
         this.deps.state.pruneSnapshots(keepIds)
     }
 
-    /** One monitor failing does not stop the others. */
-    private async checkMonitor(monitor: Monitor, settings: Settings, cycle: MonitorCycle): Promise<void> {
+    /** One monitor failing does not stop the others; it keeps its watermark, to try the same changes again. */
+    private async checkMonitor(monitor: Monitor, settings: Settings, cycle: MonitorCycle): Promise<boolean> {
         try {
             await this.runMonitor(monitor, settings, cycle)
+            return true
         } catch (error) {
             const serialized = serializeError(error)
             const params = { monitor: monitor.id, code: serialized.code }
             this.log({ type: 'monitor', event: 'monitorFailed', params }, 'error')
             this.setStatus({ lastError: { ...serialized, context: monitor.name || monitor.id } })
+            return false
         }
     }
 

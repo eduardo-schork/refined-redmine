@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { TimeEntry } from './time-entry'
-import { daysOf, focusedEntries, groupEntries, periodRange, teamSheet, assertValidTeam } from './team'
+import {
+    daysOf,
+    focusedEntries,
+    groupEntries,
+    hoursByPersonAndActivity,
+    periodRange,
+    teamSheet,
+    assertValidTeam
+} from './team'
 
 const ana = { id: 1, name: 'Ana' }
 const bia = { id: 2, name: 'Bia' }
@@ -65,5 +73,18 @@ describe('groupEntries and focus', () => {
     it('a team needs a name and members', () => {
         expect(() => assertValidTeam({ id: 't', name: ' ', members: [ana] })).toThrow('team.nameRequired')
         expect(() => assertValidTeam({ id: 't', name: 'Dev', members: [] })).toThrow('team.noMembers')
+    })
+})
+
+describe('hoursByPersonAndActivity', () => {
+    it('sums hours per person and kind of work, most hours first', () => {
+        const matrix = hoursByPersonAndActivity(entries.slice(0, 3))
+        expect(matrix.activities).toEqual(['Desenvolvimento', 'Reunião'])
+        expect(matrix.rows.map((row) => [row.person.name, row.byActivity, row.total])).toEqual([
+            ['Ana', { Desenvolvimento: 6, Reunião: 2 }, 8],
+            ['Bia', { Desenvolvimento: 4 }, 4]
+        ])
+        expect(matrix.activityTotals).toEqual({ Desenvolvimento: 10, Reunião: 2 })
+        expect(matrix.total).toBe(12)
     })
 })

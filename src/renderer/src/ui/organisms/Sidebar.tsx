@@ -1,5 +1,6 @@
 import {
     Bell,
+    BellRing,
     Clock,
     CalendarDays,
     Download,
@@ -14,13 +15,16 @@ import {
     Settings as SettingsIcon,
     Users
 } from 'lucide-react'
+import { useRef, type DragEvent } from 'react'
+import type { Board } from '@domain/board/board'
 import type { MonitorStatus } from '@domain/monitor/monitor-status'
 import { displayName } from '@domain/redmine/entities'
 import { unreadCount, useMonitorStatus, useNotifications } from '@/hooks/notifications'
 import { useUpdateStatus } from '@/hooks/updates'
-import { useSettings } from '@/hooks/session'
+import { useSettings, useUpdateSettings } from '@/hooks/session'
 import { useI18n } from '@/lib/i18n'
 import type { NavigateOptions, Route } from '@/lib/router'
+import { moveItem } from '@/lib/move-item'
 import { NEW_ISSUE_SHORTCUT, SEARCH_SHORTCUT } from '@/lib/shortcuts'
 import { Avatar } from '../atoms/Avatar'
 import { Badge } from '../atoms/Badge'
@@ -116,6 +120,13 @@ export function Sidebar({
                     {t('nav.team')}
                 </NavItem>
 
+                <NavItem
+                    active={isActive('monitors')}
+                    onClick={(newTab) => onNavigate({ page: 'monitors' }, { newTab })}
+                    icon={<BellRing size={15} />}
+                >
+                    {t('nav.monitors')}
+                </NavItem>
                 <div className="flex items-center justify-between px-2 pb-1 pt-4">
                     <Overline>{t('nav.boards')}</Overline>
                     <button
@@ -126,16 +137,7 @@ export function Sidebar({
                         <Plus size={14} />
                     </button>
                 </div>
-                {boards.map((board) => (
-                    <NavItem
-                        key={board.id}
-                        active={activeBoardId === board.id}
-                        onClick={(newTab) => onNavigate({ page: 'board', boardId: board.id }, { newTab })}
-                        icon={<KanbanSquare size={15} />}
-                    >
-                        {board.name}
-                    </NavItem>
-                ))}
+                <BoardNavList boards={boards} activeBoardId={activeBoardId} onNavigate={onNavigate} />
                 {boards.length === 0 && (
                     <button
                         onClick={onNewBoard}
@@ -188,6 +190,47 @@ export function Sidebar({
             )}
         </aside>
     )
+}
+
+/** The boards, in the order the user dragged them into. */
+function BoardNavList({
+    boards,
+    activeBoardId,
+    onNavigate
+}: {
+    boards: Board[]
+    activeBoardId?: string
+    onNavigate: (route: Route, options?: NavigateOptions) => void
+}) {
+    const updateSettings = useUpdateSettings()
+    const draggedIndex = useRef<number | undefined>(undefined)
+
+    const allowDrop = (event: DragEvent) => event.preventDefault()
+    const dropOn = (targetIndex: number) => {
+        const fromIndex = draggedIndex.current
+        draggedIndex.current = undefined
+        if (fromIndex === undefined || fromIndex === targetIndex) return
+        updateSettings.mutate({ boards: moveItem(boards, fromIndex, targetIndex - fromIndex) })
+    }
+
+    return boards.map((board, index) => (
+        <div
+            key={board.id}
+            draggable
+            onDragStart={() => (draggedIndex.current = index)}
+            onDragOver={allowDrop}
+            onDrop={() => dropOn(index)}
+            className="flex flex-col"
+        >
+            <NavItem
+                active={activeBoardId === board.id}
+                onClick={(newTab) => onNavigate({ page: 'board', boardId: board.id }, { newTab })}
+                icon={<KanbanSquare size={15} />}
+            >
+                {board.name}
+            </NavItem>
+        </div>
+    ))
 }
 
 type MonitorTone = 'ok' | 'muted' | 'danger'

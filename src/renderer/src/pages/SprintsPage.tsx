@@ -48,6 +48,7 @@ export default function SprintsPage({ onCreateBoard }: { onCreateBoard: (initial
 
     return (
         <PageLayout
+            loading={sprints.isFetching}
             title={t('nav.sprints')}
             subtitle={<span className="text-xs text-muted">{sprints.projectName}</span>}
             width="xl"

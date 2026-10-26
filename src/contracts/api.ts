@@ -5,6 +5,7 @@ import type { ProjectCustomFields } from '@domain/redmine/custom-fields'
 import type { BulkChange, BulkEditResult, IssueNoteChange, IssueTreeNode } from '@domain/redmine/issue-tree'
 import type {
     AppInfo,
+    BoardColumnSuggestion,
     BoardIssues,
     BoardNotifications,
     DeleteEventCommand,
@@ -53,6 +54,10 @@ export interface RefinedApi {
     }
     settings: {
         update(patch: SettingsPatch): SettingsView
+        /** Saves the settings to a JSON file the user picks; false when cancelled. */
+        exportBackup(): boolean
+        /** Replaces the settings with a backup file the user picks; null when cancelled. */
+        importBackup(): SettingsView | null
     }
     issues: {
         list(filter: IssueFilter, max?: number): Page<Issue>
@@ -104,6 +109,7 @@ export interface RefinedApi {
     overtime: {
         list(): OvertimeBank
         add(draft: OvertimeDraft): OvertimeBank
+        update(id: string, draft: OvertimeDraft): OvertimeBank
         remove(id: string): OvertimeBank
         setPaid(month: string, paid: boolean): OvertimeBank
     }
@@ -128,6 +134,8 @@ export interface RefinedApi {
         save(board: Board, notifications?: BoardNotifications): SettingsView
         remove(boardId: string): SettingsView
         move(boardId: string, issueId: number, columnId: string): IssueStatus
+        /** Statuses of the issues a board (being created) would show, to suggest its columns. */
+        suggestColumns(board: Board): BoardColumnSuggestion
     }
     sprints: {
         list(): SprintList
@@ -173,13 +181,19 @@ export interface RefinedApi {
         info(): AppInfo
         openDataFolder(): void
         supportReport(): SupportReport
+        /** Native folder picker; null when cancelled. */
+        pickFolder(): string | null
+    }
+    claude: {
+        /** Opens Claude with a saved action (Settings → Automations) for this issue. */
+        open(actionId: string, issue: { id: number; subject: string }): void
     }
 }
 
 /** Method list per group (used at runtime by the preload and the IPC router). */
 export const API_METHODS = {
     session: ['get', 'login', 'logout'],
-    settings: ['update'],
+    settings: ['update', 'exportBackup', 'importBackup'],
     issues: [
         'list',
         'get',
@@ -199,10 +213,10 @@ export const API_METHODS = {
     ],
     reference: ['statuses', 'projects', 'savedQueries', 'priorities', 'trackers', 'timeActivities'],
     time: ['forIssue', 'mine', 'team', 'log', 'edit', 'remove', 'repeatWeek'],
-    overtime: ['list', 'add', 'remove', 'setPaid'],
+    overtime: ['list', 'add', 'update', 'remove', 'setPaid'],
     attachments: ['preview', 'open'],
     timer: ['status', 'start', 'pause', 'resume', 'stop', 'discard'],
-    boards: ['issues', 'save', 'remove', 'move'],
+    boards: ['issues', 'save', 'remove', 'move', 'suggestColumns'],
     sprints: ['list', 'stats', 'inspectProject'],
     calendar: ['list', 'save', 'remove'],
     notifications: [
@@ -219,7 +233,8 @@ export const API_METHODS = {
     monitor: ['status', 'runNow'],
     log: ['list', 'clear'],
     updates: ['status', 'check', 'setToken', 'testToken', 'download', 'install'],
-    app: ['openExternal', 'info', 'openDataFolder', 'supportReport']
+    app: ['openExternal', 'info', 'openDataFolder', 'supportReport', 'pickFolder'],
+    claude: ['open']
 } as const satisfies { [Group in keyof RefinedApi]: readonly (keyof RefinedApi[Group])[] }
 
 /** Events from the main process to the UI. */

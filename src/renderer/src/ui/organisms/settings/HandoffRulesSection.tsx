@@ -40,7 +40,7 @@ export function HandoffRulesSection() {
     }
 
     const actions = (
-        <Button onClick={() => setEditing(newRule(localId(), t('automation.defaultName')))}>
+        <Button onClick={() => setEditing(newRule(localId(), ''))}>
             <Plus size={14} /> {t('automation.new')}
         </Button>
     )

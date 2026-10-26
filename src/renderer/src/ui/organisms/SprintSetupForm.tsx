@@ -6,6 +6,7 @@ import { useI18n } from '@/lib/i18n'
 import { Button } from '../atoms/Button'
 import { Select } from '../atoms/fields'
 import { Field } from '../molecules/Field'
+import { PickList } from '../molecules/PickList'
 import { RichText } from '../molecules/RichText'
 
 function optionalId(value: string): number | undefined {
@@ -33,18 +34,22 @@ export function SprintSetupForm() {
         })
     }
 
+    const projectOptions = (projects.data ?? []).map((project) => ({
+        value: String(project.id),
+        label: project.parent ? `${project.parent.name} › ${project.name}` : project.name
+    }))
+
     return (
         <div className="flex flex-col gap-4">
             <Field label={t('sprints.setup.project')} hint={t('sprints.setup.projectHint')}>
-                <Select value={projectId ?? ''} onChange={(event) => setProjectId(optionalId(event.target.value))}>
-                    <option value="">{placeholder}</option>
-                    {projects.data?.map((project) => (
-                        <option key={project.id} value={project.id}>
-                            {project.parent ? `${project.parent.name} › ` : ''}
-                            {project.name}
-                        </option>
-                    ))}
-                </Select>
+                <PickList
+                    value={projectId ? String(projectId) : ''}
+                    options={projectOptions}
+                    placeholder={placeholder}
+                    searchPlaceholder={t('issue.create.searchProject')}
+                    noMatches={t('issue.create.noProject')}
+                    onPick={(option) => setProjectId(optionalId(option.value))}
+                />
             </Field>
             {detected && (
                 <>

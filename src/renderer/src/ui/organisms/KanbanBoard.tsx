@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import {
     DndContext,
@@ -14,6 +15,7 @@ import {
 import { Ban } from 'lucide-react'
 import type { Board, BoardColumn } from '@domain/board/board'
 import { canDropOn, columnOf, targetStatus } from '@domain/board/board-rules'
+import { groupIssues, type IssueGroup, type ListGroupBy } from '@domain/board/issue-list'
 import type { Issue, IssueStatus } from '@domain/redmine/entities'
 import { dueState, isHighPriority } from '@domain/redmine/issue-signals'
 import { useMoveIssue } from '@/hooks/boards'
@@ -28,21 +30,13 @@ import { Badge } from '../atoms/Badge'
 import { IssueCard, type IssueCardOptions } from '../molecules/IssueCard'
 import { StatusToneDot } from '../molecules/StatusTag'
 import { useToast } from '../molecules/Toast'
+import { IssueActionsMenu } from './IssueActionsMenu'
+import { useGroupLabel } from './IssueList'
 
 const DROP_ID_SEPARATOR = '::'
 
 const dropTargetId = (lane: string, columnId: string) => `${lane}${DROP_ID_SEPARATOR}${columnId}`
 const columnIdFromDropTarget = (dropId: string | number) => String(dropId).split(DROP_ID_SEPARATOR)[1]
-
-// Lanes sorted by assignee name, with the "no assignee" lane always last.
-function assigneeLanes(issues: Issue[], laneOf: (issue: Issue) => string, noAssignee: string): string[] {
-    const names = [...new Set(issues.map(laneOf))]
-    return names.sort((left, right) => {
-        if (left === noAssignee) return 1
-        if (right === noAssignee) return -1
-        return left.localeCompare(right)
-    })
-}
 
 /**
  * When a drag starts, fetches the statuses allowed by the Redmine workflow and dims the columns
@@ -50,11 +44,14 @@ function assigneeLanes(issues: Issue[], laneOf: (issue: Issue) => string, noAssi
  */
 export function KanbanBoard({
     board,
+    laneBy,
     issues,
     loading,
     onOpen
 }: {
     board: Board
+    /** Lanes (rows) of cards: the same groupings as the list. */
+    laneBy: ListGroupBy
     issues: Issue[]
     loading: boolean
     onOpen: (id: number) => void
@@ -66,9 +63,6 @@ export function KanbanBoard({
     const [dragging, setDragging] = useState<Issue | null>(null)
     const [allowed, setAllowed] = useState<Set<number> | null>(null)
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
-    const noAssignee = t('board.noAssignee')
-    const laneOf = useCallback((issue: Issue) => issue.assigned_to?.name ?? noAssignee, [noAssignee])
-    const groupByAssignee = board.swimlanes === 'assignee'
     const staleDays = useSettings().dashboard.staleDays
     const statuses = useStatuses().data
     const firstStatusOf = (column: BoardColumn) => statuses?.find((status) => status.id === column.statusIds[0])
@@ -77,13 +71,12 @@ export function KanbanBoard({
         return { staleDays, showProject: projects.size > 1 }
     }, [issues, staleDays])
 
-    const lanes = useMemo(
-        () => (groupByAssignee ? assigneeLanes(issues, laneOf, noAssignee) : ['']),
-        [issues, groupByAssignee, laneOf, noAssignee]
-    )
+    const lanes = useMemo(() => groupIssues(issues, laneBy, statuses ?? []), [issues, laneBy, statuses])
+    const hasLanes = laneBy !== 'none'
     const canDrop = (column: BoardColumn) => !dragging || canDropOn(column, dragging.status.id, allowed)
-    const issuesIn = (column: BoardColumn) =>
-        issues.filter((issue) => columnOf(board, issue.status.id)?.id === column.id)
+    const inColumn = (column: BoardColumn, laneIssues: Issue[]) =>
+        laneIssues.filter((issue) => columnOf(board, issue.status.id)?.id === column.id)
+    const issuesIn = (column: BoardColumn) => inColumn(column, issues)
 
     function onDragStart(event: DragStartEvent) {
         const issue = issues.find((candidate) => String(candidate.id) === event.active.id)
@@ -139,19 +132,17 @@ export function KanbanBoard({
                     {loading && <div className="px-5 py-6 text-sm text-muted">{t('board.loading')}</div>}
 
                     {lanes.map((lane) => (
-                        <div key={lane} className="flex flex-col">
-                            {lane && <LaneHeader lane={lane} noAssignee={noAssignee} />}
+                        <div key={lane.key} className="flex flex-col">
+                            {hasLanes && <LaneHeader lane={lane} laneBy={laneBy} />}
                             <div className="flex gap-3 px-4 pb-3">
                                 {board.columns.map((column) => {
-                                    const laneIssues = issuesIn(column).filter(
-                                        (issue) => !lane || laneOf(issue) === lane
-                                    )
+                                    const laneIssues = inColumn(column, lane.issues)
                                     return (
                                         <Column
                                             key={column.id}
-                                            id={dropTargetId(lane, column.id)}
+                                            id={dropTargetId(lane.key, column.id)}
                                             disabled={!canDrop(column)}
-                                            fill={!lane}
+                                            fill={!hasLanes}
                                         >
                                             {laneIssues.map((issue) => (
                                                 <DraggableCard
@@ -172,9 +163,13 @@ export function KanbanBoard({
                     ))}
                 </div>
             </div>
-            <DragOverlay dropAnimation={null}>
-                {dragging && <IssueCard issue={dragging} overlay options={{ ...cardOptions, showStatus: true }} />}
-            </DragOverlay>
+            {/* In the body: the tab's layout containment would offset the fixed overlay from the pointer. */}
+            {createPortal(
+                <DragOverlay dropAnimation={null}>
+                    {dragging && <IssueCard issue={dragging} overlay options={{ ...cardOptions, showStatus: true }} />}
+                </DragOverlay>,
+                document.body
+            )}
         </DndContext>
     )
 }
@@ -221,12 +216,14 @@ function ColumnHeader({
     )
 }
 
-function LaneHeader({ lane, noAssignee }: { lane: string; noAssignee: string }) {
-    const assigneeName = lane === noAssignee ? undefined : lane
+function LaneHeader({ lane, laneBy }: { lane: IssueGroup; laneBy: ListGroupBy }) {
+    const label = useGroupLabel(lane, laneBy)
     return (
-        <div className="sticky left-0 flex items-center gap-2 px-5 pb-1 pt-3 text-xs font-medium text-muted">
-            <Avatar name={assigneeName} />
-            {lane}
+        <div className="sticky left-0 flex w-max items-center gap-2 px-5 pb-1.5 pt-4 text-sm font-semibold">
+            {laneBy === 'assignee' && <Avatar name={lane.label} />}
+            {laneBy === 'status' && <StatusToneDot status={lane.issues[0].status} />}
+            {label}
+            <Badge className="font-semibold">{lane.issues.length}</Badge>
         </div>
     )
 }
@@ -276,7 +273,7 @@ function DraggableCard({
             className={cn(isDragging && 'opacity-30')}
             onClick={() => onOpen(issue.id)}
         >
-            <IssueCard issue={issue} options={options} />
+            <IssueCard issue={issue} options={options} actions={<IssueActionsMenu issue={issue} />} />
         </div>
     )
 }

@@ -11,6 +11,8 @@ export interface HandoffRule {
     id: string
     name: string
     mode: 'same' | 'other'
+    /** Name of the icon of its button and menu item; undefined = the default one. */
+    icon?: string
     /** Where the button shows; empty = every tracker / status. */
     trackerIds: number[]
     statusIds: number[]
