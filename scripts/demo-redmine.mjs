@@ -1,5 +1,5 @@
 // Fake Redmine with fictional data, used to take the user manual screenshots without exposing real tasks.
-// Usage: node scripts/demo-redmine.mjs [--seed <profile dir>] [--port 4567]
+// Usage: node scripts/demo-redmine.mjs [--seed <profile dir>] [--port 4567] [--latency <ms>]
 // Then: REFINED_REDMINE_USER_DATA=<profile dir> npm run dev
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
@@ -14,6 +14,8 @@ function argument(name, fallback) {
 }
 
 const port = Number(argument('--port', 4567))
+// Wait before every answer, like a distant Redmine (to see loading states).
+const latencyMs = Number(argument('--latency', 0))
 const seedDir = argument('--seed')
 const now = new Date()
 
@@ -48,6 +50,9 @@ const statuses = [
     { id: 5, name: 'Finalizada', is_closed: true }
 ]
 const statusById = new Map(statuses.map((status) => [status.id, status]))
+// Like a real workflow: Em andamento → Nova is not allowed (go through Em pausa), and Redmine silently keeps the status.
+const BLOCKED_TRANSITIONS = new Map([[2, [1]]])
+const canMove = (item, statusId) => !(BLOCKED_TRANSITIONS.get(item.status.id) ?? []).includes(statusId)
 
 const project = { id: 10, name: 'Loja Virtual - Desenvolvimento' }
 const trackers = {
@@ -219,6 +224,7 @@ const issues = [
         ]
     }),
     issue(1202, 'Cupom de desconto não aplica em produtos com variação', {
+        hours: 3,
         tracker: 'bug',
         status: 1,
         priority: 'urgent',
@@ -237,6 +243,7 @@ const issues = [
         updatedDays: 9
     }),
     issue(1205, 'Ajustar e-mail de confirmação de pedido', {
+        hours: 2.5,
         status: 44,
         assignee: 'marina',
         versionId: 377,
@@ -251,6 +258,7 @@ const issues = [
         updatedDays: 1
     }),
     issue(1207, 'Carrinho perde itens ao trocar de aba', {
+        hours: 5,
         tracker: 'bug',
         status: 2,
         priority: 'high',
@@ -260,9 +268,16 @@ const issues = [
         updatedDays: 7,
         due: localDate(-1)
     }),
-    issue(1208, 'Página de rastreio de entrega', { status: 1, assignee: 'marina', versionId: 379, updatedDays: 4 }),
+    issue(1208, 'Página de rastreio de entrega', {
+        status: 1,
+        assignee: 'marina',
+        versionId: 379,
+        updatedDays: 4,
+        hours: 6
+    }),
     issue(1209, 'Otimizar imagens da vitrine', { status: 2, assignee: 'lucas', versionId: 378, done: 40 }),
     issue(1210, 'Integração com gateway de pagamento Pix', {
+        hours: 12,
         status: 2,
         priority: 'high',
         assignee: 'beatriz',
@@ -270,9 +285,10 @@ const issues = [
         done: 20,
         watchers: [1]
     }),
-    issue(1211, 'Newsletter no rodapé da loja', { status: 1, assignee: 'rafael', versionId: 378 }),
+    issue(1211, 'Newsletter no rodapé da loja', { status: 1, assignee: 'rafael', versionId: 378, hours: 4 }),
     issue(1212, 'Avaliações de produto com fotos', { status: 44, assignee: 'lucas', versionId: 378, done: 100 }),
     issue(1213, 'Frete grátis acima de um valor configurável', {
+        hours: 6,
         status: 110,
         assignee: 'beatriz',
         versionId: 377,
@@ -286,9 +302,16 @@ const issues = [
         done: 100,
         updatedDays: 3
     }),
-    issue(1215, 'Lista de desejos compartilhável', { status: 1, assignee: 'lucas', versionId: 379, author: 'marina' }),
+    issue(1215, 'Lista de desejos compartilhável', {
+        status: 1,
+        assignee: 'lucas',
+        versionId: 379,
+        author: 'marina',
+        hours: 10
+    }),
     issue(1216, 'Revisar textos da página de trocas', { status: 3, assignee: 'rafael', versionId: 3771, done: 100 }),
     issue(1220, 'QA: endereço automático pelo CEP no checkout', {
+        hours: 6,
         tracker: 'qa',
         status: 1,
         assignee: 'beatriz',
@@ -571,7 +594,7 @@ function issueDetail(item) {
         }),
         parent: parentOf(item.id),
         watchers: item.watcherIds.map((id) => Object.values(people).find((person) => person.id === id)),
-        allowed_statuses: statuses
+        allowed_statuses: statuses.filter((status) => canMove(item, status.id))
     }
 }
 
@@ -702,9 +725,19 @@ function newCustomFields(tracker, sent = []) {
 
 function updateIssue(id, body) {
     const item = issueById.get(id)
-    const statusId = body.issue?.status_id
-    if (statusId) item.status = statusById.get(Number(statusId))
+    const statusId = Number(body.issue?.status_id)
+    const oldStatusId = item.status.id
+    const movesStatus = Boolean(statusId) && statusId !== oldStatusId && canMove(item, statusId)
+    if (movesStatus) item.status = statusById.get(statusId)
     const details = updateFields(item, body.issue ?? {})
+    if (movesStatus) {
+        details.unshift({
+            property: 'attr',
+            name: 'status_id',
+            old_value: String(oldStatusId),
+            new_value: String(statusId)
+        })
+    }
     const change = (name, oldValue, newValue) =>
         details.push({ property: 'attr', name, old_value: oldValue, new_value: newValue })
     updateTextFields(item, body.issue ?? {}, change)
@@ -939,6 +972,7 @@ function startServer() {
             return
         }
         const body = await readBody(request)
+        if (latencyMs) await new Promise((resolve) => setTimeout(resolve, latencyMs))
         // Like Redmine, an API request with another key is refused (lets the connection screen show the error).
         const isApiCall = url.pathname.endsWith('.json')
         if (isApiCall && request.headers['x-redmine-api-key'] !== DEMO_API_KEY) {
@@ -987,7 +1021,16 @@ function demoConfig() {
         ],
         sprints: { sprintPattern: '^\\d+\\.\\d+$', hotfixPattern: '^\\d+\\.\\d+\\.\\d+$', projectId: project.id },
         dashboard: { staleDays: 5 },
-        teams: [{ id: 't-loja', name: 'Time da loja', members: Object.values(people) }],
+        teams: [
+            {
+                id: 't-loja',
+                name: 'Time da loja',
+                // Rafael works part time: the team capacity counts 4 hours a day for him.
+                members: Object.values(people).map((person) =>
+                    person.id === people.rafael.id ? { ...person, hoursPerDay: 4 } : person
+                )
+            }
+        ],
         claudeActions: [
             {
                 id: 'c-review',
