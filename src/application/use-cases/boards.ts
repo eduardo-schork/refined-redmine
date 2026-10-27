@@ -128,6 +128,21 @@ export class ListBoardIssuesUseCase {
     }
 }
 
+/** How many issues the board's source has (Redmine's total), for the sidebar; null without a sprint today. */
+export class CountBoardIssuesUseCase {
+    constructor(
+        private readonly gateway: RedmineGateway,
+        private readonly settings: SettingsRepository,
+        private readonly resolver: BoardFilterResolver
+    ) {}
+
+    async execute(boardId: string): Promise<number | null> {
+        const resolved = await this.resolver.resolve(findBoard(this.settings, boardId))
+        if (!resolved.filter) return null
+        return this.gateway.countIssues(resolved.filter)
+    }
+}
+
 /** Reads the issues of a board being created (not saved yet) to suggest its columns. */
 export class SuggestBoardColumnsUseCase {
     constructor(

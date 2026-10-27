@@ -92,7 +92,11 @@ export async function checkSource(
         return
     }
 
-    const notificationSource: NotificationSource = { monitorId: monitor.id, name: resolved.board?.name ?? monitor.name }
+    const notificationSource: NotificationSource = {
+        monitorId: monitor.id,
+        name: resolved.board?.name ?? monitor.name,
+        sourceType: monitor.source.type
+    }
     const previous = deps.state.getSnapshot(monitor.id)
     const page = await listSource(resolved.filter, cycle.sinceOf(monitor.id), previous, deps.gateway)
     const current = snapshotOf(page.total, page.items)

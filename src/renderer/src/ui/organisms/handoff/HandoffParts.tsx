@@ -8,8 +8,10 @@ import { toLocalDate } from '@domain/shared/date'
 import { defaultActivityId, parseHours, type TimeEntryDraft } from '@domain/time/time-entry'
 import type { IssueUpload } from '@domain/redmine/issue-upload'
 import { useAddOvertime } from '@/hooks/overtime'
+import { useStatuses } from '@/hooks/reference'
 import { useSettings } from '@/hooks/session'
 import { useIssueTime, useLogTime, useTimeActivities, useTimer, useTimerActions } from '@/hooks/time'
+import { cn } from '@/lib/cn'
 import { useI18n } from '@/lib/i18n'
 import { lastActivityId } from '@/lib/last-activity'
 import type { Step } from '@/lib/steps'
@@ -19,6 +21,17 @@ import { Field } from '../../molecules/Field'
 import { UploadPreviewDialog } from '../attachments/UploadPreviewDialog'
 import { type useChosenFiles } from '../IssueCreateDialog'
 import { MarkdownEditor } from '../MarkdownEditor'
+
+/** "Goes through A → B first", next to a status that has statuses on the way. */
+export function ViaHint({ viaStatusIds, className }: { viaStatusIds?: number[]; className?: string }) {
+    const { t } = useI18n()
+    const statuses = useStatuses().data ?? []
+    if (!viaStatusIds?.length) return null
+    const names = viaStatusIds.map((id) => statuses.find((status) => status.id === id)?.name ?? `#${id}`)
+    return (
+        <span className={cn('text-xs text-muted', className)}>{t('handoff.via', { statuses: names.join(' → ') })}</span>
+    )
+}
 
 const TIMER = 'timer'
 const TYPED = ''
@@ -174,7 +187,7 @@ export function HoursFields({ hours }: { hours: HandoffHours }) {
 /** The time entry (and overtime) steps of a handoff, logged today on `issueId`. */
 export function useTimeSteps(hours: HandoffHours, issueId: number, comment: string): Step[] {
     const { t } = useI18n()
-    const logTime = useLogTime()
+    const logTime = useLogTime(false)
     const addOvertime = useAddOvertime()
     const timerActions = useTimerActions()
     if (!hours.enabled || !hours.hours) return []

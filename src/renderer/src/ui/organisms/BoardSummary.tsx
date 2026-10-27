@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { AlarmClock, CheckCircle2, ChevronsUp, CircleDot, Clock, Inbox, Pause, UserX } from 'lucide-react'
+import { AlarmClock, CheckCircle2, ChevronsUp, CircleDot, Clock, Hourglass, Inbox, Pause, UserX } from 'lucide-react'
 import type { Board } from '@domain/board/board'
 import { summarizeBoard, type BoardSummary as Summary, type PersonSummary } from '@domain/board/board-summary'
 import type { Issue } from '@domain/redmine/entities'
@@ -16,6 +16,7 @@ import { ProgressBar } from '../atoms/misc'
 import { DistributionBar, RankedBars } from '../molecules/DistributionBar'
 import { Card, StatTile } from '../molecules/surfaces'
 import { SprintProgressPanel } from './SprintProgressPanel'
+import { TeamCapacityCard } from './TeamCapacityCard'
 
 /**
  * The board seen as numbers: totals, what needs attention, status distribution, people and breakdowns.
@@ -46,6 +47,9 @@ export function BoardSummary({
     return (
         <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-5">
             {sprint && <SprintProgressPanel sprint={sprint} issues={issues} />}
+            {sprint?.devDeadline && (
+                <TeamCapacityCard sprint={sprint} devDeadline={sprint.devDeadline} issues={issues} />
+            )}
             <SummaryTiles summary={summary} />
             <Card title={t('board.summary.byStatus')} description={t('board.summary.byStatusHint')}>
                 <DistributionBar
@@ -89,7 +93,8 @@ function SummaryTiles({ summary }: { summary: Summary }) {
     const { t, dates } = useI18n()
     const toneWhen = (value: number, tone: 'warn' | 'danger') => (value > 0 ? tone : undefined)
     return (
-        <div className="grid grid-cols-4 gap-3 xl:grid-cols-8">
+        // Nine tiles in one row only on very wide windows: narrower, the hours ("46:00 h") break in two lines.
+        <div className="grid grid-cols-3 gap-3 lg:grid-cols-5 min-[1800px]:grid-cols-9">
             <StatTile label={t('board.summary.total')} value={summary.total} icon={<Inbox size={15} />} />
             <StatTile label={t('board.summary.open')} value={summary.open} icon={<CircleDot size={15} />} />
             <StatTile
@@ -101,6 +106,11 @@ function SummaryTiles({ summary }: { summary: Summary }) {
                 label={t('board.summary.estimated')}
                 value={dates.hours(summary.estimatedHours)}
                 icon={<Clock size={15} />}
+            />
+            <StatTile
+                label={t('board.summary.remaining')}
+                value={dates.hours(summary.remainingHours)}
+                icon={<Hourglass size={15} />}
             />
             <StatTile
                 label={t('board.summary.overdue')}
@@ -131,7 +141,7 @@ function SummaryTiles({ summary }: { summary: Summary }) {
 }
 
 const COLUMNS =
-    'grid grid-cols-[minmax(0,1.6fr)_4.5rem_4.5rem_minmax(0,1.2fr)_4.5rem_4.5rem_4.5rem_5rem] items-center gap-3'
+    'grid grid-cols-[minmax(0,1.6fr)_4.5rem_4.5rem_minmax(0,1.2fr)_4.5rem_4.5rem_4.5rem_5rem_5rem] items-center gap-3'
 
 function PeopleTable({
     people,
@@ -152,6 +162,7 @@ function PeopleTable({
                 <span className="text-right">{t('board.summary.highShort')}</span>
                 <span className="text-right">{t('board.summary.staleShort')}</span>
                 <span className="text-right">{t('board.summary.estimatedShort')}</span>
+                <span className="text-right">{t('board.summary.remainingShort')}</span>
             </div>
             {people.map((person) => (
                 <PersonRow key={person.id ?? 'none'} person={person} onSelect={onSelect} />
@@ -199,6 +210,14 @@ function PersonRow({ person, onSelect }: { person: PersonSummary; onSelect: (id:
             <span className="text-right text-xs text-muted">
                 {person.estimatedHours ? dates.hours(person.estimatedHours) : '—'}
             </span>
+            <HoursCell hours={person.remainingHours} />
         </button>
     )
+}
+
+/** What is left to do stands out in the row; nothing left is a dash. */
+function HoursCell({ hours }: { hours: number }) {
+    const { dates } = useI18n()
+    if (!hours) return <span className="text-right text-xs text-muted">—</span>
+    return <span className="text-right text-xs font-semibold tabular-nums">{dates.hours(hours)}</span>
 }

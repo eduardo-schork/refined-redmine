@@ -41,7 +41,8 @@ describe('summarizeBoard', () => {
             overdue: 1,
             highPriority: 1,
             unassigned: 1,
-            estimatedHours: 6
+            estimatedHours: 6,
+            remainingHours: 4
         })
     })
 
@@ -59,6 +60,7 @@ describe('summarizeBoard', () => {
             [undefined, 1, 0]
         ])
         expect(summary.byAssignee[0].estimatedHours).toBe(6)
+        expect(summary.byAssignee[0].remainingHours).toBe(4)
     })
 
     it('orders priorities from the most urgent', () => {

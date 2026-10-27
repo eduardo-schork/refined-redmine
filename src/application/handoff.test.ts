@@ -46,7 +46,30 @@ describe('findNearbyIssues', () => {
         const nearby = await findNearbyIssues(deep, 1, [])
         expect(nearby.map((found) => found.issue.id)).toEqual([2, 3])
     })
+    it('reads up to four issues of one depth at the same time, keeping their order', async () => {
+        const childIds = [11, 12, 13, 14, 15, 16]
+        const slow = new SlowGateway()
+        slow.details.set(1, detail(1, 1, { children: childIds.map((id) => ({ id })) as IssueDetail['children'] }))
+        for (const id of childIds) slow.details.set(id, detail(id, 2, { parent: { id: 1 } }))
+        const nearby = await findNearbyIssues(slow, 1, [])
+        expect(nearby.map((found) => found.issue.id)).toEqual(childIds)
+        expect(slow.mostAtOnce).toBe(4)
+    })
 })
+
+/** Answers on the next tick and counts the reads in progress. */
+class SlowGateway extends FakeGateway {
+    inProgress = 0
+    mostAtOnce = 0
+
+    override async getIssue(id: number) {
+        this.inProgress += 1
+        this.mostAtOnce = Math.max(this.mostAtOnce, this.inProgress)
+        await new Promise((resolve) => setTimeout(resolve, 1))
+        this.inProgress -= 1
+        return super.getIssue(id)
+    }
+}
 
 describe('CommentAndChangeUseCase', () => {
     it('sends the comment and only the fields that differ, in one update', async () => {
@@ -69,5 +92,18 @@ describe('CommentAndChangeUseCase', () => {
         const result = await new CommentAndChangeUseCase(gateway).execute(1300, { notes: '  ', statusId: 1 })
         expect(result.outcome).toBe('unchanged')
         expect(gateway.updates).toEqual([])
+    })
+    it('goes through the statuses on the way first; the comment goes with the final status', async () => {
+        const gateway = gatewayWith(detail(1300, 43, { status: { id: 12, name: 'Em pausa', is_closed: false } }))
+        await new CommentAndChangeUseCase(gateway).execute(1300, { notes: 'ok', statusId: 1, viaStatusIds: [2, 12, 3] })
+        expect(gateway.updates).toEqual([
+            { id: 1300, update: { statusId: 3 } },
+            { id: 1300, update: { statusId: 1, notes: 'ok', uploads: undefined } }
+        ])
+    })
+    it('already in the final status, only the comment', async () => {
+        const gateway = gatewayWith(detail(1300, 43))
+        await new CommentAndChangeUseCase(gateway).execute(1300, { notes: 'ok', statusId: 1, viaStatusIds: [12] })
+        expect(gateway.updates).toEqual([{ id: 1300, update: { notes: 'ok', uploads: undefined } }])
     })
 })

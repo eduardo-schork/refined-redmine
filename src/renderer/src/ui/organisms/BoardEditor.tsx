@@ -14,6 +14,7 @@ import { useSprints } from '@/hooks/sprints'
 import { localId } from '@/lib/ids'
 import { moveItem } from '@/lib/move-item'
 import { useI18n } from '@/lib/i18n'
+import { useNameFollowingSource } from '@/lib/name-following-source'
 import { Button } from '../atoms/Button'
 import { AddSelect, Input, Select } from '../atoms/fields'
 import { IconButton } from '../atoms/IconButton'
@@ -71,15 +72,9 @@ export function BoardEditor({
     const [notifications, setNotifications] = useState(() => initialNotifications(existingMonitor))
 
     const source = draft.source
-    const lastSuggestion = useRef('')
-    // The name follows the source while the user has not typed one of their own.
+    const nameFor = useNameFollowingSource()
     const setSource: SourceChange = (nextSource, suggestedName) =>
-        setDraft((previous) => {
-            const followsSource = !previous.name.trim() || previous.name === lastSuggestion.current
-            const name = suggestedName && followsSource ? suggestedName : previous.name
-            if (suggestedName && followsSource) lastSuggestion.current = suggestedName
-            return { ...previous, source: nextSource, name }
-        })
+        setDraft((previous) => ({ ...previous, source: nextSource, name: nameFor(previous.name, suggestedName) }))
     const changeSourceType = (type: BoardSource['type']) => {
         const suggestion = type === 'mine' ? t('board.editor.sourceMine') : undefined
         setSource(DEFAULT_SOURCES[type](), suggestion)

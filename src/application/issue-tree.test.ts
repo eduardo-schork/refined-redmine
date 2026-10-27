@@ -47,4 +47,14 @@ describe('BulkEditUseCase', () => {
         expect(result.outcome).toBe('unchanged')
         expect(gateway.updates).toEqual([])
     })
+    it('goes through the statuses on the way, one update each, before the final status', async () => {
+        const gateway = new FakeGateway()
+        gateway.details.set(10, detail(10, { status: { id: 2, name: 'Em andamento', is_closed: false } }))
+        await new BulkEditUseCase(gateway).execute(10, { statusId: 5, viaStatusIds: [12, 3] })
+        expect(gateway.updates).toEqual([
+            { id: 10, update: { statusId: 12 } },
+            { id: 10, update: { statusId: 3 } },
+            { id: 10, update: { statusId: 5 } }
+        ])
+    })
 })

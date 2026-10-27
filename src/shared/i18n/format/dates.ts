@@ -1,4 +1,5 @@
 import { addDays, daysBetween, daysSince, daysUntil, parseLocal, type LocalDate } from '@domain/shared/date'
+import { hoursClock } from '@domain/time/timer'
 import type { TFunction } from 'i18next'
 
 const SECONDS_PER_MINUTE = 60
@@ -100,16 +101,16 @@ export class DateFormatter {
         return `${this.shortDayMonth(start)} – ${this.shortDayMonth(lastDay)}`
     }
 
+    /** 2.83 → "2:50 h": Redmine keeps decimal hours, people read hours and minutes. */
     hours(hours: number | null | undefined): string {
         if (hours == null) return '—'
-        const rounded = Number(hours.toFixed(2))
-        return this.t('duration.workHours', { value: rounded.toLocaleString(this.locale) })
+        return this.t('duration.workHours', { value: hoursClock(hours) })
     }
 
-    /** Hours the way people type them in a field (1.5 → "1,5" in Portuguese); empty without a value. */
+    /** Hours to fill a field with (2.83 → "2:50"; the fields also take "2,83", "1h30", "90m"); empty without a value. */
     hoursInput(hours: number | null | undefined): string {
         if (hours == null) return ''
-        return hours.toLocaleString(this.locale, { maximumFractionDigits: 2, useGrouping: false })
+        return hoursClock(hours)
     }
 
     private shortDayMonth(date: Date): string {

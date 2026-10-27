@@ -7,6 +7,7 @@ import {
     type SignalOptions
 } from '../redmine/issue-signals'
 import { statusTone, type StatusTone } from '../redmine/status-tone'
+import { remainingHours } from './remaining-work'
 
 export interface StatusSlice {
     statusId: number
@@ -27,6 +28,8 @@ export interface PersonSummary {
     highPriority: number
     stale: number
     estimatedHours: number
+    /** Estimate still to do (`remainingHours`). */
+    remainingHours: number
 }
 
 export interface CountSlice {
@@ -49,6 +52,8 @@ export interface BoardSummary {
     stale: number
     unassigned: number
     estimatedHours: number
+    /** Estimate still to do (`remainingHours`). */
+    remainingHours: number
     byStatus: StatusSlice[]
     byAssignee: PersonSummary[]
     byTracker: CountSlice[]
@@ -110,7 +115,8 @@ function emptyPerson(issue: Issue): PersonSummary {
         overdue: 0,
         highPriority: 0,
         stale: 0,
-        estimatedHours: 0
+        estimatedHours: 0,
+        remainingHours: 0
     }
 }
 
@@ -131,6 +137,7 @@ function personSummaries(issues: Issue[], options: SignalOptions): PersonSummary
         person.highPriority += signalCount(issue, 'highPriority', options)
         person.stale += signalCount(issue, 'stale', options)
         person.estimatedHours += issue.estimated_hours ?? 0
+        person.remainingHours += remainingHours(issue, options.rules)
     }
     const unassignedLast = (person: PersonSummary) => (person.id === undefined ? 1 : 0)
     return [...people.values()].sort(
@@ -155,6 +162,7 @@ export function summarizeBoard(issues: Issue[], statusOrder: number[], options: 
         stale: count('stale'),
         unassigned: count('unassigned'),
         estimatedHours: issues.reduce((sum, issue) => sum + (issue.estimated_hours ?? 0), 0),
+        remainingHours: issues.reduce((sum, issue) => sum + remainingHours(issue, options.rules), 0),
         byStatus: statusSlices(issues, statusOrder, options),
         byAssignee: personSummaries(issues, options),
         byTracker: countBy(issues, (issue) => issue.tracker.name),

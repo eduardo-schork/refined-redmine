@@ -136,7 +136,8 @@ function useEscapeOnTop(onClose: () => void) {
 
 /**
  * Modal window: closes on Esc or outside click. `bare` omits the default header. With `resizeKey` the user can drag
- * the corner to resize it, and the size is kept for the next time.
+ * the corner to resize it, and the size is kept for the next time. `locked` (steps being sent) keeps it open: Esc,
+ * an outside click and ✕ do nothing.
  */
 export function Dialog({
     title,
@@ -145,7 +146,8 @@ export function Dialog({
     footer,
     size = 'md',
     bare,
-    resizeKey
+    resizeKey,
+    locked = false
 }: {
     title?: string
     onClose: () => void
@@ -154,16 +156,20 @@ export function Dialog({
     size?: DialogSize
     bare?: boolean
     resizeKey?: string
+    locked?: boolean
 }) {
     const { t } = useI18n()
-    useEscapeOnTop(onClose)
+    const close = () => {
+        if (!locked) onClose()
+    }
+    useEscapeOnTop(close)
     const { panelRef, style } = useRememberedSize(resizeKey)
     const sizeClasses = resizeKey
         ? cn('min-h-80 min-w-[36rem] resize', RESIZABLE_SIZES[size])
         : cn('max-w-full', SIZES[size])
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6" onMouseDown={onClose}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6" onMouseDown={close}>
             <div
                 ref={panelRef}
                 role="dialog"
@@ -178,7 +184,13 @@ export function Dialog({
                 {!bare && (
                     <div className="flex items-center justify-between border-b border-line px-5 py-3">
                         <h2 className="text-lg font-semibold">{title}</h2>
-                        <IconButton label={t('common.close')} icon={<X size={16} />} size="sm" onClick={onClose} />
+                        <IconButton
+                            label={t('common.close')}
+                            icon={<X size={16} />}
+                            size="sm"
+                            disabled={locked}
+                            onClick={close}
+                        />
                     </div>
                 )}
                 {bare ? children : <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>}

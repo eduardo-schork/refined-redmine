@@ -68,6 +68,13 @@ export function formatClock(ms: number): string {
     return `${hours}:${String(minutes).padStart(2, '0')}`
 }
 
+/** 2.83 → "2:50": hours as hours and minutes, rounded to the minute, the way people read them. */
+export function hoursClock(hours: number): string {
+    const minutes = Math.round(Math.abs(hours) * 60)
+    const sign = hours < 0 && minutes > 0 ? '-' : ''
+    return sign + formatClock(minutes * 60_000)
+}
+
 /** "0:07:12": with seconds, for the stopwatch on screen. */
 export function formatStopwatch(ms: number): string {
     const totalSeconds = Math.floor(Math.max(0, ms) / 1000)

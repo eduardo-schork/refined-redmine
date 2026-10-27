@@ -15,10 +15,11 @@ import {
     Settings as SettingsIcon,
     Users
 } from 'lucide-react'
-import { useRef, type DragEvent } from 'react'
+import { useRef, useState, type DragEvent, type KeyboardEvent, type PointerEvent } from 'react'
 import type { Board } from '@domain/board/board'
 import type { MonitorStatus } from '@domain/monitor/monitor-status'
 import { displayName } from '@domain/redmine/entities'
+import { useBoardCount } from '@/hooks/boards'
 import { unreadCount, useMonitorStatus, useNotifications } from '@/hooks/notifications'
 import { useUpdateStatus } from '@/hooks/updates'
 import { useSettings, useUpdateSettings } from '@/hooks/session'
@@ -26,6 +27,14 @@ import { useI18n } from '@/lib/i18n'
 import type { NavigateOptions, Route } from '@/lib/router'
 import { moveItem } from '@/lib/move-item'
 import { NEW_ISSUE_SHORTCUT, SEARCH_SHORTCUT } from '@/lib/shortcuts'
+import {
+    clampSidebarWidth,
+    loadSidebarWidth,
+    saveSidebarWidth,
+    SIDEBAR_DEFAULT_WIDTH,
+    SIDEBAR_MAX_WIDTH,
+    SIDEBAR_MIN_WIDTH
+} from '@/lib/sidebar-width'
 import { Avatar } from '../atoms/Avatar'
 import { Badge } from '../atoms/Badge'
 import { Kbd } from '../atoms/Kbd'
@@ -54,9 +63,14 @@ export function Sidebar({
     const boards = settings.boards
     const activeBoardId = route?.page === 'board' ? (route.boardId ?? boards[0]?.id) : undefined
     const isActive = (page: Route['page']) => route?.page === page
+    const sidebarWidth = useSidebarWidth()
 
     return (
-        <aside className="flex w-60 shrink-0 flex-col border-r border-line bg-panel">
+        <aside
+            className="relative flex shrink-0 flex-col border-r border-line bg-panel"
+            style={{ width: sidebarWidth.width }}
+        >
+            <ResizeHandle sidebar={sidebarWidth} />
             <div className="drag h-12 shrink-0" />
             <div className="mx-2 mb-2 flex gap-1.5">
                 <button
@@ -226,11 +240,97 @@ function BoardNavList({
                 active={activeBoardId === board.id}
                 onClick={(newTab) => onNavigate({ page: 'board', boardId: board.id }, { newTab })}
                 icon={<KanbanSquare size={15} />}
+                title={board.name}
             >
-                {board.name}
+                <span className="min-w-0 flex-1 truncate">{board.name}</span>
+                <BoardCountBadge boardId={board.id} />
             </NavItem>
         </div>
     ))
+}
+
+/** How many issues the board has, at a glance (like the redmine-adapter); "!" when its query fails. */
+function BoardCountBadge({ boardId }: { boardId: string }) {
+    const { t, error } = useI18n()
+    const count = useBoardCount(boardId)
+    if (count.isError) {
+        return (
+            <Badge tone="outline" className="font-semibold text-danger" title={error(count.error)}>
+                !
+            </Badge>
+        )
+    }
+    if (count.data === undefined || count.data === null) return null
+    return (
+        <Badge tone="outline" className="tabular-nums" title={t('nav.boardCount', { count: count.data })}>
+            {count.data}
+        </Badge>
+    )
+}
+
+/** The width follows the pointer while dragging and is saved when the drag ends. */
+function useSidebarWidth() {
+    const [width, setWidth] = useState(loadSidebarWidth)
+    const resize = (next: number) => setWidth(clampSidebarWidth(next))
+    const commit = (next: number) => {
+        const clamped = clampSidebarWidth(next)
+        setWidth(clamped)
+        saveSidebarWidth(clamped)
+    }
+    return { width, resize, commit }
+}
+
+const KEYBOARD_STEPS: Record<string, number> = { ArrowLeft: -16, ArrowRight: 16 }
+
+/**
+ * The sidebar's right edge: drag it to widen the sidebar (within limits), double-click for the default width, or
+ * focus it and use the arrows. `no-drag`: the window's drag region at the top would swallow the pointer.
+ */
+function ResizeHandle({ sidebar }: { sidebar: ReturnType<typeof useSidebarWidth> }) {
+    const { t } = useI18n()
+    const dragStart = useRef<{ x: number; width: number } | undefined>(undefined)
+    const widthAt = (event: PointerEvent) => {
+        const start = dragStart.current
+        return start ? start.width + event.clientX - start.x : sidebar.width
+    }
+    const beginDrag = (event: PointerEvent<HTMLDivElement>) => {
+        event.preventDefault()
+        event.currentTarget.setPointerCapture(event.pointerId)
+        dragStart.current = { x: event.clientX, width: sidebar.width }
+    }
+    const drag = (event: PointerEvent) => {
+        if (dragStart.current) sidebar.resize(widthAt(event))
+    }
+    const endDrag = (event: PointerEvent) => {
+        if (!dragStart.current) return
+        sidebar.commit(widthAt(event))
+        dragStart.current = undefined
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+        const step = KEYBOARD_STEPS[event.key]
+        if (!step) return
+        event.preventDefault()
+        sidebar.commit(sidebar.width + step)
+    }
+    return (
+        <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label={t('nav.resize')}
+            aria-valuenow={sidebar.width}
+            aria-valuemin={SIDEBAR_MIN_WIDTH}
+            aria-valuemax={SIDEBAR_MAX_WIDTH}
+            tabIndex={0}
+            title={t('nav.resizeHint')}
+            onPointerDown={beginDrag}
+            onPointerMove={drag}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+            onDoubleClick={() => sidebar.commit(SIDEBAR_DEFAULT_WIDTH)}
+            onKeyDown={handleKeyDown}
+            className="no-drag absolute inset-y-0 -right-1 z-20 w-2 cursor-col-resize outline-none after:absolute after:inset-y-0 after:left-[3px] after:w-0.5 hover:after:bg-accent/60 focus-visible:after:bg-accent active:after:bg-accent"
+        />
+    )
 }
 
 type MonitorTone = 'ok' | 'muted' | 'danger'

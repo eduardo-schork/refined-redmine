@@ -130,6 +130,8 @@ export interface RefinedApi {
     }
     boards: {
         issues(boardId: string): BoardIssues
+        /** Total issues of the board's source (sidebar); null for an automatic sprint with no version today. */
+        count(boardId: string): number | null
         /** `notifications`: the board's monitor (null switches it off; omitted keeps it as it is). */
         save(board: Board, notifications?: BoardNotifications): SettingsView
         remove(boardId: string): SettingsView
@@ -216,7 +218,7 @@ export const API_METHODS = {
     overtime: ['list', 'add', 'update', 'remove', 'setPaid'],
     attachments: ['preview', 'open'],
     timer: ['status', 'start', 'pause', 'resume', 'stop', 'discard'],
-    boards: ['issues', 'save', 'remove', 'move', 'suggestColumns'],
+    boards: ['issues', 'count', 'save', 'remove', 'move', 'suggestColumns'],
     sprints: ['list', 'stats', 'inspectProject'],
     calendar: ['list', 'save', 'remove'],
     notifications: [

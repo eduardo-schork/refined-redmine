@@ -6,19 +6,28 @@ import { useI18n } from '@/lib/i18n'
 const SLACK_LINES = 3
 
 /** Height that shows `lines` lines of the content, or null when the content is not much taller than that. */
-function clampedHeight(content: HTMLElement, lines: number): number | null {
+function clampedHeight(content: HTMLElement, lines: number, slackLines: number): number | null {
     const styled = content.firstElementChild ?? content
     const lineHeight = parseFloat(getComputedStyle(styled).lineHeight)
     if (!lineHeight) return null
-    const tooTall = content.offsetHeight > lineHeight * (lines + SLACK_LINES)
+    const tooTall = content.offsetHeight > lineHeight * (lines + slackLines)
     return tooTall ? lineHeight * lines : null
 }
 
 /**
  * Shows the first `lines` lines of long content, fading out, with a button to show the rest. The fade is a gradient
  * laid over the text, not a CSS mask: a mask would also cut windows opened from inside the text (an image preview).
+ * Content up to `slackLines` lines taller than the limit is shown whole.
  */
-export function ClampedContent({ lines, children }: { lines: number; children: ReactNode }) {
+export function ClampedContent({
+    lines,
+    slackLines = SLACK_LINES,
+    children
+}: {
+    lines: number
+    slackLines?: number
+    children: ReactNode
+}) {
     const { t } = useI18n()
     const contentRef = useRef<HTMLDivElement>(null)
     const [limit, setLimit] = useState<number | null>(null)
@@ -28,12 +37,12 @@ export function ClampedContent({ lines, children }: { lines: number; children: R
     useLayoutEffect(() => {
         const content = contentRef.current
         if (!content) return
-        const measure = () => setLimit(clampedHeight(content, lines))
+        const measure = () => setLimit(clampedHeight(content, lines, slackLines))
         measure()
         const observer = new ResizeObserver(measure)
         observer.observe(content)
         return () => observer.disconnect()
-    }, [lines])
+    }, [lines, slackLines])
 
     const clamped = limit !== null && !expanded
     const clampStyle = clamped ? { maxHeight: limit, overflow: 'hidden' } : undefined

@@ -8,7 +8,7 @@ import { useIssueStyle } from '@/lib/issue-style'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/cn'
 import { Avatar } from '../atoms/Avatar'
-import { DueChip, PriorityChip, TrackerLabel, VersionChip } from './issue-chips'
+import { DueChip, EstimateChip, PriorityChip, TrackerLabel, VersionChip } from './issue-chips'
 import { StatusTag } from './StatusTag'
 
 export interface IssueCardOptions {
@@ -70,12 +70,14 @@ export function IssueCard({
 
 function CardTags({ issue, now, options }: { issue: Issue; now: Date; options: IssueCardOptions }) {
     const hasVersion = Boolean(issue.fixed_version)
+    const hasEstimate = Boolean(issue.estimated_hours)
     const hasDue = Boolean(issue.due_date) && !issue.status.is_closed
-    const hasTags = hasVersion || hasDue || options.showStatus || options.showProject
+    const hasTags = hasVersion || hasEstimate || hasDue || options.showStatus || options.showProject
     if (!hasTags) return null
     return (
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <VersionChip issue={issue} />
+            <EstimateChip issue={issue} />
             <DueChip issue={issue} now={now} />
             {options.showStatus && <StatusTag status={issue.status} />}
             {options.showProject && <span className="truncate text-2xs text-muted">{issue.project.name}</span>}

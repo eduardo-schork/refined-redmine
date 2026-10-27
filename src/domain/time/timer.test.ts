@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { elapsedHours, elapsedMs, formatClock, formatStopwatch, pauseTimer, resumeTimer, startTimer } from './timer'
+import {
+    elapsedHours,
+    elapsedMs,
+    formatClock,
+    formatStopwatch,
+    hoursClock,
+    pauseTimer,
+    resumeTimer,
+    startTimer
+} from './timer'
 
 const at = (time: string) => new Date(`2026-10-01T${time}:00Z`)
 const issue = { id: 1201, subject: 'CEP no checkout' }
@@ -32,6 +41,17 @@ describe('timer', () => {
         expect(resumeTimer(running, at('09:10'))).toBe(running)
         const paused = pauseTimer(running, at('09:20'), 'manual')
         expect(pauseTimer(paused, at('09:30'), 'idle')).toBe(paused)
+    })
+})
+
+describe('hoursClock', () => {
+    it('shows decimal hours as hours and minutes, rounded to the minute', () => {
+        expect(hoursClock(2.83)).toBe('2:50')
+        expect(hoursClock(1.5)).toBe('1:30')
+        expect(hoursClock(8)).toBe('8:00')
+        expect(hoursClock(0.25)).toBe('0:15')
+        expect(hoursClock(-1.5)).toBe('-1:30')
+        expect(hoursClock(0.001)).toBe('0:00')
     })
 })
 

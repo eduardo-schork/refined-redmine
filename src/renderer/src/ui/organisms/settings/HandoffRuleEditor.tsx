@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Plus, Send, X } from 'lucide-react'
-import type { ClosingStep, HandoffRule } from '@domain/automation/handoff'
+import { fromStatusPath, statusPath, type ClosingStep, type HandoffRule } from '@domain/automation/handoff'
 import type { Named } from '@domain/redmine/entities'
 import { useIssueEditOptions } from '@/hooks/issues'
 import { useProjects, useStatuses, useTrackers } from '@/hooks/reference'
@@ -8,7 +8,7 @@ import { useTimeActivities } from '@/hooks/time'
 import { cn } from '@/lib/cn'
 import { useI18n } from '@/lib/i18n'
 import { Button } from '../../atoms/Button'
-import { Input, Select, Textarea } from '../../atoms/fields'
+import { AddSelect, Input, Select, Textarea } from '../../atoms/fields'
 import { IconButton } from '../../atoms/IconButton'
 import { Dialog } from '../../molecules/Dialog'
 import { Field, ToggleField } from '../../molecules/Field'
@@ -158,7 +158,6 @@ function VisibilityFields({ draft, change }: { draft: HandoffRule; change: Chang
 function DefaultsFields({ draft, change }: { draft: HandoffRule; change: Change }) {
     const { t } = useI18n()
     const trackers = useTrackers().data ?? []
-    const statuses = useStatuses().data ?? []
     return (
         <div className="grid grid-cols-2 gap-4">
             {draft.mode === 'other' && (
@@ -176,19 +175,15 @@ function DefaultsFields({ draft, change }: { draft: HandoffRule; change: Change 
                     </Select>
                 </Field>
             )}
-            <Field label={t('automation.defaultStatus')}>
-                <Select
-                    value={draft.statusId ?? NONE}
-                    onChange={(event) => change({ statusId: optionalNumber(event.target.value) })}
-                >
-                    <option value={NONE}>{t('bulk.keep')}</option>
-                    {statuses.map((status) => (
-                        <option key={status.id} value={status.id}>
-                            {status.name}
-                        </option>
-                    ))}
-                </Select>
-            </Field>
+            <div className="col-span-2">
+                <Labeled label={t('automation.defaultStatus')} hint={t('automation.statusPathHint')}>
+                    <StatusPathField
+                        path={statusPath(draft)}
+                        emptyLabel={t('bulk.keep')}
+                        onChange={(path) => change(fromStatusPath(path))}
+                    />
+                </Labeled>
+            </div>
             <AssigneeField draft={draft} change={change} />
         </div>
     )
@@ -297,18 +292,78 @@ function TimeFields({ draft, change }: { draft: HandoffRule; change: Change }) {
     )
 }
 
+/**
+ * The statuses set in order, one select each; the last one is the final status and the others are gone through
+ * first, because the workflow may not allow going straight to it.
+ */
+function StatusPathField({
+    path,
+    emptyLabel,
+    onChange
+}: {
+    path: number[]
+    emptyLabel: string
+    onChange: (path: number[]) => void
+}) {
+    const { t } = useI18n()
+    const statuses = useStatuses().data ?? []
+    const options = statuses.map((status) => (
+        <option key={status.id} value={status.id}>
+            {status.name}
+        </option>
+    ))
+    const replace = (index: number, statusId: number) =>
+        onChange(path.map((current, position) => (position === index ? statusId : current)))
+    const remove = (index: number) => onChange(path.filter((_, position) => position !== index))
+
+    if (!path.length) {
+        return (
+            <Select className="w-56" value={NONE} onChange={(event) => onChange([Number(event.target.value)])}>
+                <option value={NONE}>{emptyLabel}</option>
+                {options}
+            </Select>
+        )
+    }
+    return (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+            {path.map((statusId, index) => (
+                <span key={index} className="flex items-center gap-1">
+                    {index > 0 && <span className="pr-1 text-muted">→</span>}
+                    <Select
+                        className="w-48"
+                        value={statusId}
+                        onChange={(event) => replace(index, Number(event.target.value))}
+                    >
+                        {options}
+                    </Select>
+                    <IconButton
+                        label={t('automation.removeStatus')}
+                        icon={<X size={14} />}
+                        size="sm"
+                        onClick={() => remove(index)}
+                    />
+                </span>
+            ))}
+            <AddSelect onChange={(event) => onChange([...path, Number(event.target.value)])}>
+                <option value={NONE}>{t('automation.thenStatus')}</option>
+                {options}
+            </AddSelect>
+        </div>
+    )
+}
+
 function ClosingStepsFields({ draft, change }: { draft: HandoffRule; change: Change }) {
     const { t } = useI18n()
     const trackers = useTrackers().data ?? []
-    const statuses = useStatuses().data ?? []
     const steps = draft.closingSteps
     const setStep = (index: number, patch: Partial<ClosingStep>) =>
         change({ closingSteps: steps.map((step, position) => (position === index ? { ...step, ...patch } : step)) })
     return (
         <Labeled label={t('automation.closing')} hint={t('automation.closingHint')}>
             {steps.map((step, index) => (
-                <div key={index} className="flex items-center gap-2">
+                <div key={index} className="flex items-start gap-2">
                     <Select
+                        className="w-48 shrink-0"
                         value={step.trackerId || NONE}
                         onChange={(event) => setStep(index, { trackerId: Number(event.target.value) })}
                     >
@@ -319,18 +374,17 @@ function ClosingStepsFields({ draft, change }: { draft: HandoffRule; change: Cha
                             </option>
                         ))}
                     </Select>
-                    <span className="text-muted">→</span>
-                    <Select
-                        value={step.statusId || NONE}
-                        onChange={(event) => setStep(index, { statusId: Number(event.target.value) })}
-                    >
-                        <option value={NONE}>{t('automation.pickStatus')}</option>
-                        {statuses.map((status) => (
-                            <option key={status.id} value={status.id}>
-                                {status.name}
-                            </option>
-                        ))}
-                    </Select>
+                    <span className="pt-2 text-muted">→</span>
+                    <div className="min-w-0 flex-1">
+                        <StatusPathField
+                            path={statusPath(step)}
+                            emptyLabel={t('automation.pickStatus')}
+                            onChange={(path) => {
+                                const { statusId, viaStatusIds } = fromStatusPath(path)
+                                setStep(index, { statusId: statusId ?? 0, viaStatusIds })
+                            }}
+                        />
+                    </div>
                     <IconButton
                         label={t('automation.removeStep')}
                         icon={<X size={14} />}

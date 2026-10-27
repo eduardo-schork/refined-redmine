@@ -226,19 +226,21 @@ function IssueModal({ id, onClose, canGoBack }: { id: number; onClose: () => voi
             {issue && (
                 <div className="flex min-h-0 flex-1">
                     <div className="min-w-0 flex-1 overflow-y-auto px-6 py-5">
-                        <DescriptionSection issue={issue} {...markdownLinks} />
-                        <IssueDetailTabs
-                            key={issue.id}
+                        <IssueMain
                             issue={issue}
+                            tabsOnTop={settings.workspace.issueTabs}
+                            description={<DescriptionSection issue={issue} {...markdownLinks} />}
+                            history={
+                                <History
+                                    issue={issue}
+                                    statusName={statusName}
+                                    composer={<CommentBox issue={issue} comment={comment} saving={saving} />}
+                                    {...markdownLinks}
+                                />
+                            }
                             links={links}
                             onOpenIssue={openIssue}
                             onNewSubtask={() => openNewIssue(subtaskDefaults(issue))}
-                        />
-                        <History
-                            issue={issue}
-                            statusName={statusName}
-                            composer={<CommentBox issue={issue} comment={comment} saving={saving} />}
-                            {...markdownLinks}
                         />
                     </div>
 
@@ -246,6 +248,45 @@ function IssueModal({ id, onClose, canGoBack }: { id: number; onClose: () => voi
                 </div>
             )}
         </Dialog>
+    )
+}
+
+/** Description, the detail tabs and the history stacked (scrolling down), or all of them as tabs on top. */
+function IssueMain({
+    issue,
+    tabsOnTop,
+    description,
+    history,
+    links,
+    onOpenIssue,
+    onNewSubtask
+}: {
+    issue: IssueDetail
+    tabsOnTop: boolean
+    description: ReactNode
+    history: ReactNode
+    links: RedmineLinks
+    onOpenIssue: (id: number) => void
+    onNewSubtask: () => void
+}) {
+    // A new key also when the layout changes, so the first tab is the right one for it.
+    const tabs = (
+        <IssueDetailTabs
+            key={`${issue.id}:${tabsOnTop}`}
+            issue={issue}
+            links={links}
+            wholeIssue={tabsOnTop ? { description, history } : undefined}
+            onOpenIssue={onOpenIssue}
+            onNewSubtask={onNewSubtask}
+        />
+    )
+    if (tabsOnTop) return tabs
+    return (
+        <>
+            {description}
+            {tabs}
+            {history}
+        </>
     )
 }
 
@@ -676,7 +717,7 @@ function History({
         saveJournalOrder(next)
     }
     return (
-        <section className="mt-7">
+        <section className="mt-7 first:mt-0">
             <div className="mb-2 flex items-center justify-between">
                 <Overline>{t('issue.history', { count: journals.length })}</Overline>
                 <Button variant="ghost" className="h-7 px-2 text-xs" onClick={toggleOrder}>

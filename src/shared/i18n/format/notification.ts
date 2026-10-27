@@ -1,9 +1,10 @@
-import { MINE_MONITOR_ID } from '@domain/monitor/monitor'
+import { isBoardMonitorId, MINE_MONITOR_ID } from '@domain/monitor/monitor'
 import type {
     AppNotification,
     IssueChange,
     IssueRef,
     NotificationPayload,
+    NotificationSource,
     QueueExitReason
 } from '@domain/notification/notification'
 import { parseLocal, startOfDay } from '@domain/shared/date'
@@ -164,17 +165,23 @@ function formatReminder(
     }
 }
 
-/** Monitors other than "my issues" that saw the change, e.g. "via Sprint board". */
+/** "My issues", "board Sprint" or "monitor Bugs". Older notifications have no type: a board is told by its id. */
+export function describeSource(source: NotificationSource, t: TFunction): string {
+    if (source.monitorId === MINE_MONITOR_ID) return t('monitors.mine')
+    const isBoard = source.sourceType === 'board' || isBoardMonitorId(source.monitorId)
+    return t(isBoard ? 'notification.sourceBoard' : 'notification.sourceMonitor', { name: source.name })
+}
+
+/** Where the notification came from, e.g. "via My issues, board Sprint". */
 export function describeSources(notification: AppNotification, t: TFunction): string | undefined {
     const payload = notification.payload
     // An entry/exit notification is already titled with the monitor name.
     const titleName = 'queryName' in payload ? payload.queryName : undefined
-    const names = (notification.sources ?? [])
-        .filter((source) => source.monitorId !== MINE_MONITOR_ID)
-        .map((source) => source.name)
-        .filter((name) => name && name !== titleName)
-    if (!names.length) return undefined
-    return t('notification.via', { names: names.join(', ') })
+    const labels = (notification.sources ?? [])
+        .filter((source) => source.monitorId === MINE_MONITOR_ID || (source.name && source.name !== titleName))
+        .map((source) => describeSource(source, t))
+    if (!labels.length) return undefined
+    return t('notification.via', { names: labels.join(', ') })
 }
 
 /** Turns the structured notification into text in the current language. */

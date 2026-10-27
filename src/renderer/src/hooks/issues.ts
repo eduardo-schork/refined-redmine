@@ -1,5 +1,5 @@
 import type { BulkChange, IssueNoteChange } from '@domain/redmine/issue-tree'
-import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, type Query, type QueryClient } from '@tanstack/react-query'
 import type { Issue } from '@domain/redmine/entities'
 import type { IssueFieldsChange, NewIssue } from '@domain/redmine/issue-edit'
 import { MY_OPEN_QUEUE } from '@domain/redmine/issue-filter'
@@ -13,10 +13,10 @@ export const issueQuery = (id: number) => ({ queryKey: qk.issue(id), queryFn: ()
 export const useIssue = (id: number, enabled = true) => useQuery({ ...issueQuery(id), enabled })
 
 /** Subtasks and related issues of `issueId`, by number. */
-export const useLinkedIssues = (issueId: number, ids: number[]) =>
+export const useLinkedIssues = (issueId: number, ids: number[], enabled = true) =>
     useQuery({
         queryKey: qk.linkedIssues(issueId, ids),
-        enabled: ids.length > 0,
+        enabled: enabled && ids.length > 0,
         queryFn: () => api.issues.byIds(ids),
         select: (issues) => new Map(issues.map((issue) => [issue.id, issue]))
     })
@@ -53,17 +53,31 @@ export function fetchAllowedStatuses(queryClient: QueryClient, issue: Issue) {
     })
 }
 
-function invalidateIssueViews(queryClient: QueryClient, id: number) {
-    void queryClient.invalidateQueries({ queryKey: qk.issue(id) })
+/**
+ * The changed issues (with their related issues and tree) and, once, the boards and the queue that list them. Not the
+ * nearby issues of a handoff left open after a failure: up to 60 reads, and they only help to pick the target.
+ */
+function refreshIssueViews(queryClient: QueryClient, ids: number[]) {
+    const notNearby = (query: Query) => query.queryKey[2] !== 'nearby'
+    for (const id of new Set(ids)) void queryClient.invalidateQueries({ queryKey: qk.issue(id), predicate: notNearby })
     void queryClient.invalidateQueries({ queryKey: qk.boardIssuesAll })
     void queryClient.invalidateQueries({ queryKey: qk.myQueue })
+}
+
+/**
+ * For multi-step actions (bulk edit, trâmites): one refresh when every step ran, instead of reading the boards and
+ * the issue tree again after each issue.
+ */
+export function useRefreshIssueViews() {
+    const queryClient = useQueryClient()
+    return (ids: number[]) => refreshIssueViews(queryClient, ids)
 }
 
 export function useChangeIssueStatus(id: number) {
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: (statusId: number) => api.issues.changeStatus(id, statusId),
-        onSuccess: () => invalidateIssueViews(queryClient, id)
+        onSuccess: () => refreshIssueViews(queryClient, [id])
     })
 }
 
@@ -71,7 +85,7 @@ export function useCommentOnIssue(id: number) {
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: (notes: string) => api.issues.comment(id, notes),
-        onSuccess: () => invalidateIssueViews(queryClient, id)
+        onSuccess: () => refreshIssueViews(queryClient, [id])
     })
 }
 
@@ -107,7 +121,7 @@ export function useEditIssue(id: number) {
         mutationFn: (change: IssueFieldsChange) => api.issues.edit(id, change),
         onSuccess: (result) => {
             queryClient.setQueryData(qk.issue(id), result.issue)
-            invalidateIssueViews(queryClient, id)
+            refreshIssueViews(queryClient, [id])
         }
     })
 }
@@ -130,13 +144,11 @@ export function useCreateIssue() {
 export const useIssueTree = (id: number, enabled = true) =>
     useQuery({ queryKey: qk.issueTree(id), queryFn: () => api.issues.tree(id), gcTime: 0, enabled })
 
-export function useBulkEdit() {
-    const queryClient = useQueryClient()
-    return useMutation({
-        mutationFn: ({ id, change }: { id: number; change: BulkChange }) => api.issues.bulkEdit(id, change),
-        onSuccess: (_result, { id }) => invalidateIssueViews(queryClient, id)
+/** Only used by multi-step actions, which refresh the views once at the end (`useRefreshIssueViews`). */
+export const useBulkEdit = () =>
+    useMutation({
+        mutationFn: ({ id, change }: { id: number; change: BulkChange }) => api.issues.bulkEdit(id, change)
     })
-}
 
 /** Issues around this one with their journals: targets and cited notes of a handoff. */
 export const useNearbyIssues = (id: number, trackerIds: number[]) =>
@@ -146,11 +158,14 @@ export const useNearbyIssues = (id: number, trackerIds: number[]) =>
         gcTime: 0
     })
 
-export function useCommentAndChange() {
+/** `refreshViews: false` in multi-step actions, which refresh once at the end (`useRefreshIssueViews`). */
+export function useCommentAndChange(refreshViews = true) {
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: ({ id, change, uploads }: { id: number; change: IssueNoteChange; uploads: IssueUpload[] }) =>
             api.issues.commentAndChange(id, change, uploads),
-        onSuccess: (_result, { id }) => invalidateIssueViews(queryClient, id)
+        onSuccess: (_result, { id }) => {
+            if (refreshViews) refreshIssueViews(queryClient, [id])
+        }
     })
 }

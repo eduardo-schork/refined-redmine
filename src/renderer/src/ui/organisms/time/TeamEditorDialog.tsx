@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import type { Named } from '@domain/redmine/entities'
-import type { Team } from '@domain/time/team'
+import { scheduledHoursPerDay } from '@domain/time/business-hours'
+import type { Team, TeamMember } from '@domain/time/team'
+import { parseHours } from '@domain/time/time-entry'
 import { useIssueEditOptions } from '@/hooks/issues'
 import { useProjects } from '@/hooks/reference'
 import { useSettings, useUpdateSettings } from '@/hooks/session'
@@ -33,7 +35,7 @@ export function TeamEditorDialog({
     const settings = useSettings()
     const update = useUpdateSettings()
     const [name, setName] = useState(team?.name ?? '')
-    const [members, setMembers] = useState<Named[]>(team?.members ?? [])
+    const [members, setMembers] = useState<TeamMember[]>(team?.members ?? [])
 
     const persist = (teams: Team[], afterSave: () => void) =>
         update.mutate({ teams }, { onSuccess: afterSave, onError: (saveError) => toast(error(saveError), 'error') })
@@ -80,19 +82,30 @@ export function TeamEditorDialog({
     )
 }
 
-function ChosenMembers({ members, onChange }: { members: Named[]; onChange: (members: Named[]) => void }) {
-    const { t } = useI18n()
+function ChosenMembers({ members, onChange }: { members: TeamMember[]; onChange: (members: TeamMember[]) => void }) {
+    const { t, dates } = useI18n()
+    const scheduleHours = scheduledHoursPerDay(useSettings().workSchedule)
+    const setHours = (memberId: number, hoursPerDay: number | undefined) =>
+        onChange(members.map((member) => (member.id === memberId ? { ...member, hoursPerDay } : member)))
     return (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5">
             <span className="text-xs font-medium text-muted">{t('team.members', { count: members.length })}</span>
-            <div className="flex flex-wrap gap-1.5">
-                {members.length === 0 && <span className="text-sm text-muted">{t('team.noneYet')}</span>}
+            {members.length === 0 && <span className="text-sm text-muted">{t('team.noneYet')}</span>}
+            {members.length > 0 && (
+                <span className="text-xs text-muted">{t('team.hoursHint', { hours: dates.hours(scheduleHours) })}</span>
+            )}
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
                 {members.map((member) => (
-                    <span
+                    <div
                         key={member.id}
-                        className="flex items-center gap-1 rounded-full bg-panel-2 py-0.5 pl-2.5 pr-1 text-xs"
+                        className="flex items-center gap-2 rounded-md bg-panel-2 py-1 pl-2.5 pr-1 text-sm"
                     >
-                        {member.name}
+                        <span className="min-w-0 flex-1 truncate">{member.name}</span>
+                        <MemberHoursInput
+                            member={member}
+                            placeholder={dates.hoursInput(scheduleHours)}
+                            onChange={(hoursPerDay) => setHours(member.id, hoursPerDay)}
+                        />
                         <button
                             aria-label={t('team.removeMember', { name: member.name })}
                             className="rounded-full p-0.5 text-muted hover:text-fg"
@@ -100,10 +113,48 @@ function ChosenMembers({ members, onChange }: { members: Named[]; onChange: (mem
                         >
                             <X size={12} />
                         </button>
-                    </span>
+                    </div>
                 ))}
             </div>
         </div>
+    )
+}
+
+/**
+ * Empty follows the work schedule. Each valid duration counts as it is typed: on macOS clicking "Salvar" does not
+ * take the focus away, so waiting for the blur would save the old value. Leaving the field shows the value counted.
+ */
+function MemberHoursInput({
+    member,
+    placeholder,
+    onChange
+}: {
+    member: TeamMember
+    placeholder: string
+    onChange: (hoursPerDay: number | undefined) => void
+}) {
+    const { t, dates } = useI18n()
+    const shown = (hours?: number) => (hours ? dates.hoursInput(hours) : '')
+    const [text, setText] = useState(shown(member.hoursPerDay))
+    const type = (typed: string) => {
+        setText(typed)
+        if (!typed.trim()) {
+            onChange(undefined)
+            return
+        }
+        const hours = parseHours(typed)
+        if (hours !== null) onChange(hours)
+    }
+    return (
+        <Input
+            className="w-16"
+            value={text}
+            placeholder={placeholder}
+            aria-label={t('team.hoursPerDay', { name: member.name })}
+            title={t('team.hoursPerDay', { name: member.name })}
+            onChange={(event) => type(event.target.value)}
+            onBlur={() => setText(shown(member.hoursPerDay))}
+        />
     )
 }
 

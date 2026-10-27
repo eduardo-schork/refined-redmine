@@ -20,6 +20,8 @@ export interface HandoffRule {
     targetTrackerId?: number
     /** Default new status and assignee (of the target, or of the issue itself); undefined = keep. */
     statusId?: number
+    /** Statuses set one by one before `statusId`, when the workflow does not allow going straight to it. */
+    viaStatusIds?: number[]
     assigneeId?: number
     assigneeName?: string
     /** Comment with one cited note (`other`), or the prefilled comment (`same`). */
@@ -37,6 +39,34 @@ export interface HandoffRule {
 export interface ClosingStep {
     trackerId: number
     statusId: number
+    viaStatusIds?: number[]
+}
+
+interface StatusTarget {
+    statusId?: number
+    viaStatusIds?: number[]
+}
+
+/** The statuses in the order they are set: the ones to go through, then the final one. */
+export function statusPath(target: StatusTarget): number[] {
+    if (!target.statusId) return []
+    return [...(target.viaStatusIds ?? []), target.statusId]
+}
+
+export function fromStatusPath(path: number[]): { statusId?: number; viaStatusIds: number[] } {
+    return { statusId: path.at(-1), viaStatusIds: path.slice(0, -1) }
+}
+
+/** The statuses to go through, while the status chosen when sending is the configured one (another goes straight). */
+export function viaFor(target: StatusTarget, chosenStatusId: number | undefined): number[] | undefined {
+    if (!target.statusId || chosenStatusId !== target.statusId) return undefined
+    return target.viaStatusIds
+}
+
+/** Without a final status there is nothing to go through; empty picks and the final status itself are dropped. */
+function cleanVia(target: StatusTarget): number[] {
+    if (!target.statusId) return []
+    return (target.viaStatusIds ?? []).filter((id) => id && id !== target.statusId)
 }
 
 export const NOTE_PLACEHOLDER = '{{noteSelecionado}}'
@@ -90,12 +120,17 @@ export function cleanRule(rule: HandoffRule): HandoffRule {
     const isOther = rule.mode === 'other'
     const template = rule.template.trim() || (isOther ? DEFAULT_TEMPLATE : '')
     const multiTemplate = rule.multiTemplate.trim() || DEFAULT_MULTI_TEMPLATE
-    const closingSteps = isOther ? rule.closingSteps.filter((step) => step.trackerId && step.statusId) : []
+    const closingSteps = isOther
+        ? rule.closingSteps
+              .filter((step) => step.trackerId && step.statusId)
+              .map((step) => ({ ...step, viaStatusIds: cleanVia(step) }))
+        : []
     return {
         ...rule,
         name,
         template,
         multiTemplate,
+        viaStatusIds: cleanVia(rule),
         closingSteps,
         timeActivityId: rule.logTime ? rule.timeActivityId : undefined
     }

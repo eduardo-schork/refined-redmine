@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Issue, IssueDetail, Relation } from './entities'
-import { closedSubtaskCount, linkedIssueIds, relationGroups } from './linked-issues'
+import { closedSubtaskCount, linkedIssueIds, relationGroups, siblingIds } from './linked-issues'
 
 const relation = (id: number, from: number, to: number, type: string): Relation => ({
     id,
@@ -50,6 +50,18 @@ describe('linkedIssueIds', () => {
         })
 
         expect(linkedIssueIds(issue)).toEqual([301, 302])
+    })
+    it('starts with the parent', () => {
+        expect(linkedIssueIds(detail({ parent: { id: 50 } }))).toEqual([50])
+    })
+})
+
+describe('siblingIds', () => {
+    it("are the parent's other subtasks", () => {
+        const child = (id: number) => ({ id, tracker: { id: 1, name: 'Dev' }, subject: `#${id}` })
+        const parent = detail({ id: 50, children: [child(100), child(101), child(102)] })
+        expect(siblingIds(detail({}), parent)).toEqual([101, 102])
+        expect(siblingIds(detail({}), undefined)).toEqual([])
     })
 })
 

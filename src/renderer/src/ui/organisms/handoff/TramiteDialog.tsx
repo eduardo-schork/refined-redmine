@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { fillTemplate, type HandoffRule } from '@domain/automation/handoff'
+import { fillTemplate, viaFor, type HandoffRule } from '@domain/automation/handoff'
 import type { IssueDetail } from '@domain/redmine/entities'
 import { toggleSubtree } from '@domain/redmine/issue-tree'
-import { useCommentAndChange, useIssueTree } from '@/hooks/issues'
+import { useCommentAndChange, useIssueTree, useRefreshIssueViews } from '@/hooks/issues'
 import { useI18n } from '@/lib/i18n'
 import { stepProblems, useSteps, type Step } from '@/lib/steps'
 import { Dialog } from '../../molecules/Dialog'
@@ -12,7 +12,7 @@ import { StepsFooter } from '../../molecules/StepsFooter'
 import { useToast } from '../../molecules/Toast'
 import { ChoiceFields, choiceKeyOf, KEEP, nothingChosen, toChange, TreeTable, type Choices } from '../BulkEditDialog'
 import { useChosenFiles } from '../IssueCreateDialog'
-import { CommentWithFiles, HoursFields, useHandoffHours, useTimeSteps } from './HandoffParts'
+import { CommentWithFiles, HoursFields, useHandoffHours, useTimeSteps, ViaHint } from './HandoffParts'
 
 export const initialChoices = (rule: HandoffRule): Choices => ({
     status: rule.statusId ? String(rule.statusId) : KEEP,
@@ -50,10 +50,13 @@ export function TramiteDialog({
     const files = useChosenFiles()
     const hours = useHandoffHours(rule, issue)
     const extras = useExtraIssues(issue, rule.bulk)
-    const commentAndChange = useCommentAndChange()
+    const commentAndChange = useCommentAndChange(false)
+    const refreshViews = useRefreshIssueViews()
     const steps = useSteps(error)
 
-    const change = { ...toChange(choices), notes: comment }
+    const statusChange = toChange(choices)
+    const viaStatusIds = viaFor(rule, statusChange.statusId)
+    const change = { ...statusChange, viaStatusIds, notes: comment }
     const contentKey = `${choiceKeyOf(choices)}:${comment.length}:${files.uploads.length}`
     const updateStep = (id: number): Step => ({
         key: `update:${id}:${contentKey}`,
@@ -69,9 +72,12 @@ export function TramiteDialog({
 
     const send = async () => {
         const clean = await steps.run(planned)
-        if (!clean) return
-        toast(t('handoff.sent', { id: issue.id }))
-        onClose()
+        if (clean) {
+            toast(t('handoff.sent', { id: issue.id }))
+            onClose()
+        }
+        // After closing: what only the dialog shows is not read again.
+        refreshViews([issue.id, ...extras.checked])
     }
 
     const footer = (
@@ -89,9 +95,10 @@ export function TramiteDialog({
 
     const title = rule.name || t('handoff.newTramite')
     return (
-        <Dialog title={`${title} · #${issue.id}`} onClose={onClose} size="xl" footer={footer}>
+        <Dialog title={`${title} · #${issue.id}`} onClose={onClose} locked={steps.running} size="xl" footer={footer}>
             <div className="flex flex-col gap-4">
                 <ChoiceFields projectId={issue.project.id} choices={choices} onChange={setChoices} />
+                <ViaHint viaStatusIds={viaStatusIds} className="-mt-2" />
                 <CommentWithFiles
                     comment={comment}
                     onComment={setComment}

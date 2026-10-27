@@ -11,6 +11,7 @@ import {
 import { useSettings } from '@/hooks/session'
 import { localId } from '@/lib/ids'
 import { useI18n } from '@/lib/i18n'
+import { useNameFollowingSource } from '@/lib/name-following-source'
 import { Button } from '../../atoms/Button'
 import { Input, Select } from '../../atoms/fields'
 import { Dialog } from '../../molecules/Dialog'
@@ -49,6 +50,9 @@ export function MonitorEditor({
     const [draft, setDraft] = useState<Monitor>(() => structuredClone(monitor ?? newMonitor()))
     const isMine = draft.id === MINE_MONITOR_ID
     const patch = (fields: Partial<Monitor>) => setDraft((previous) => ({ ...previous, ...fields }))
+    const nameFor = useNameFollowingSource()
+    const setSource: SourceChange = (source, suggestedName) =>
+        setDraft((previous) => ({ ...previous, source, name: nameFor(previous.name, suggestedName) }))
 
     const changeSourceType = (type: ExternalSourceType) => {
         patch({ source: EMPTY_SOURCES[type](), events: defaultEvents(type) })
@@ -83,31 +87,32 @@ export function MonitorEditor({
                 {isMine ? (
                     <h3 className="text-sm font-semibold">{t('monitors.mine')}</h3>
                 ) : (
-                    <div className="grid grid-cols-2 gap-4">
-                        <Field label={t('monitors.name')}>
-                            <Input
-                                autoFocus
-                                value={draft.name}
-                                placeholder={t('monitors.namePlaceholder')}
-                                onChange={(event) => patch({ name: event.target.value })}
-                            />
-                        </Field>
-                        <Field label={t('monitors.source')}>
-                            <Select
-                                value={draft.source.type}
-                                onChange={(event) => changeSourceType(event.target.value as ExternalSourceType)}
-                            >
-                                {EXTERNAL_SOURCE_TYPES.map((type) => (
-                                    <option key={type} value={type}>
-                                        {t(`monitors.sourceType.${type}`)}
-                                    </option>
-                                ))}
-                            </Select>
-                        </Field>
-                    </div>
+                    <Field label={t('monitors.source')}>
+                        <Select
+                            autoFocus={!monitor}
+                            value={draft.source.type}
+                            onChange={(event) => changeSourceType(event.target.value as ExternalSourceType)}
+                        >
+                            {EXTERNAL_SOURCE_TYPES.map((type) => (
+                                <option key={type} value={type}>
+                                    {t(`monitors.sourceType.${type}`)}
+                                </option>
+                            ))}
+                        </Select>
+                    </Field>
                 )}
 
-                <SourceFields draft={draft} onPatch={patch} />
+                <SourceFields draft={draft} onPatch={patch} onSource={setSource} />
+
+                {!isMine && (
+                    <Field label={t('monitors.name')}>
+                        <Input
+                            value={draft.name}
+                            placeholder={t('monitors.namePlaceholder')}
+                            onChange={(event) => patch({ name: event.target.value })}
+                        />
+                    </Field>
+                )}
 
                 <div>
                     <h3 className="mb-1 text-xs font-medium text-muted">{t('monitors.events')}</h3>
@@ -131,7 +136,18 @@ export function MonitorEditor({
     )
 }
 
-function SourceFields({ draft, onPatch }: { draft: Monitor; onPatch: (fields: Partial<Monitor>) => void }) {
+/** `suggestedName`: what the monitor could be called with this source (the saved query's or the board's name). */
+type SourceChange = (source: MonitorSource, suggestedName?: string) => void
+
+function SourceFields({
+    draft,
+    onPatch,
+    onSource
+}: {
+    draft: Monitor
+    onPatch: (fields: Partial<Monitor>) => void
+    onSource: SourceChange
+}) {
     const source = draft.source
     switch (source.type) {
         case 'mine':
@@ -142,11 +158,11 @@ function SourceFields({ draft, onPatch }: { draft: Monitor; onPatch: (fields: Pa
                 />
             )
         case 'query':
-            return <QueryFields draft={draft} onPatch={onPatch} />
+            return <QueryFields queryId={source.queryId} onSource={onSource} />
         case 'filter':
-            return <FilterUrlField url={source.url} onChange={(url) => onPatch({ source: { type: 'filter', url } })} />
+            return <FilterUrlField url={source.url} onChange={(url) => onSource({ type: 'filter', url })} />
         case 'board':
-            return <BoardFields boardId={source.boardId} onPatch={onPatch} />
+            return <BoardFields boardId={source.boardId} onSource={onSource} />
     }
 }
 
@@ -174,15 +190,10 @@ function MineScopesFields({ scopes, onChange }: { scopes: MineScopes; onChange: 
     )
 }
 
-/** Picking a query also names the monitor, if it has no name yet. */
-function QueryFields({ draft, onPatch }: { draft: Monitor; onPatch: (fields: Partial<Monitor>) => void }) {
+function QueryFields({ queryId, onSource }: { queryId: number; onSource: SourceChange }) {
     const { t } = useI18n()
-    const queryId = draft.source.type === 'query' ? draft.source.queryId : undefined
-    const select = (selectedId: number, projectId?: number, name?: string) => {
-        const source: MonitorSource = { type: 'query', queryId: selectedId, projectId }
-        const nameToUse = draft.name.trim() ? draft.name : (name ?? '')
-        onPatch({ source, name: nameToUse })
-    }
+    const select = (selectedId: number, projectId?: number, name?: string) =>
+        onSource({ type: 'query', queryId: selectedId, projectId }, name)
     return (
         <Field label={t('board.editor.query')}>
             <SavedQuerySelect queryId={queryId} onChange={select} />
@@ -190,12 +201,12 @@ function QueryFields({ draft, onPatch }: { draft: Monitor; onPatch: (fields: Par
     )
 }
 
-function BoardFields({ boardId, onPatch }: { boardId: string; onPatch: (fields: Partial<Monitor>) => void }) {
+function BoardFields({ boardId, onSource }: { boardId: string; onSource: SourceChange }) {
     const { t } = useI18n()
     const settings = useSettings()
     const select = (selectedId: string) => {
         const board = settings.boards.find((candidate) => candidate.id === selectedId)
-        onPatch({ source: { type: 'board', boardId: selectedId }, name: board?.name ?? '' })
+        onSource({ type: 'board', boardId: selectedId }, board?.name)
     }
     return (
         <Field label={t('monitors.board')} hint={t('monitors.boardHint')}>

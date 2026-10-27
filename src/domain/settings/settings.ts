@@ -59,6 +59,8 @@ export interface WorkspacePreferences {
     tabs: boolean
     /** Reopen the tabs of the last session when the app starts. */
     restoreTabs: boolean
+    /** Issue detail with description, related issues, attachments, hours and history as tabs on top. */
+    issueTabs: boolean
 }
 
 export interface UpdatePreferences {
@@ -104,7 +106,7 @@ export const DEFAULT_SETTINGS: Settings = {
     openAtLogin: false,
     sound: true,
     updates: DEFAULT_UPDATE_PREFERENCES,
-    workspace: { tabs: true, restoreTabs: true },
+    workspace: { tabs: true, restoreTabs: true, issueTabs: false },
     teams: [],
     handoffRules: [],
     claudeActions: [],

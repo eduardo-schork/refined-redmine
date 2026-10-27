@@ -1,3 +1,4 @@
+import type { MonitorSourceType } from '../monitor/monitor'
 import type { LocalDate, LocalDateTime } from '../shared/date'
 
 export type NotificationKind =
@@ -65,6 +66,8 @@ export type NotificationTarget = { type: 'url'; url: string } | { type: 'route';
 export interface NotificationSource {
     monitorId: string
     name: string
+    /** Board, query, filter or "my issues"; missing in notifications saved before it was recorded. */
+    sourceType?: MonitorSourceType
 }
 
 /** An item of the notification history. */

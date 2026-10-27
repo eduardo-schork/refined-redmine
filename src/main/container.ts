@@ -9,6 +9,7 @@ import { MonitorService } from '@application/services/monitor-service'
 import { UpdateService } from '@application/services/update-service'
 import {
     BoardFilterResolver,
+    CountBoardIssuesUseCase,
     DeleteBoardUseCase,
     ListBoardIssuesUseCase,
     MoveIssueToColumnUseCase,
@@ -215,6 +216,7 @@ export function createContainer(presentation: () => Presentation) {
     const versionStats = new GetVersionStatsUseCase(gateway)
     const inspectProject = new InspectSprintProjectUseCase(gateway)
     const boardIssues = new ListBoardIssuesUseCase(gateway, settings, boardFilter)
+    const boardCount = new CountBoardIssuesUseCase(gateway, settings, boardFilter)
     const suggestColumns = new SuggestBoardColumnsUseCase(gateway, boardFilter)
     const restartMonitor = () => monitor.start()
     const saveBoard = new SaveBoardUseCase(settings, secrets, restartMonitor)
@@ -354,6 +356,7 @@ export function createContainer(presentation: () => Presentation) {
         },
         boards: {
             issues: (boardId) => boardIssues.execute(boardId),
+            count: (boardId) => boardCount.execute(boardId),
             save: (board, notifications) => saveBoard.execute(board, notifications),
             remove: (boardId) => deleteBoard.execute(boardId),
             move: (boardId, issueId, columnId) => moveIssue.execute(boardId, issueId, columnId),

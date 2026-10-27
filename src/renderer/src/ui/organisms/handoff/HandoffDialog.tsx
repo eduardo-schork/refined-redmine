@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import {
     defaultClosingChecks,
     noteNumber,
     renderHandoffComment,
     ruleAppliesTo,
     targetCandidates,
+    viaFor,
     type CitedNote,
     type HandoffRule,
     type NearbyIssue
@@ -12,23 +14,37 @@ import {
 import type { IssueDetail, Journal } from '@domain/redmine/entities'
 import { parseIssueSearch } from '@domain/redmine/issue-search'
 import { toggleSubtree } from '@domain/redmine/issue-tree'
-import { useBulkEdit, useCommentAndChange, useIssue, useIssueTree, useNearbyIssues } from '@/hooks/issues'
+import { RedmineLinks } from '@domain/redmine/links'
+import {
+    useBulkEdit,
+    useCommentAndChange,
+    useIssue,
+    useIssueTree,
+    useNearbyIssues,
+    useRefreshIssueViews
+} from '@/hooks/issues'
 import { useStatuses } from '@/hooks/reference'
+import { useSettings } from '@/hooks/session'
+import { api } from '@/lib/api'
 import { useI18n } from '@/lib/i18n'
 import { useSteps, type Step } from '@/lib/steps'
 import { Input, Select } from '../../atoms/fields'
+import { ClampedContent } from '../../molecules/ClampedContent'
 import { Dialog } from '../../molecules/Dialog'
 import { Field } from '../../molecules/Field'
+import { Markdown } from '../../molecules/Markdown'
 import { StepsFooter } from '../../molecules/StepsFooter'
 import { Alert } from '../../molecules/surfaces'
 import { useToast } from '../../molecules/Toast'
+import { inlineAttachmentRenderer } from '../attachments/InlineAttachment'
 import { ChoiceFields, choiceKeyOf, toChange, TreeTable, type Choices } from '../BulkEditDialog'
 import { useChosenFiles } from '../IssueCreateDialog'
-import { CommentWithFiles, HoursFields, useHandoffHours, useTimeSteps } from './HandoffParts'
+import { CommentWithFiles, HoursFields, useHandoffHours, useTimeSteps, ViaHint } from './HandoffParts'
 import { ignoredNames, initialChoices, StepList, stepLabel } from './TramiteDialog'
 
 const noteKey = (note: CitedNote) => `${note.issueId}#${note.number}`
 const NOTES_SHOWN = 3
+const NOTE_VISIBLE_LINES = 2
 
 function lastNote(issue: IssueDetail): CitedNote | undefined {
     const withNotes = issue.journals.filter((journal) => journal.notes?.trim())
@@ -61,7 +77,7 @@ const wantedTrackers = (rule: HandoffRule, source: IssueDetail) =>
  */
 export function HandoffDialog({
     source,
-    rules,
+    rules: offeredRules,
     initialRuleId,
     initialJournalId,
     onClose
@@ -74,6 +90,9 @@ export function HandoffDialog({
 }) {
     const { t, error } = useI18n()
     const toast = useToast()
+    // The rules offered when the dialog opened: sending may move this issue out of the rule's statuses (a closing
+    // step on it), and the issue read again would no longer offer the rule while the dialog still needs it.
+    const [rules] = useState(offeredRules)
     const [ruleId, setRuleId] = useState(initialRuleId)
     const rule = rules.find((candidate) => candidate.id === ruleId) ?? rules[0]
     const nearbyQuery = useNearbyIssues(source.id, wantedTrackers(rule, source))
@@ -85,8 +104,9 @@ export function HandoffDialog({
     const hours = useHandoffHours(rule, source)
     const extras = useTargetExtras(target.issue, rule.bulk)
     const closing = useClosing(rule, source, nearby, notes.picked)
-    const commentAndChange = useCommentAndChange()
+    const commentAndChange = useCommentAndChange(false)
     const bulkEdit = useBulkEdit()
+    const refreshViews = useRefreshIssueViews()
     const steps = useSteps(error)
 
     const pickRule = (id: string) => {
@@ -96,7 +116,9 @@ export function HandoffDialog({
         notes.reset(next)
     }
     const targetId = target.issue?.id
-    const change = { ...toChange(choices), notes: notes.comment }
+    const statusChange = toChange(choices)
+    const viaStatusIds = viaFor(rule, statusChange.statusId)
+    const change = { ...statusChange, viaStatusIds, notes: notes.comment }
     const contentKey = `${choiceKeyOf(choices)}:${notes.comment.length}:${files.uploads.length}`
     const commentStep = (id: number): Step => ({
         key: `comment:${id}:${contentKey}`,
@@ -106,10 +128,10 @@ export function HandoffDialog({
                 return t('handoff.notApplied', { id, fields: ignoredNames(result.ignored, t) })
         }
     })
-    const closeStep = (id: number, statusId: number): Step => ({
+    const closeStep = ({ issueId: id, statusId, viaStatusIds: via }: ClosingMove): Step => ({
         key: `close:${id}:${statusId}`,
         run: async () => {
-            const result = await bulkEdit.mutateAsync({ id, change: { statusId } })
+            const result = await bulkEdit.mutateAsync({ id, change: { statusId, viaStatusIds: via } })
             if (result.outcome === 'partial') throw new Error(t('handoff.statusNotApplied', { id }))
         }
     })
@@ -119,16 +141,22 @@ export function HandoffDialog({
               commentStep(targetId),
               ...[...extras.checked].map(commentStep),
               ...timeSteps,
-              ...closing.moves.map((move) => closeStep(move.issueId, move.statusId))
+              ...closing.moves.map(closeStep)
           ]
         : []
-    const ready = Boolean(targetId) && Boolean(notes.comment.trim()) && !hours.blocked
+    // The notes of the issues around, the target and the closing all come from the search: nothing before it ends.
+    const searching = nearbyQuery.isPending
+    const ready = !searching && Boolean(targetId) && Boolean(notes.comment.trim()) && !hours.blocked
 
     const send = async () => {
         const clean = await steps.run(planned)
-        if (!clean) return
-        toast(t('handoff.sentTo', { id: targetId }))
-        onClose()
+        if (clean) {
+            toast(t('handoff.sentTo', { id: targetId }))
+            onClose()
+        }
+        // After closing: what only the dialog shows is not read again.
+        const closedIds = closing.moves.map((move) => move.issueId)
+        refreshViews([source.id, ...(targetId ? [targetId] : []), ...extras.checked, ...closedIds])
     }
 
     const footer = (
@@ -144,48 +172,67 @@ export function HandoffDialog({
         />
     )
 
-    return (
-        <Dialog title={`${rule.name} · #${source.id}`} onClose={onClose} size="xl" footer={footer}>
-            <div className="flex flex-col gap-5">
-                {rules.length > 1 && (
-                    <Field label={t('handoff.rule')}>
-                        <Select className="w-72" value={rule.id} onChange={(event) => pickRule(event.target.value)}>
-                            {rules.map((candidate) => (
-                                <option key={candidate.id} value={candidate.id}>
-                                    {candidate.name}
-                                </option>
-                            ))}
-                        </Select>
-                    </Field>
-                )}
-                {nearbyQuery.isError && <Alert>{error(nearbyQuery.error)}</Alert>}
-                <NotePicker sources={noteSources(source, nearby, rule)} notes={notes} />
-                <TargetPicker
-                    candidates={targetCandidates(nearby, rule)}
-                    target={target}
-                    loading={nearbyQuery.isLoading}
-                />
-                {target.issue && (
+    const form = (
+        <>
+            {nearbyQuery.isError && <Alert>{error(nearbyQuery.error)}</Alert>}
+            <NotePicker sources={noteSources(source, nearby, rule)} notes={notes} />
+            <TargetPicker candidates={targetCandidates(nearby, rule)} target={target} />
+            {target.issue && (
+                <>
                     <ChoiceFields projectId={target.issue.project.id} choices={choices} onChange={setChoices} />
-                )}
-                {extras.nodes.length > 0 && (
-                    <div className="flex flex-col gap-1">
-                        <span className="text-xs font-medium text-muted">{t('handoff.alsoOn')}</span>
-                        <TreeTable
-                            nodes={extras.nodes}
-                            checked={extras.checked}
-                            outcomes={{}}
-                            choiceKey=""
-                            onToggle={extras.toggle}
-                        />
-                    </div>
-                )}
-                <CommentWithFiles comment={notes.comment} onComment={notes.setComment} files={files} />
-                <HoursFields hours={hours} />
-                <ClosingFields closing={closing} />
-                <StepList planned={planned} outcomes={steps.outcomes} labelOf={(key) => stepLabel(key, t)} />
+                    <ViaHint viaStatusIds={viaStatusIds} className="-mt-3" />
+                </>
+            )}
+            <AlsoOnFields extras={extras} />
+            <CommentWithFiles comment={notes.comment} onComment={notes.setComment} files={files} />
+            <HoursFields hours={hours} />
+            <ClosingFields closing={closing} />
+            <StepList planned={planned} outcomes={steps.outcomes} labelOf={(key) => stepLabel(key, t)} />
+        </>
+    )
+
+    return (
+        <Dialog
+            title={`${rule.name} · #${source.id}`}
+            onClose={onClose}
+            locked={steps.running}
+            size="xl"
+            footer={footer}
+        >
+            <div className="flex flex-col gap-5">
+                <RulePicker rules={rules} ruleId={rule.id} onPick={pickRule} />
+                {searching ? <SearchingNearby /> : form}
             </div>
         </Dialog>
+    )
+}
+
+/** Only with two or more rules for this issue. */
+function RulePicker({ rules, ruleId, onPick }: { rules: HandoffRule[]; ruleId: string; onPick: (id: string) => void }) {
+    const { t } = useI18n()
+    if (rules.length < 2) return null
+    return (
+        <Field label={t('handoff.rule')}>
+            <Select className="w-72" value={ruleId} onChange={(event) => onPick(event.target.value)}>
+                {rules.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id}>
+                        {candidate.name}
+                    </option>
+                ))}
+            </Select>
+        </Field>
+    )
+}
+
+/** While the issues around are read, with their notes: it may take a few seconds with many of them. */
+function SearchingNearby() {
+    const { t } = useI18n()
+    return (
+        <div role="status" className="flex flex-col items-center gap-2 py-16 text-center text-sm text-muted">
+            <Loader2 size={20} className="animate-spin text-accent" />
+            <span>{t('handoff.searching')}</span>
+            <span className="text-xs">{t('handoff.searchingHint')}</span>
+        </div>
     )
 }
 
@@ -248,12 +295,12 @@ function IssueNotes({ issue, notes }: { issue: IssueDetail; notes: CitedNotes })
                             checked={isPicked(journal)}
                             onChange={() => notes.toggle({ issueId: issue.id, number })}
                         />
-                        <span className="min-w-0 flex-1">
-                            <span className="text-xs text-muted">
+                        <div className="min-w-0 flex-1">
+                            <span className="block text-xs text-muted">
                                 #note-{number} · {journal.user.name} · {dates.dateTime(journal.created_on)}
                             </span>
-                            <span className="line-clamp-2 block">{journal.notes}</span>
-                        </span>
+                            <NoteText issue={issue} text={journal.notes ?? ''} />
+                        </div>
                     </label>
                 )
             })}
@@ -263,6 +310,26 @@ function IssueNotes({ issue, notes }: { issue: IssueDetail; notes: CitedNotes })
                 </button>
             )}
         </div>
+    )
+}
+
+/**
+ * A note as Redmine shows it, two lines until "show all". `#1234` opens in Redmine, so the handoff being written
+ * stays open.
+ */
+function NoteText({ issue, text }: { issue: IssueDetail; text: string }) {
+    const links = new RedmineLinks(useSettings().baseUrl)
+    const openExternal = (url: string) => void api.app.openExternal(url)
+    return (
+        <ClampedContent lines={NOTE_VISIBLE_LINES} slackLines={0}>
+            <Markdown
+                text={text}
+                links={links}
+                onIssue={(id) => openExternal(links.issue(id))}
+                onExternal={openExternal}
+                renderImage={inlineAttachmentRenderer(issue.attachments, links)}
+            />
+        </ClampedContent>
     )
 }
 
@@ -289,23 +356,12 @@ function useTarget(nearby: NearbyIssue[], rule: HandoffRule) {
     }
 }
 
-function TargetPicker({
-    candidates,
-    target,
-    loading
-}: {
-    candidates: NearbyIssue[]
-    target: ReturnType<typeof useTarget>
-    loading: boolean
-}) {
+function TargetPicker({ candidates, target }: { candidates: NearbyIssue[]; target: ReturnType<typeof useTarget> }) {
     const { t } = useI18n()
     return (
         <div className="flex flex-col gap-2">
             <span className="text-xs font-medium text-muted">{t('handoff.target')}</span>
-            {loading && <span className="text-sm text-muted">{t('handoff.searching')}</span>}
-            {!loading && candidates.length === 0 && (
-                <span className="text-sm text-muted">{t('handoff.noCandidates')}</span>
-            )}
+            {candidates.length === 0 && <span className="text-sm text-muted">{t('handoff.noCandidates')}</span>}
             {candidates.map(({ issue }) => (
                 <label key={issue.id} className="flex items-center gap-2 text-sm">
                     <input type="radio" checked={target.id === issue.id} onChange={() => target.choose(issue.id)} />
@@ -341,6 +397,29 @@ function useTargetExtras(target: IssueDetail | undefined, enabled: boolean) {
     return { nodes, checked, toggle: (id: number) => setChecked(toggleSubtree(nodes, checked, id)) }
 }
 
+function AlsoOnFields({ extras }: { extras: ReturnType<typeof useTargetExtras> }) {
+    const { t } = useI18n()
+    if (!extras.nodes.length) return null
+    return (
+        <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted">{t('handoff.alsoOn')}</span>
+            <TreeTable
+                nodes={extras.nodes}
+                checked={extras.checked}
+                outcomes={{}}
+                choiceKey=""
+                onToggle={extras.toggle}
+            />
+        </div>
+    )
+}
+
+interface ClosingMove {
+    issueId: number
+    statusId: number
+    viaStatusIds?: number[]
+}
+
 /** For each closing step, the issues of its tracker with checkboxes; an issue moves only in the first step. */
 function useClosing(rule: HandoffRule, source: IssueDetail, nearby: NearbyIssue[], picked: CitedNote[]) {
     const known: NearbyIssue[] = [{ issue: source, depth: 0 }, ...nearby]
@@ -353,15 +432,16 @@ function useClosing(rule: HandoffRule, source: IssueDetail, nearby: NearbyIssue[
             .filter((candidate) => candidate.issue.tracker.id === step.trackerId)
             .map((candidate) => candidate.issue)
         const isChecked = (id: number) => overrides[`${index}:${id}`] ?? defaults.has(id)
-        return { index, step, statusId: statusOverrides[index] ?? step.statusId, issues, isChecked }
+        const statusId = statusOverrides[index] ?? step.statusId
+        return { index, step, statusId, viaStatusIds: viaFor(step, statusId), issues, isChecked }
     })
     const moved = new Set<number>()
-    const moves = groups.flatMap((group) =>
+    const moves: ClosingMove[] = groups.flatMap((group) =>
         group.issues
             .filter((issue) => group.isChecked(issue.id) && group.statusId && !moved.has(issue.id))
             .map((issue) => {
                 moved.add(issue.id)
-                return { issueId: issue.id, statusId: group.statusId }
+                return { issueId: issue.id, statusId: group.statusId, viaStatusIds: group.viaStatusIds }
             })
     )
     const toggle = (index: number, id: number, checked: boolean) =>
@@ -390,6 +470,7 @@ function ClosingFields({ closing }: { closing: ReturnType<typeof useClosing> }) 
                         </option>
                     ))}
                 </Select>
+                <ViaHint viaStatusIds={group.viaStatusIds} />
             </div>
             {group.issues.length === 0 && <span className="text-sm text-muted">{t('handoff.noneOfTracker')}</span>}
             {group.issues.map((issue) => (
