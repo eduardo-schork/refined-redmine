@@ -2,6 +2,29 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
+## Próxima versão
+
+- **Trâmites com situação em etapas**: quando o fluxo do Redmine não deixa ir direto para a situação desejada (ex.: Em andamento → Nova), a regra pode passar antes por outras, em ordem (ex.: Em pausa → Nova). Vale para a situação padrão da regra e para cada passo de fechamento das tarefas ligadas; o diálogo mostra "Passa antes por …".
+- **Tarefa pai e irmãs nas relacionadas**: a aba **Tarefas relacionadas** mostra a tarefa pai no topo (clique para abri-la) e as outras subtarefas dela, além das subtarefas e relações.
+- **Horas a fazer e capacidade do time na sprint**: o Resumo de todo quadro mostra as **horas a fazer** (o que falta do estimado nas tarefas que ainda estão com o dev, descontando o % concluído; Em aprovação conta, Em teste e Resolvida não), no total e por pessoa. Nos quadros de sprint, e para qualquer sprint (inclusive as próximas) na aba **Capacidade** ao clicar no cartão da sprint na tela Sprints, a **capacidade do time** mostra, para cada pessoa do time escolhido, as horas a fazer, as horas úteis do período da sprint pelo expediente (numa próxima sprint, do início estimado dela até o prazo) e quanto **sobra** para o backlog ou **falta**. Em Tempo do time, cada pessoa pode ter horas por dia próprias (meio período).
+- **Tempo estimado nos cards, na Lista e nas relacionadas**: o tempo estimado de cada tarefa (campo padrão do Redmine) aparece no card, numa coluna nova da Lista (que também ordena por ele) e nas linhas de Tarefas relacionadas. Não faz nenhuma requisição a mais.
+- **Tipo e versão nas relacionadas**: cada linha de tarefa pai, subtarefa ou relação mostra o tipo (com a cor dele, como nos cards) e a versão.
+- **Detalhe da tarefa em abas** (Configurações → Geral → Abas): opção de ver descrição, tarefas relacionadas, anexos, horas e histórico em abas no topo da tarefa, sem rolar até embaixo. O padrão continua como antes.
+- **Horas em horas e minutos**: o app inteiro mostra `2:50 h` em vez de `2,83 h`, e os campos de horas já vêm preenchidos assim. Continua dando para digitar `2,83`, `1h30` ou `90m`.
+- **Botões das automações**: o ícone escolhido para cada trâmite aparece na lista de Configurações → Automações; no detalhe da tarefa, as ações do Claude ficam em laranja (os trâmites seguem em azul) e os botões da linha de ações ficaram maiores.
+- **Correção**: no Alterar em massa e no "Aplicar também em" dos trâmites, as subtarefas aparecem na ordem em que foram criadas (antes vinham da mais nova para a mais antiga).
+- **Alterar em massa e trâmites mais leves**: os quadros e a fila são atualizados uma vez só, no fim, e não a cada tarefa alterada; enquanto o envio acontece, a janela não pode ser fechada.
+- **De onde veio cada notificação**: toda notificação mostra a origem embaixo do texto — "via Minhas tarefas", "via quadro Sprint atual" ou "via monitor Fila do Rafael" (antes as de Minhas tarefas ficavam sem nada).
+- **Cadastro de monitor como o de quadro**: primeiro a origem (consulta, filtro ou quadro), depois o nome, que já vem com o nome da consulta ou do quadro e acompanha a escolha até você digitar um nome seu.
+- **Barra lateral mais larga**: arraste a borda direita do menu para alargá-lo (até um limite) e ler nomes longos de quadros; clique duas vezes na borda para voltar ao tamanho padrão. Passar o mouse num quadro mostra o nome inteiro.
+- **Notas no envio para outra tarefa**: as notas a citar aparecem formatadas (como no histórico) e cortadas em duas linhas, com **Mostrar tudo**.
+- **Correção: tela branca no envio para outra tarefa**: quando um passo de fechamento mudava a situação da própria tarefa para uma em que a regra não aparece (ex.: Desenvolvimento → Em teste), a janela ficava toda branca no fim do envio, mesmo com tudo salvo no Redmine.
+- **Listas com busca prontas para digitar**: ao clicar num campo com busca (projeto, pessoa, versão, consulta salva…), o cursor já vai para a busca; antes era preciso clicar nela, e o que se digitava ia para o campo anterior. Depois de escolher ou apertar Esc, o foco volta para o campo.
+- **Correção: ícone do app no macOS**: em Ajustes do Sistema → Notificações (e nos avisos), o ícone do Refined Redmine aparecia como um quadrado de ruído colorido. Depois de instalar esta versão, se o ícone antigo continuar aparecendo, reinicie o Mac para o sistema ler o ícone novo.
+- **Total de cada quadro no menu**: ao lado do nome de cada quadro, na barra lateral, aparece quantas tarefas a consulta dele tem (como no redmine-adapter). O número é relido no intervalo das verificações automáticas (Configurações → Notificações) e, para o quadro aberto, a cada atualização dele (automática ou pelo botão Atualizar). Se a consulta falhar, aparece um "!" com o motivo ao passar o mouse.
+- **Envio para outra tarefa espera as tarefas ligadas**: enquanto o app procura as tarefas ligadas e as notas delas (as das subtarefas, por exemplo), o envio mostra "Procurando…" e só libera o formulário e o botão Enviar quando termina, em vez de mostrar só as notas da tarefa aberta. A busca também ficou bem mais rápida (lê até 4 tarefas ao mesmo tempo).
+- **Erro inesperado sem tela branca**: se uma tela quebrar, a aba mostra "Algo deu errado" com a mensagem, **Copiar detalhes** (para relatar o problema) e **Tentar de novo**; o menu e as outras abas continuam funcionando.
+
 ## 0.12.0
 
 - **Quadro Ágil**: um quadro com todas as suas tarefas abertas, uma coluna por situação, aparece no topo da lista. Depois é um quadro como os outros: renomeie, mude as colunas ou exclua (ele não volta).

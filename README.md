@@ -15,14 +15,14 @@ No primeiro acesso, informe a URL do Redmine e a chave em **Minha conta → Chav
 
 Como usar cada tela: [manual do usuário](docs/MANUAL.md).
 
-| Comando             | O que faz                                                                |
-| ------------------- | ------------------------------------------------------------------------ |
-| `npm run dev`       | App em modo desenvolvimento (hot reload na interface)                    |
-| `npm run typecheck` | Checagem de tipos                                                        |
-| `npm run dist:mac`  | Gera `.dmg` em `dist/`                                                   |
-| `npm run dist:win`  | Gera instalador `.exe` (NSIS) em `dist/`                                 |
-| `npm run icons`     | Regera os ícones em `build/` e `resources/`                              |
-| `npm run release`   | Publica a versão no GitHub Releases ([docs/RELEASE.md](docs/RELEASE.md)) |
+| Comando             | O que faz                                                                          |
+| ------------------- | ---------------------------------------------------------------------------------- |
+| `npm run dev`       | App em modo desenvolvimento (hot reload na interface)                              |
+| `npm run typecheck` | Checagem de tipos                                                                  |
+| `npm run dist:mac`  | Gera `.dmg` em `dist/`                                                             |
+| `npm run dist:win`  | Gera instalador `.exe` (NSIS) em `dist/`                                           |
+| `npm run icons`     | Regera os ícones em `build/` e `resources/` (no macOS, também o `build/icon.icns`) |
+| `npm run release`   | Publica a versão no GitHub Releases ([docs/RELEASE.md](docs/RELEASE.md))           |
 
 ## Funcionalidades
 
