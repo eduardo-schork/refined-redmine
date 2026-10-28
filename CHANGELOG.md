@@ -2,7 +2,7 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
-## Próxima versão
+## 0.13.0
 
 - **Trâmites com situação em etapas**: quando o fluxo do Redmine não deixa ir direto para a situação desejada (ex.: Em andamento → Nova), a regra pode passar antes por outras, em ordem (ex.: Em pausa → Nova). Vale para a situação padrão da regra e para cada passo de fechamento das tarefas ligadas; o diálogo mostra "Passa antes por …".
 - **Tarefa pai e irmãs nas relacionadas**: a aba **Tarefas relacionadas** mostra a tarefa pai no topo (clique para abri-la) e as outras subtarefas dela, além das subtarefas e relações.
