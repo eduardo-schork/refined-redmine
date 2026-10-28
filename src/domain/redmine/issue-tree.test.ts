@@ -3,6 +3,7 @@ import type { Issue, IssueDetail } from './entities'
 import {
     bulkDiff,
     buildIssueTree,
+    statusHops,
     subtreeIds,
     toggleSubtree,
     treeGuides,
@@ -65,6 +66,13 @@ describe('buildIssueTree', () => {
         expect([...checked]).toEqual([10, 11, 12])
         expect([...toggleSubtree(nodes as IssueTreeNode[], checked, 11)]).toEqual([10])
     })
+    it('lists subtasks in the order they were created, at every level', () => {
+        const tree = buildIssueTree(
+            [{ issue: issue(10), role: 'self' }],
+            [child(30, 10), child(20, 10), child(11, 10), child(32, 20), child(31, 20)]
+        )
+        expect(tree.map((node) => node.issue.id)).toEqual([10, 11, 20, 31, 32, 30])
+    })
     it('draws the tree: last children close the branch, deeper rows keep the line of unfinished levels', () => {
         const tree = buildIssueTree([{ issue: issue(10), role: 'self' }], [child(11, 10), child(12, 11), child(13, 10)])
         expect(tree.map((node) => node.issue.id)).toEqual([10, 11, 12, 13])
@@ -89,5 +97,23 @@ describe('bulkDiff', () => {
     it('lists what Redmine did not apply', () => {
         const saved = issue(10, { fixed_version: { id: 378, name: '3.78' } })
         expect(unappliedFields({ statusId: 2, fixedVersionId: 378 }, saved)).toEqual(['statusId'])
+    })
+    it('ignores the statuses to go through', () => {
+        expect(bulkDiff(issue(10), { statusId: 5, viaStatusIds: [3] })).toEqual({ statusId: 5 })
+    })
+})
+
+describe('statusHops', () => {
+    it('goes through every configured status, in order, before the final one', () => {
+        expect(statusHops(2, [12, 3], 1)).toEqual([12, 3])
+    })
+    it('starts after the current status when it is on the way', () => {
+        expect(statusHops(12, [12, 3], 1)).toEqual([3])
+        expect(statusHops(3, [12, 3], 1)).toEqual([])
+    })
+    it('nothing when already in the final status or without a new status', () => {
+        expect(statusHops(1, [12, 3], 1)).toEqual([])
+        expect(statusHops(2, [12, 3], undefined)).toEqual([])
+        expect(statusHops(2, undefined, 1)).toEqual([])
     })
 })

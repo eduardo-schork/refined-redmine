@@ -3,6 +3,7 @@ import {
     bulkDiff,
     buildIssueTree,
     isEmptyChange,
+    statusHops,
     treeRoots,
     TREE_SUBTASK_LEVELS,
     unappliedFields,
@@ -65,9 +66,25 @@ export class BulkEditUseCase {
         const current = await this.gateway.getIssue(issueId)
         const diff = bulkDiff(current, change)
         if (isEmptyChange(diff)) return { outcome: 'unchanged', ignored: [] }
+        await applyStatusHops(this.gateway, current, change.viaStatusIds, diff.statusId)
         await this.gateway.updateIssue(issueId, diff)
         const saved = await this.gateway.getIssue(issueId)
         const ignored = unappliedFields(diff, saved)
         return { outcome: ignored.length ? 'partial' : 'applied', ignored }
+    }
+}
+
+/**
+ * The statuses to go through before the final one, one update each (Redmine checks the workflow against the status
+ * the issue is in). Whether they all went through shows in the final status, checked after the last update.
+ */
+export async function applyStatusHops(
+    gateway: RedmineGateway,
+    current: Issue,
+    viaStatusIds: number[] | undefined,
+    finalStatusId: number | undefined
+): Promise<void> {
+    for (const statusId of statusHops(current.status.id, viaStatusIds, finalStatusId)) {
+        await gateway.updateIssue(current.id, { statusId })
     }
 }

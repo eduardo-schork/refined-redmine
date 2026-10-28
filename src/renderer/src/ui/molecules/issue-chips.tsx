@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronDown, ChevronsUp, ChevronUp, type LucideIcon } from 'lucide-react'
+import { CalendarDays, ChevronDown, ChevronsUp, ChevronUp, Clock, type LucideIcon } from 'lucide-react'
 import type { Issue, Named } from '@domain/redmine/entities'
 import { dueState, priorityLevel, type DueState, type PriorityLevel } from '@domain/redmine/issue-signals'
 import type { IssueStyleRules } from '@domain/redmine/issue-style'
@@ -81,4 +81,16 @@ export function TrackerLabel({ tracker, className }: { tracker: Named; className
 export function VersionChip({ issue }: { issue: Issue }) {
     if (!issue.fixed_version) return null
     return <span className={cn(CHIP, 'border border-line text-fg/80')}>{issue.fixed_version.name}</span>
+}
+
+/** Redmine's "Tempo estimado" of the issue itself (not the total with subtasks); nothing when empty or zero. */
+export function EstimateChip({ issue }: { issue: Issue }) {
+    const { t, dates } = useI18n()
+    if (!issue.estimated_hours) return null
+    return (
+        <span className={cn(CHIP, 'border border-line text-fg/80')} title={t('issue.estimateTitle')}>
+            <Clock size={12} />
+            {dates.hours(issue.estimated_hours)}
+        </span>
+    )
 }

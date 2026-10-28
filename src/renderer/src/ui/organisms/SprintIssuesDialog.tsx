@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState, type ReactNode } from 'react'
 import { KanbanSquare } from 'lucide-react'
 import type { Issue, IssueStatus } from '@domain/redmine/entities'
 import type { Sprint } from '@domain/sprint/sprint'
@@ -11,10 +11,12 @@ import { Badge } from '../atoms/Badge'
 import { Button } from '../atoms/Button'
 import { Dialog } from '../molecules/Dialog'
 import { PickList } from '../molecules/PickList'
+import { Tabs, tabPanelProps, type TabOption } from '../molecules/Tabs'
 import { ToggleField } from '../molecules/Field'
 import { TrackerLabel } from '../molecules/issue-chips'
 import { PhaseBadge } from '../molecules/sprint'
 import { useOpenIssue } from './IssueModal'
+import { TeamCapacityView } from './TeamCapacityCard'
 
 function uniqueAssigneeNames(issues: Issue[]): string[] {
     const names = issues.map((issue) => issue.assigned_to?.name).filter((name): name is string => Boolean(name))
@@ -35,6 +37,9 @@ function groupByStatus(issues: Issue[], statusOrder: Map<number, number>) {
     }))
 }
 
+type SprintTab = 'issues' | 'capacity'
+
+/** The sprint's issues and, when it has a dev deadline, the team capacity (also for upcoming sprints). */
 export function SprintIssuesDialog({
     sprint,
     onClose,
@@ -45,23 +50,19 @@ export function SprintIssuesDialog({
     onCreateBoard: () => void
 }) {
     const { t, dates, error } = useI18n()
-    const statuses = useStatuses()
-    const myUserId = useSettings().user?.id
+    const tabsId = useId()
     const issues = useVersionIssues(sprint.version.id)
-    const [onlyMine, setOnlyMine] = useState(false)
-    const [assignee, setAssignee] = useState('')
-
+    const [tab, setTab] = useState<SprintTab>('issues')
     const allIssues = useMemo(() => issues.data?.items ?? [], [issues.data])
-    const people = useMemo(() => uniqueAssigneeNames(allIssues), [allIssues])
-    const matchesFilters = (issue: Issue) => {
-        const mineOk = !onlyMine || issue.assigned_to?.id === myUserId
-        const assigneeOk = !assignee || issue.assigned_to?.name === assignee
-        return mineOk && assigneeOk
+    const devDeadline = sprint.devDeadline
+    const options: TabOption<SprintTab>[] = [
+        { value: 'issues', label: t('sprints.tabs.issues'), badge: issues.data ? allIssues.length : undefined },
+        ...(devDeadline ? [{ value: 'capacity' as const, label: t('sprints.tabs.capacity') }] : [])
+    ]
+    const panels: Record<SprintTab, () => ReactNode> = {
+        issues: () => <SprintIssuesPanel issues={allIssues} loaded={Boolean(issues.data)} />,
+        capacity: () => devDeadline && <TeamCapacityView sprint={sprint} devDeadline={devDeadline} issues={allIssues} />
     }
-    const visibleIssues = allIssues.filter(matchesFilters)
-    const statusOrder = new Map((statuses.data ?? []).map((status, index) => [status.id, index]))
-    const groups = groupByStatus(visibleIssues, statusOrder)
-    const isEmpty = Boolean(issues.data) && visibleIssues.length === 0
 
     return (
         <Dialog
@@ -74,7 +75,7 @@ export function SprintIssuesDialog({
                 </Button>
             }
         >
-            <div className="mb-4 flex flex-wrap items-center gap-3">
+            <div className="mb-3 flex flex-wrap items-center gap-3">
                 <PhaseBadge phase={sprint.phase} />
                 <span className="text-xs text-muted">
                     {t('sprints.datesLine', {
@@ -82,6 +83,39 @@ export function SprintIssuesDialog({
                         release: dates.date(sprint.release, true)
                     })}
                 </span>
+            </div>
+            <Tabs id={tabsId} value={tab} options={options} onChange={setTab} />
+            <div {...tabPanelProps(tabsId, tab)} className="pt-4">
+                {issues.isLoading && <p className="text-sm text-muted">{t('sprints.loadingIssues')}</p>}
+                {issues.isError && <p className="text-sm text-danger">{error(issues.error)}</p>}
+                {issues.data && panels[tab]()}
+            </div>
+        </Dialog>
+    )
+}
+
+/** The issues by status, with the assignee filters. */
+function SprintIssuesPanel({ issues, loaded }: { issues: Issue[]; loaded: boolean }) {
+    const { t } = useI18n()
+    const statuses = useStatuses()
+    const myUserId = useSettings().user?.id
+    const [onlyMine, setOnlyMine] = useState(false)
+    const [assignee, setAssignee] = useState('')
+
+    const people = useMemo(() => uniqueAssigneeNames(issues), [issues])
+    const matchesFilters = (issue: Issue) => {
+        const mineOk = !onlyMine || issue.assigned_to?.id === myUserId
+        const assigneeOk = !assignee || issue.assigned_to?.name === assignee
+        return mineOk && assigneeOk
+    }
+    const visibleIssues = issues.filter(matchesFilters)
+    const statusOrder = new Map((statuses.data ?? []).map((status, index) => [status.id, index]))
+    const groups = groupByStatus(visibleIssues, statusOrder)
+    const isEmpty = loaded && visibleIssues.length === 0
+
+    return (
+        <>
+            <div className="mb-4 flex flex-wrap items-center gap-3">
                 <div className="ml-auto flex items-center gap-3">
                     <PickList
                         className="w-48"
@@ -100,8 +134,6 @@ export function SprintIssuesDialog({
                 </div>
             </div>
 
-            {issues.isLoading && <p className="text-sm text-muted">{t('sprints.loadingIssues')}</p>}
-            {issues.isError && <p className="text-sm text-danger">{error(issues.error)}</p>}
             {isEmpty && <p className="text-sm text-muted">{t('sprints.noIssues')}</p>}
 
             <div className="flex flex-col gap-4">
@@ -109,7 +141,7 @@ export function SprintIssuesDialog({
                     <StatusGroup key={group.status.id} status={group.status} issues={group.items} />
                 ))}
             </div>
-        </Dialog>
+        </>
     )
 }
 

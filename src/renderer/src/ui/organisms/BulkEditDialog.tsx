@@ -8,7 +8,7 @@ import {
     type IssueTreeNode,
     type TreeGuide
 } from '@domain/redmine/issue-tree'
-import { useBulkEdit, useIssueEditOptions, useIssueTree } from '@/hooks/issues'
+import { useBulkEdit, useIssueEditOptions, useIssueTree, useRefreshIssueViews } from '@/hooks/issues'
 import { useStatuses } from '@/hooks/reference'
 import { cn } from '@/lib/cn'
 import { useI18n } from '@/lib/i18n'
@@ -67,21 +67,21 @@ export function BulkEditDialog({ issue, onClose }: { issue: IssueDetail; onClose
     const selected = checked ?? new Set(tree.data ? subtreeIds(nodes, issue.id) : [])
     const [choices, setChoices] = useState<Choices>({ status: KEEP, assignee: KEEP, version: KEEP })
     const bulkEdit = useBulkEdit()
+    const refreshViews = useRefreshIssueViews()
     const steps = useSteps(error)
 
     const choiceKey = choiceKeyOf(choices)
     const change = toChange(choices)
-    const plannedSteps: Step[] = nodes
-        .filter((node) => selected.has(node.issue.id))
-        .map((node) => ({
-            key: `${node.issue.id}:${choiceKey}`,
-            run: async () => {
-                const result = await bulkEdit.mutateAsync({ id: node.issue.id, change })
-                if (result.outcome !== 'partial') return
-                const fields = result.ignored.map((field) => t(`bulk.fields.${field}`)).join(', ')
-                return t('bulk.ignored', { fields })
-            }
-        }))
+    const selectedNodes = nodes.filter((node) => selected.has(node.issue.id))
+    const plannedSteps: Step[] = selectedNodes.map((node) => ({
+        key: `${node.issue.id}:${choiceKey}`,
+        run: async () => {
+            const result = await bulkEdit.mutateAsync({ id: node.issue.id, change })
+            if (result.outcome !== 'partial') return
+            const fields = result.ignored.map((field) => t(`bulk.fields.${field}`)).join(', ')
+            return t('bulk.ignored', { fields })
+        }
+    }))
     const pendingCount = steps.pending(plannedSteps).length
     const labelOf = (key: string) => {
         const id = Number(key.split(':')[0])
@@ -91,9 +91,12 @@ export function BulkEditDialog({ issue, onClose }: { issue: IssueDetail; onClose
 
     const apply = async () => {
         const clean = await steps.run(plannedSteps)
-        if (!clean) return
-        toast(t('bulk.done', { count: plannedSteps.length }))
-        onClose()
+        if (clean) {
+            toast(t('bulk.done', { count: plannedSteps.length }))
+            onClose()
+        }
+        // After closing: the tree, which only the dialog shows, is not read again.
+        refreshViews(selectedNodes.map((node) => node.issue.id))
     }
 
     const footer = (
@@ -110,7 +113,13 @@ export function BulkEditDialog({ issue, onClose }: { issue: IssueDetail; onClose
     )
 
     return (
-        <Dialog title={t('bulk.title', { id: issue.id })} onClose={onClose} size="xl" footer={footer}>
+        <Dialog
+            title={t('bulk.title', { id: issue.id })}
+            onClose={onClose}
+            locked={steps.running}
+            size="xl"
+            footer={footer}
+        >
             <div className="flex flex-col gap-4">
                 <ChoiceFields projectId={issue.project.id} choices={choices} onChange={setChoices} />
                 {tree.isError && <Alert>{error(tree.error)}</Alert>}

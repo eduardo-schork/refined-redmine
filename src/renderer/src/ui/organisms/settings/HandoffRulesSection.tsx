@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, Pencil, Plus, Send, Trash2 } from 'lucide-react'
 import { newRule, type HandoffRule } from '@domain/automation/handoff'
 import { useSettings, useUpdateSettings } from '@/hooks/session'
 import { useI18n } from '@/lib/i18n'
 import { localId } from '@/lib/ids'
+import { ActionIcon } from '../../atoms/ActionIcon'
 import { Button } from '../../atoms/Button'
 import { IconButton } from '../../atoms/IconButton'
 import { Card } from '../../molecules/surfaces'
@@ -51,6 +52,9 @@ export function HandoffRulesSection() {
             <div className="flex flex-col divide-y divide-line">
                 {rules.map((rule, index) => (
                     <div key={rule.id} className="flex items-center gap-3 py-2">
+                        <span className="text-muted">
+                            <ActionIcon name={rule.icon} fallback={Send} size={15} />
+                        </span>
                         <div className="min-w-0 flex-1">
                             <div className="text-sm font-medium">{rule.name}</div>
                             <div className="truncate text-xs text-muted">

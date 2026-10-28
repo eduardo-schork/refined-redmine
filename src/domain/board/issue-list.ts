@@ -4,7 +4,8 @@ import type { IssueStyleRules } from '../redmine/issue-style'
 import { compareVersions } from '../sprint/sprint-classifier'
 import { NONE } from './quick-filter'
 
-export type ListColumn = 'id' | 'tracker' | 'status' | 'priority' | 'subject' | 'assignee' | 'version' | 'due'
+export type ListColumn =
+    'id' | 'tracker' | 'status' | 'priority' | 'subject' | 'assignee' | 'version' | 'estimate' | 'due'
 export type SortDirection = 'asc' | 'desc'
 export type ListGroupBy = 'version' | 'status' | 'assignee' | 'tracker' | 'none'
 
@@ -45,6 +46,7 @@ const COMPARE: Record<ListColumn, (first: Issue, second: Issue, context: SortCon
     subject: (first, second) => byText(first.subject, second.subject),
     assignee: (first, second) => byText(first.assigned_to?.name, second.assigned_to?.name),
     version: (first, second) => compareVersions(first.fixed_version?.name ?? '', second.fixed_version?.name ?? ''),
+    estimate: (first, second) => (first.estimated_hours ?? 0) - (second.estimated_hours ?? 0),
     due: (first, second) => (first.due_date ?? '').localeCompare(second.due_date ?? '')
 }
 
@@ -52,6 +54,8 @@ const COMPARE: Record<ListColumn, (first: Issue, second: Issue, context: SortCon
 const IS_EMPTY: Partial<Record<ListColumn, (issue: Issue) => boolean>> = {
     assignee: (issue) => !issue.assigned_to,
     version: (issue) => !issue.fixed_version,
+    // Zero shows as empty too (Redmine fills 0 when an estimate is cleared on some versions).
+    estimate: (issue) => !issue.estimated_hours,
     due: (issue) => !issue.due_date
 }
 

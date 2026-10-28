@@ -55,6 +55,7 @@ export type ErrorCode =
     | 'backup.newer'
     | 'team.noMembers'
     | 'team.tooMany'
+    | 'team.memberHours'
     | 'overtime.day'
     | 'overtime.issue'
     | 'overtime.month'

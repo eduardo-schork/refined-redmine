@@ -100,6 +100,7 @@ export const ptBR = {
         'team.nameRequired': 'Dê um nome ao time.',
         'team.noMembers': 'Escolha ao menos uma pessoa.',
         'team.tooMany': 'Um time pode ter até {{max}} pessoas.',
+        'team.memberHours': 'As horas por dia de uma pessoa precisam estar entre {{min}} e {{max}}.',
         'overtime.hours': 'Horas extras precisam ser mais que zero e até {{max}} por lançamento.',
         'overtime.day': 'Escolha o dia da hora extra.',
         'overtime.issue': 'A tarefa vai pelo número (ex.: #1234).',
@@ -107,7 +108,7 @@ export const ptBR = {
         'overtime.notFound': 'Esta hora extra não existe mais.',
         'issue.tooManyUploads': 'Dá para anexar até {{max}} arquivos de uma vez.',
         'issue.uploadTooLarge': '“{{name}}” passa de {{max}} MB. Anexe pelo Redmine.',
-        'time.hours': 'Informe as horas: mais que 0 e até {{max}} (ex.: 1,5 · 1:30 · 1h30 · 90m).',
+        'time.hours': 'Informe as horas: mais que 0 e até {{max}} (ex.: 1:30 · 1,5 · 1h30 · 90m).',
         'time.date': 'Informe uma data válida.',
         'time.comment': 'Escreva um comentário sobre o que foi feito.',
         'time.issue': 'Escolha a tarefa do lançamento.',
@@ -178,6 +179,8 @@ export const ptBR = {
             more: '(+{{count}})'
         },
         via: 'via {{names}}',
+        sourceBoard: 'quadro {{name}}',
+        sourceMonitor: 'monitor {{name}}',
         reminder: {
             startingNow: 'Começando agora',
             inTime: 'Em {{time}}',
@@ -313,6 +316,8 @@ export const ptBR = {
         members_other: '{{count}} pessoas no time',
         noneYet: 'Ninguém ainda: escolha um projeto e marque as pessoas.',
         removeMember: 'Tirar {{name}}',
+        hoursHint: 'Horas por dia: vazio segue o expediente ({{hours}}); preencha só para quem trabalha diferente.',
+        hoursPerDay: 'Horas por dia de {{name}}',
         fromProject: 'Adicionar pessoas de um projeto',
         filter: 'Filtrar pessoas…',
         checkAll: 'Marcar todas as que aparecem',
@@ -371,6 +376,8 @@ export const ptBR = {
         tooMuch: 'A hora extra não pode passar das horas lançadas.'
     },
     nav: {
+        resize: 'Largura do menu',
+        resizeHint: 'Arraste para mudar a largura do menu; clique duas vezes para voltar ao padrão.',
         overtime: 'Horas extras',
         team: 'Tempo do time',
         monitors: 'Monitores',
@@ -379,6 +386,8 @@ export const ptBR = {
         calendar: 'Agenda',
         sprints: 'Sprints',
         boards: 'Quadros',
+        boardCount_one: '{{count}} tarefa nesta consulta',
+        boardCount_other: '{{count}} tarefas nesta consulta',
         newBoard: 'Novo quadro',
         firstBoard: 'Criar o primeiro quadro',
         app: 'App',
@@ -450,6 +459,10 @@ export const ptBR = {
         noNotifications: 'Nenhuma notificação ainda.'
     },
     sprints: {
+        tabs: {
+            issues: 'Tarefas',
+            capacity: 'Capacidade'
+        },
         active: 'Ativas',
         groups: 'Agrupadores',
         recent: 'Publicadas recentemente',
@@ -529,6 +542,25 @@ export const ptBR = {
             addedHint: 'Criadas depois do início estimado',
             remaining: 'Estimativa das abertas'
         },
+        capacity: {
+            title: 'Capacidade do time até o prazo dos devs ({{date}})',
+            titleRange: 'Capacidade do time de {{from}} a {{to}}',
+            windowRange: 'Horas úteis de {{from}} a {{to}}',
+            windowFromNow: 'Horas úteis de agora até {{to}}',
+            team: 'Time',
+            hint: 'Horas úteis pelo expediente, de agora até o fim do dia do prazo, contra as horas a fazer de cada pessoa (estimado × % que falta, em Nova, Em andamento, parada ou Em aprovação).',
+            noTeam: 'Crie um time em Tempo do time para ver a capacidade de cada pessoa.',
+            deadlinePassed: 'O prazo dos devs já passou: não sobram horas úteis.',
+            person: 'Pessoa',
+            issues: 'Tarefas',
+            remaining: 'A fazer',
+            available: 'Horas úteis',
+            balance: 'Saldo',
+            spare: 'sobra {{hours}}',
+            missing: 'falta {{hours}}',
+            total: 'Total do time',
+            perDay: '{{hours}}/dia'
+        },
         summary: {
             empty: 'Nenhuma tarefa neste quadro.',
             total: 'Tarefas',
@@ -537,6 +569,8 @@ export const ptBR = {
             closedShort: 'Fechadas',
             estimated: 'Estimativa total',
             estimatedShort: 'Estimado',
+            remaining: 'Horas a fazer',
+            remainingShort: 'A fazer',
             overdue: 'Atrasadas',
             overdueShort: 'Atrasadas',
             highPriority: 'Prioridade alta',
@@ -582,6 +616,7 @@ export const ptBR = {
                 subject: 'Título',
                 assignee: 'Atribuído para',
                 version: 'Versão',
+                estimate: 'Estimado',
                 due: 'Previsão'
             },
             empty: 'Nenhuma tarefa com esses filtros.'
@@ -693,8 +728,8 @@ export const ptBR = {
         today: 'Hoje',
         yesterday: 'Ontem',
         hours: 'Horas',
-        hoursHint: 'Ex.: 1,5 · 1:30 · 1h30 · 90m',
-        hoursInvalid: 'Não entendi. Use 1,5 · 1:30 · 1h30 · 90m',
+        hoursHint: 'Ex.: 1:30 · 1,5 · 1h30 · 90m',
+        hoursInvalid: 'Não entendi. Use 1:30 · 1,5 · 1h30 · 90m',
         activity: 'Atividade',
         activityHint: 'O tipo de trabalho no Redmine (não é a tarefa).',
         comment: 'Comentário',
@@ -767,7 +802,8 @@ export const ptBR = {
         notes: 'Notas citadas no trâmite',
         allNotes: 'Mostrar todas as notas ({{count}})',
         target: 'Tarefa que recebe o trâmite',
-        searching: 'Procurando nas tarefas ligadas…',
+        searching: 'Procurando as tarefas ligadas e as notas delas…',
+        searchingHint: 'O envio libera quando terminar.',
         noCandidates: 'Nenhuma tarefa ligada do tipo esperado. Informe o número abaixo.',
         otherIssue: 'Outra: #1234',
         alsoOn: 'Aplicar também em',
@@ -778,6 +814,7 @@ export const ptBR = {
         timeComment: 'Trâmite',
         closing: 'Depois, mudar a situação para',
         dontChange: 'Não alterar',
+        via: 'Passa antes por {{statuses}}',
         noneOfTracker: 'Nenhuma tarefa ligada desse tipo.',
         send: 'Enviar trâmite',
         sendTo: 'Enviar para #{{id}}',
@@ -892,6 +929,10 @@ export const ptBR = {
         targetTracker: 'Tipo da tarefa destino',
         anyTracker: 'Qualquer tipo',
         defaultStatus: 'Situação padrão',
+        statusPathHint:
+            'Se o fluxo do Redmine não deixa ir direto, adicione as situações do caminho: o trâmite passa por cada uma, em ordem, e a última é a final.',
+        thenStatus: '+ Depois, mudar para…',
+        removeStatus: 'Tirar situação',
         peopleFrom: 'Projeto (para listar as pessoas)',
         defaultAssignee: 'Responsável padrão',
         sameTemplate: 'Comentário padrão (opcional, completado na hora)',
@@ -906,7 +947,8 @@ export const ptBR = {
         activity: 'Atividade padrão',
         chooseLater: 'Escolher na hora',
         closing: 'Fechamento (opcional)',
-        closingHint: 'Depois de enviar, muda a situação das tarefas vizinhas destes tipos (marcadas na hora).',
+        closingHint:
+            'Depois de enviar, muda a situação das tarefas vizinhas destes tipos (marcadas na hora); com várias situações, passa por cada uma, em ordem.',
         pickTracker: 'Tipo…',
         pickStatus: 'Situação…',
         addStep: 'Adicionar situação',
@@ -1023,11 +1065,14 @@ export const ptBR = {
         subtasks: 'Subtarefas ({{count}})',
         subtasksClosed: '{{closed}} de {{total}} fechadas',
         relations: 'Relações',
+        siblings: 'Outras subtarefas de #{{id}}',
         tabs: {
+            description: 'Descrição',
+            history: 'Histórico',
             links: 'Tarefas relacionadas',
             attachments: 'Anexos',
             time: 'Horas',
-            noLinks: 'Nenhuma subtarefa ou relação.',
+            noLinks: 'Nenhuma tarefa pai, subtarefa ou relação.',
             noAttachments: 'Nenhum anexo.'
         },
         history: 'Histórico ({{count}})',
@@ -1047,6 +1092,7 @@ export const ptBR = {
         start: 'Início',
         due: 'Previsão',
         estimated: 'Estimado',
+        estimateTitle: 'Tempo estimado',
         spent: 'Gasto',
         done: '% concluído',
         watchers: 'Observadores ({{count}})',
@@ -1279,6 +1325,9 @@ export const ptBR = {
             'Cada tela e cada quadro abrem numa aba, como no navegador. Ctrl+Tab passa para a próxima e {{key}}1…9 vai direto para uma.',
         workspaceTabs: 'Abrir as telas em abas',
         workspaceRestore: 'Reabrir as abas ao iniciar o app',
+        issueTabs: 'Detalhe da tarefa em abas',
+        issueTabsHint:
+            'Descrição, tarefas relacionadas, anexos, horas e histórico em abas no topo da tarefa, uma de cada vez, sem rolar até embaixo.',
         diagnostics: 'Diagnóstico',
         diagnosticsHint: 'Ferramentas para investigar problemas: o log lista as requisições e os ciclos do monitor.',
         showLog: 'Mostrar o Log na barra lateral',
@@ -1575,6 +1624,15 @@ export const ptBR = {
         releaseNotes: 'Novidades da versão {{version}}',
         viewOnGithub: 'Ver no GitHub',
         sidebar: 'Versão {{version}} disponível'
+    },
+    crash: {
+        title: 'Algo deu errado',
+        tabHint:
+            'Esta aba parou por um erro inesperado; o menu e as outras abas continuam funcionando. Copie os detalhes para relatar o problema.',
+        appHint: 'O app parou por um erro inesperado. Copie os detalhes para relatar o problema e recarregue.',
+        copy: 'Copiar detalhes',
+        retry: 'Tentar de novo',
+        reload: 'Recarregar'
     },
     whatsNew: {
         title: 'O que há de novo na versão {{version}}',

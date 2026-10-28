@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import type { BoardIssues, BoardNotifications } from '@contracts/api'
 import type { Board } from '@domain/board/board'
 import { createAgileBoard, isCompleteSource } from '@domain/board/board-rules'
@@ -11,8 +11,32 @@ import { qk } from '@/lib/query-keys'
 import { useStatuses } from './reference'
 import { useSettings, useUpdateSettings } from './session'
 
-export const useBoardIssues = (boardId: string) =>
-    useQuery({ queryKey: qk.boardIssues(boardId), queryFn: () => api.boards.issues(boardId), refetchInterval: 60_000 })
+/** The open board's total also goes to the sidebar count: it follows every reload, automatic or by Atualizar. */
+async function loadBoardIssues(queryClient: QueryClient, boardId: string): Promise<BoardIssues> {
+    const boardIssues = await api.boards.issues(boardId)
+    const total = boardIssues.unresolvedSprint ? null : boardIssues.issues.total
+    queryClient.setQueryData(qk.boardCount(boardId), total)
+    return boardIssues
+}
+
+export function useBoardIssues(boardId: string) {
+    const queryClient = useQueryClient()
+    return useQuery({
+        queryKey: qk.boardIssues(boardId),
+        queryFn: () => loadBoardIssues(queryClient, boardId),
+        refetchInterval: 60_000
+    })
+}
+
+/** Total issues of a board's source, for the sidebar; read again at each automatic check interval. */
+export function useBoardCount(boardId: string) {
+    const { pollSeconds } = useSettings()
+    return useQuery({
+        queryKey: qk.boardCount(boardId),
+        queryFn: () => api.boards.count(boardId),
+        refetchInterval: pollSeconds * 1000
+    })
+}
 
 export function useSaveBoard() {
     const queryClient = useQueryClient()
@@ -22,6 +46,7 @@ export function useSaveBoard() {
         onSuccess: (session, { board }) => {
             queryClient.setQueryData(qk.session, session)
             void queryClient.invalidateQueries({ queryKey: qk.boardIssues(board.id) })
+            void queryClient.invalidateQueries({ queryKey: qk.boardCount(board.id) })
         }
     })
 }

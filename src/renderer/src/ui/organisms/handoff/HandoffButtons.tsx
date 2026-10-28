@@ -3,14 +3,11 @@ import { MessageSquarePlus, Send } from 'lucide-react'
 import { NEW_TRAMITE_RULE, rulesFor, type HandoffRule } from '@domain/automation/handoff'
 import type { IssueDetail, Journal } from '@domain/redmine/entities'
 import { useSettings } from '@/hooks/session'
-import { cn } from '@/lib/cn'
 import { useI18n } from '@/lib/i18n'
+import { ActionButton } from '../../atoms/ActionButton'
 import { ActionIcon } from '../../atoms/ActionIcon'
 import { HandoffDialog } from './HandoffDialog'
 import { TramiteDialog } from './TramiteDialog'
-
-const ACTION_BUTTON =
-    'inline-flex h-7 cursor-default items-center gap-1.5 whitespace-nowrap rounded-md border px-2 text-xs disabled:opacity-50'
 
 /** The rules whose button shows on this issue, split by kind. */
 export function useIssueRules(issue: Pick<IssueDetail, 'tracker' | 'status'>) {
@@ -56,26 +53,16 @@ export function HandoffButtons({ issue, otherActions }: { issue: IssueDetail; ot
     return (
         <>
             {configured.map((rule) => (
-                <button
-                    key={rule.id}
-                    type="button"
-                    onClick={() => setOpened({ rule })}
-                    className={cn(ACTION_BUTTON, 'border-accent/40 bg-accent-soft text-accent hover:border-accent')}
-                >
-                    <ActionIcon name={rule.icon} fallback={Send} size={13} />
+                <ActionButton key={rule.id} tone="accent" onClick={() => setOpened({ rule })}>
+                    <ActionIcon name={rule.icon} fallback={Send} />
                     {rule.name}
-                </button>
+                </ActionButton>
             ))}
             {otherActions}
-            <button
-                type="button"
-                onClick={() => setOpened({ rule: NEW_TRAMITE_RULE })}
-                title={t('handoff.newTramiteHint')}
-                className={cn(ACTION_BUTTON, 'border-line text-fg/85 hover:bg-panel-2 hover:text-fg')}
-            >
-                <MessageSquarePlus size={13} />
+            <ActionButton onClick={() => setOpened({ rule: NEW_TRAMITE_RULE })} title={t('handoff.newTramiteHint')}>
+                <MessageSquarePlus />
                 {t('handoff.newTramite')}
-            </button>
+            </ActionButton>
             <OpenedDialog issue={issue} opened={opened} others={rules.other} onClose={() => setOpened(undefined)} />
         </>
     )

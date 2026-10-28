@@ -27,10 +27,12 @@ const COLUMNS: { column: ListColumn; labelKey: string }[] = [
     { column: 'subject', labelKey: 'board.list.column.subject' },
     { column: 'assignee', labelKey: 'board.list.column.assignee' },
     { column: 'version', labelKey: 'board.list.column.version' },
+    { column: 'estimate', labelKey: 'board.list.column.estimate' },
     { column: 'due', labelKey: 'board.list.column.due' }
 ]
 
-const GRID = 'grid grid-cols-[5rem_8.5rem_10rem_7rem_minmax(0,1fr)_11rem_6rem_6.5rem_1.75rem] items-center gap-3 px-4'
+const GRID =
+    'grid grid-cols-[5rem_8.5rem_10rem_7rem_minmax(0,1fr)_11rem_6rem_5.5rem_6.5rem_1.75rem] items-center gap-3 px-4'
 
 const DUE_TONE: Record<DueState, string> = {
     overdue: 'font-medium text-due-overdue',
@@ -216,6 +218,9 @@ function ListRow({ issue, onOpen }: { issue: Issue; onOpen: (id: number) => void
             </span>
             <span className="min-w-0">
                 <VersionChip issue={issue} />
+            </span>
+            <span className={cn('tabular-nums', !issue.estimated_hours && 'text-muted')}>
+                {issue.estimated_hours ? dates.hours(issue.estimated_hours) : '—'}
             </span>
             <span className={cn('tabular-nums', DUE_TONE[due])}>
                 {issue.due_date ? dates.date(issue.due_date) : '—'}

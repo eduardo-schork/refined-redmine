@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_WORK_SCHEDULE, splitWorkTime } from './business-hours'
+import { DEFAULT_WORK_SCHEDULE, scheduledHoursPerDay, splitWorkTime } from './business-hours'
 
 // 2026-10-26 is a Monday.
 const at = (day: number, hour: number, minute = 0) => new Date(2026, 9, day, hour, minute)
@@ -34,5 +34,19 @@ describe('splitWorkTime', () => {
             ]
         }
         expect(splitWorkTime(at(26, 8), at(26, 13), schedule)).toEqual({ business: 5, overtime: 0 })
+    })
+})
+
+describe('scheduledHoursPerDay', () => {
+    it('adds up the periods of a day, counting overlaps once', () => {
+        expect(scheduledHoursPerDay(DEFAULT_WORK_SCHEDULE)).toBe(9)
+        const overlapping = {
+            weekdays: [1],
+            periods: [
+                { start: '08:00', end: '12:00' },
+                { start: '11:00', end: '13:30' }
+            ]
+        }
+        expect(scheduledHoursPerDay(overlapping)).toBe(5.5)
     })
 })

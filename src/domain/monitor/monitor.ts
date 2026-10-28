@@ -133,7 +133,12 @@ export function withMineMonitor(monitors: Monitor[], fallbackScopes: MineScopes)
     return [mine, ...others]
 }
 
-export const boardMonitorId = (boardId: string) => `board:${boardId}`
+const BOARD_MONITOR_PREFIX = 'board:'
+
+export const boardMonitorId = (boardId: string) => `${BOARD_MONITOR_PREFIX}${boardId}`
+
+/** The monitor a board's "notify about this board" switch created. */
+export const isBoardMonitorId = (monitorId: string) => monitorId.startsWith(BOARD_MONITOR_PREFIX)
 
 export function findBoardMonitor(monitors: Monitor[], boardId: string): Monitor | undefined {
     return monitors.find((monitor) => monitor.source.type === 'board' && monitor.source.boardId === boardId)

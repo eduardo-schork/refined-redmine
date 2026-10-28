@@ -6,8 +6,8 @@ import { useCommentAndChange } from '@/hooks/issues'
 import { useStatuses } from '@/hooks/reference'
 import { useSettings } from '@/hooks/session'
 import { api } from '@/lib/api'
-import { cn } from '@/lib/cn'
 import { useI18n } from '@/lib/i18n'
+import { ActionButton } from '../atoms/ActionButton'
 import { ActionIcon } from '../atoms/ActionIcon'
 import { useToast } from '../molecules/Toast'
 
@@ -58,21 +58,13 @@ export function useClaudeActions(issue: Pick<Issue, 'id' | 'subject' | 'tracker'
     return { actions, run, running }
 }
 
-const ACTION_BUTTON =
-    'inline-flex h-7 cursor-default items-center gap-1.5 whitespace-nowrap rounded-md border px-2 text-xs disabled:opacity-50'
-
 /** Buttons of the Claude actions in the issue detail, next to the trâmites. */
 export function ClaudeActionButtons({ issue }: { issue: Issue }) {
     const { actions, run } = useClaudeActions(issue)
     return actions.map((action) => (
-        <button
-            key={action.id}
-            type="button"
-            onClick={() => void run(action)}
-            className={cn(ACTION_BUTTON, 'border-line text-fg/85 hover:bg-panel-2 hover:text-fg')}
-        >
-            <ActionIcon name={action.icon} fallback={Terminal} size={13} />
+        <ActionButton key={action.id} tone="claude" onClick={() => void run(action)}>
+            <ActionIcon name={action.icon} fallback={Terminal} />
             {action.name}
-        </button>
+        </ActionButton>
     ))
 }

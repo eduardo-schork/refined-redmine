@@ -8,11 +8,14 @@ export function NavItem({
     active,
     onClick,
     icon,
+    title,
     children
 }: {
     active: boolean
     onClick: (inNewTab: boolean) => void
     icon: ReactNode
+    /** Full text on hover, for names cut by the sidebar width. */
+    title?: string
     children: ReactNode
 }) {
     const openOnMiddleClick = (event: MouseEvent) => {
@@ -24,6 +27,7 @@ export function NavItem({
         <button
             onClick={(event) => onClick(event.metaKey || event.ctrlKey)}
             onAuxClick={openOnMiddleClick}
+            title={title}
             aria-current={active ? 'page' : undefined}
             className={cn(
                 'flex h-8 cursor-default items-center gap-2 rounded-md px-2 text-left text-sm',

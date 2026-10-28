@@ -6,7 +6,7 @@ import { enUS } from './locales/en-US'
 import { DateFormatter } from './format/dates'
 import { describeRecurrence, describeReminder } from './format/recurrence'
 import { describeLogEntry, formatBytes } from './format/log'
-import { formatNotification, systemNotificationText } from './format/notification'
+import { describeSources, formatNotification, systemNotificationText } from './format/notification'
 import { errorMessage } from './format/errors'
 
 function keysOf(resources: object, prefix = ''): string[] {
@@ -117,8 +117,27 @@ describe('formatters (pt-BR)', () => {
         }
         expect(systemNotificationText(notification, t, dates, new Date())).toEqual({
             title: 'Sprint',
-            body: '3 → 3 (0)\nEntraram: #7 Novo\nSaíram: #5 Antigo\nvia Bugs'
+            body: '3 → 3 (0)\nEntraram: #7 Novo\nSaíram: #5 Antigo\nvia Minhas tarefas, monitor Bugs'
         })
+    })
+
+    it('always says where a notification came from: my issues, a board or a monitor', () => {
+        const base: AppNotification = {
+            id: 'n3',
+            kind: 'status',
+            target: { type: 'url', url: 'x' },
+            createdAt: '',
+            read: false,
+            payload: { type: 'queryCount', queryName: 'Outra', count: 1, op: 'below', value: 2 }
+        }
+        const via = (sources: AppNotification['sources']) => describeSources({ ...base, sources }, t)
+        expect(via([{ monitorId: 'mine', name: '' }])).toBe('via Minhas tarefas')
+        expect(via([{ monitorId: 'board:b1', name: 'Sprint atual' }])).toBe('via quadro Sprint atual')
+        expect(via([{ monitorId: 'x1', name: 'Ágil', sourceType: 'board' }])).toBe('via quadro Ágil')
+        expect(via([{ monitorId: 'x2', name: 'Fila do Rafael', sourceType: 'query' }])).toBe(
+            'via monitor Fila do Rafael'
+        )
+        expect(via(undefined)).toBeUndefined()
     })
 
     it('count alert of a query', () => {

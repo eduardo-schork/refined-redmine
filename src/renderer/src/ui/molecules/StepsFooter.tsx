@@ -3,7 +3,7 @@ import type { Step, StepOutcome } from '@/lib/steps'
 import { Button } from '../atoms/Button'
 
 /**
- * Footer of a multi-step action: Cancel before anything ran, Close after. The main button starts, and after a
+ * Footer of a multi-step action: Cancel before anything ran, Close after, neither while sending. The main button starts, and after a
  * failure turns into "Try again" (finished steps are skipped); it disappears when nothing is left to do.
  */
 export function StepsFooter({
@@ -32,7 +32,9 @@ export function StepsFooter({
     const hasFailures = planned.some((step) => outcomes[step.key]?.state === 'failed')
     return (
         <>
-            <Button onClick={onClose}>{started ? t('common.close') : t('common.cancel')}</Button>
+            <Button onClick={onClose} disabled={running}>
+                {started ? t('common.close') : t('common.cancel')}
+            </Button>
             {!finished && (
                 <Button variant="primary" disabled={!ready || pending === 0 || running} onClick={onStart}>
                     {hasFailures ? t('steps.retry') : startLabel}

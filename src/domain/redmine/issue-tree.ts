@@ -30,8 +30,9 @@ export function treeRoots(issue: IssueDetail): { id: number; role: TreeRole; rel
 }
 
 /**
- * The tree in display order: each root followed by its subtasks (depth first). An issue appears once, in the first
- * place it is found, so the opened issue under its parent is not repeated.
+ * The tree in display order: each root followed by its subtasks (depth first), subtasks in the order they were
+ * created. An issue appears once, in the first place it is found, so the opened issue under its parent is not
+ * repeated.
  */
 export function buildIssueTree(
     roots: { issue: Issue; role: TreeRole; relation?: RelationType }[],
@@ -42,6 +43,8 @@ export function buildIssueTree(
         const parentId = child.parent?.id
         if (parentId !== undefined) byParent.set(parentId, [...(byParent.get(parentId) ?? []), child])
     }
+    // Redmine lists newest first; its issue numbers grow as issues are created, so ascending numbers = creation order.
+    for (const siblings of byParent.values()) siblings.sort((first, second) => first.id - second.id)
     const seen = new Set<number>()
     const nodes: IssueTreeNode[] = []
     const visit = (node: IssueTreeNode) => {
@@ -103,6 +106,8 @@ export function toggleSubtree(nodes: IssueTreeNode[], checked: Set<number>, id: 
 /** What to apply to many issues. Undefined keeps the field; null clears it (nobody, no version). */
 export interface BulkChange {
     statusId?: number
+    /** Statuses set one by one before `statusId`, when the workflow does not allow going straight to it. */
+    viaStatusIds?: number[]
     assignedToId?: number | null
     fixedVersionId?: number | null
 }
@@ -122,7 +127,16 @@ export function bulkDiff(issue: Issue, change: BulkChange): BulkChange {
 
 export const isEmptyChange = (change: BulkChange) => Object.keys(change).length === 0
 
-export type BulkField = keyof BulkChange
+/**
+ * Statuses to set before the final one: the ones to go through, in order, after the current status when it is one
+ * of them (never back); none when there is no new status.
+ */
+export function statusHops(currentStatusId: number, viaStatusIds: number[] = [], finalStatusId?: number): number[] {
+    if (finalStatusId === undefined || finalStatusId === currentStatusId) return []
+    return viaStatusIds.slice(viaStatusIds.indexOf(currentStatusId) + 1)
+}
+
+export type BulkField = Exclude<keyof BulkChange, 'viaStatusIds'>
 
 /** Fields of the change that Redmine did not apply (workflow, read-only field or no permission). */
 export function unappliedFields(change: BulkChange, saved: Issue): BulkField[] {

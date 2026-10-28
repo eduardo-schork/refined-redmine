@@ -38,11 +38,18 @@ export function relationGroups(issueId: number, relations: Relation[]): Relation
         .sort((first, second) => orderOf(first.type) - orderOf(second.type))
 }
 
-/** Subtasks and related issues, without repeats: the ones to load to show their status and assignee. */
+/** Parent, subtasks and related issues, without repeats: the ones to load to show their status and assignee. */
 export function linkedIssueIds(issue: IssueDetail): number[] {
+    const parentIds = issue.parent ? [issue.parent.id] : []
     const subtaskIds = issue.children.map((child) => child.id)
     const relatedIds = issue.relations.map((relation) => relationFrom(issue.id, relation).otherId)
-    return [...new Set([...subtaskIds, ...relatedIds])]
+    return [...new Set([...parentIds, ...subtaskIds, ...relatedIds])]
+}
+
+/** The parent's other subtasks; none until the parent is read. */
+export function siblingIds(issue: IssueDetail, parent?: IssueDetail): number[] {
+    if (!parent) return []
+    return parent.children.map((child) => child.id).filter((id) => id !== issue.id)
 }
 
 /** Subtasks already closed, among the ones loaded. */

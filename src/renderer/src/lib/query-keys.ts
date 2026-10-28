@@ -17,6 +17,8 @@ export const qk = {
     myQueue: ['issues', 'my-queue'] as const,
     boardIssues: (boardId: string) => ['board-issues', boardId] as const,
     boardIssuesAll: ['board-issues'] as const,
+    // Not under 'board-issues': changing an issue refreshes the boards, not the count of every board.
+    boardCount: (boardId: string) => ['board-count', boardId] as const,
     sprints: ['sprints'] as const,
     versionStats: (id: number) => ['version-stats', id] as const,
     versionIssues: (id: number) => ['version-issues', id] as const,

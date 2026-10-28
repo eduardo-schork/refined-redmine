@@ -12,6 +12,7 @@ import {
 } from '@domain/notification/inbox'
 import type { AppNotification } from '@domain/notification/notification'
 import { RedmineLinks } from '@domain/redmine/links'
+import { describeSource } from '@shared/i18n/format/notification'
 import {
     unreadCount,
     useClearNotifications,
@@ -160,7 +161,7 @@ function MonitorSelect({
             <option value="">{t('notificationsPage.allMonitors')}</option>
             {sources.map((source) => (
                 <option key={source.monitorId} value={source.monitorId}>
-                    {source.monitorId === MINE_MONITOR_ID ? t('monitors.mine') : source.name}
+                    {describeSource(source, t)}
                 </option>
             ))}
         </Select>

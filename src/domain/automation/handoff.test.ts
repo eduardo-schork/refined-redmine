@@ -5,12 +5,15 @@ import {
     defaultClosingChecks,
     DEFAULT_TEMPLATE,
     fillTemplate,
+    fromStatusPath,
     neighbourIds,
     newRule,
     noteNumber,
     renderHandoffComment,
     rulesFor,
+    statusPath,
     targetCandidates,
+    viaFor,
     type HandoffRule
 } from './handoff'
 
@@ -78,6 +81,30 @@ describe('cleanRule', () => {
             template: '',
             closingSteps: []
         })
+    })
+    it('keeps the statuses to go through only with a final status, without blanks or the final one', () => {
+        expect(cleanRule({ ...rule, statusId: 1, viaStatusIds: [12, 0, 1] }).viaStatusIds).toEqual([12])
+        expect(cleanRule({ ...rule, statusId: undefined, viaStatusIds: [12] }).viaStatusIds).toEqual([])
+        const closingSteps = [{ trackerId: 42, statusId: 5, viaStatusIds: [12, 5] }]
+        expect(cleanRule({ ...rule, closingSteps }).closingSteps).toEqual([
+            { trackerId: 42, statusId: 5, viaStatusIds: [12] }
+        ])
+    })
+})
+
+describe('status path', () => {
+    it('is the statuses to go through, then the final one', () => {
+        expect(statusPath({ statusId: 1, viaStatusIds: [12] })).toEqual([12, 1])
+        expect(statusPath({ statusId: 1 })).toEqual([1])
+        expect(statusPath({ viaStatusIds: [12] })).toEqual([])
+        expect(fromStatusPath([12, 3, 1])).toEqual({ statusId: 1, viaStatusIds: [12, 3] })
+        expect(fromStatusPath([])).toEqual({ statusId: undefined, viaStatusIds: [] })
+    })
+    it('applies only while the chosen status is the configured one', () => {
+        const target = { statusId: 1, viaStatusIds: [12] }
+        expect(viaFor(target, 1)).toEqual([12])
+        expect(viaFor(target, 3)).toBeUndefined()
+        expect(viaFor(target, undefined)).toBeUndefined()
     })
 })
 

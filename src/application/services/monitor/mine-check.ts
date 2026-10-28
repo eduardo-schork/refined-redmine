@@ -38,7 +38,7 @@ export async function checkMine(
     cycle: MonitorCycle,
     deps: MineCheckDeps
 ): Promise<void> {
-    const source: NotificationSource = { monitorId: monitor.id, name: monitor.name }
+    const source: NotificationSource = { monitorId: monitor.id, name: monitor.name, sourceType: 'mine' }
     await checkQueueExits(monitor, source, cycle, deps)
     const since = cycle.sinceOf(monitor.id)
     const issues = await fetchChangedIssues(scopeFilters(scopes), since, deps.gateway)

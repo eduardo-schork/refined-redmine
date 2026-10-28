@@ -24,6 +24,7 @@ import SettingsPage from '@/pages/SettingsPage'
 import SprintsPage from '@/pages/SprintsPage'
 import TeamTimePage from '@/pages/TeamTimePage'
 import TimePage from '@/pages/TimePage'
+import { ErrorBoundary } from '@/ui/molecules/ErrorBoundary'
 import { ToastProvider } from '@/ui/molecules/Toast'
 import { BoardEditor } from '@/ui/organisms/BoardEditor'
 import { IssueModalProvider, TabIssueModals, useOpenIssue } from '@/ui/organisms/IssueModal'
@@ -46,7 +47,9 @@ function SessionApp({ session }: { session: SettingsView }) {
     const isLoggedIn = session.hasApiKey && Boolean(session.user)
     return (
         <I18nProvider locale={locale}>
-            <ToastProvider>{isLoggedIn ? <AuthenticatedApp /> : <OnboardingPage />}</ToastProvider>
+            <ToastProvider>
+                <ErrorBoundary scope="app">{isLoggedIn ? <AuthenticatedApp /> : <OnboardingPage />}</ErrorBoundary>
+            </ToastProvider>
         </I18nProvider>
     )
 }
@@ -130,20 +133,22 @@ interface TabPanelProps {
 /**
  * Hidden tabs stay mounted (scroll, filters, forms and open dialogs are kept) but do not react to the keyboard.
  * Layout containment makes the panel the box of its `fixed` dialogs: they cover only this tab, leaving the sidebar and
- * the tab bar usable, and hide with it.
+ * the tab bar usable, and hide with it. A crash inside stops only this tab.
  */
 function TabPanel({ tab, active, onOpenIssue, onCloseIssue, children }: TabPanelProps) {
     const panelClass = active ? 'flex min-h-0 flex-1 flex-col contain-layout' : 'hidden'
     return (
         <ActiveTabContext.Provider value={active}>
             <div className={panelClass}>
-                <TabIssueModals
-                    issues={tab.issues ?? []}
-                    onOpenIssue={(issueId) => onOpenIssue(tab.key, issueId)}
-                    onBack={() => onCloseIssue(tab.key)}
-                >
-                    {children}
-                </TabIssueModals>
+                <ErrorBoundary scope="tab">
+                    <TabIssueModals
+                        issues={tab.issues ?? []}
+                        onOpenIssue={(issueId) => onOpenIssue(tab.key, issueId)}
+                        onBack={() => onCloseIssue(tab.key)}
+                    >
+                        {children}
+                    </TabIssueModals>
+                </ErrorBoundary>
             </div>
         </ActiveTabContext.Provider>
     )

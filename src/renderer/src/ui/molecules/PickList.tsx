@@ -1,4 +1,4 @@
-import { useEffect, useState, type KeyboardEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { Check, ChevronDown, Search } from 'lucide-react'
 import { foldForSearch } from '@domain/shared/text'
 import { cn } from '@/lib/cn'
@@ -40,7 +40,14 @@ export function PickList({
     const [open, setOpen] = useState(false)
     const [filter, setFilter] = useState('')
     const { rootRef, floatingRef, anchorStyle, floatingStyle } = useFloating(open, () => setOpen(false))
+    const searchRef = useRef<HTMLInputElement>(null)
+    const buttonRef = useRef<HTMLButtonElement>(null)
     const current = options.find((option) => option.value === value)
+
+    // After `useFloating` shows the popover: `autoFocus` ran while it was still hidden, so the focus stayed behind.
+    useLayoutEffect(() => {
+        if (open) searchRef.current?.focus()
+    }, [open])
 
     // While a change is being saved the field is disabled: an open list would allow a second change.
     useEffect(() => {
@@ -51,15 +58,21 @@ export function PickList({
         setFilter('')
         setOpen((wasOpen) => !wasOpen)
     }
-    const pick = (option: PickOption) => {
+    // Closed from inside (Esc or a pick), the focus goes back to the field, like a native select; the search box it
+    // was in disappears with the list.
+    const closeToButton = () => {
         setOpen(false)
+        buttonRef.current?.focus()
+    }
+    const pick = (option: PickOption) => {
+        closeToButton()
         if (option.value !== value) onPick(option)
     }
     // Esc closes only the list, not the dialog around it.
     const handleKeyDown = (keyboardEvent: KeyboardEvent) => {
         if (keyboardEvent.key !== 'Escape') return
         keyboardEvent.stopPropagation()
-        setOpen(false)
+        closeToButton()
     }
 
     const term = foldForSearch(filter.trim())
@@ -68,6 +81,7 @@ export function PickList({
     return (
         <div ref={rootRef} className={cn('min-w-0', className)} onKeyDown={handleKeyDown}>
             <button
+                ref={buttonRef}
                 type="button"
                 disabled={disabled}
                 aria-haspopup="listbox"
@@ -91,7 +105,7 @@ export function PickList({
                     <div className="flex items-center gap-2 border-b border-line px-2.5">
                         <Search size={14} className="shrink-0 text-muted" />
                         <input
-                            autoFocus
+                            ref={searchRef}
                             value={filter}
                             placeholder={searchPlaceholder ?? t('common.searchList')}
                             onChange={(changeEvent) => setFilter(changeEvent.target.value)}

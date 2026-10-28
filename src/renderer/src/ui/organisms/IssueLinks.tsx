@@ -1,23 +1,74 @@
 import { useMemo, type ReactNode } from 'react'
 import type { Issue, IssueDetail } from '@domain/redmine/entities'
-import { closedSubtaskCount, linkedIssueIds, relationGroups } from '@domain/redmine/linked-issues'
-import { useLinkedIssues } from '@/hooks/issues'
+import { closedSubtaskCount, linkedIssueIds, relationGroups, siblingIds } from '@domain/redmine/linked-issues'
+import { useIssue, useLinkedIssues } from '@/hooks/issues'
 import { useI18n } from '@/lib/i18n'
 import { Overline, ProgressBar } from '../atoms/misc'
 import { LinkedIssueGroupLabel, LinkedIssueList, LinkedIssueRow } from '../molecules/LinkedIssueList'
 
 const NOTHING_LOADED: ReadonlyMap<number, Issue> = new Map()
 
-/** Subtasks and related issues of the issue, each with its title, status and assignee. */
+/**
+ * Parent (with its other subtasks), subtasks and related issues of the issue, each with its title, status, version
+ * and assignee. The parent is read first to know the siblings, so all of them come in one listing.
+ */
 export function IssueLinks({ issue, onOpen }: { issue: IssueDetail; onOpen: (id: number) => void }) {
-    const ids = useMemo(() => linkedIssueIds(issue), [issue])
-    const linked = useLinkedIssues(issue.id, ids)
+    const parentQuery = useIssue(issue.parent?.id ?? 0, Boolean(issue.parent))
+    const parent = parentQuery.data
+    const siblings = useMemo(() => siblingIds(issue, parent), [issue, parent])
+    const ids = useMemo(() => [...linkedIssueIds(issue), ...siblings], [issue, siblings])
+    const parentSettled = !issue.parent || !parentQuery.isPending
+    const linked = useLinkedIssues(issue.id, ids, parentSettled)
     const loaded = linked.data ?? NOTHING_LOADED
     return (
         <>
+            <Parent issue={issue} parent={parent} siblings={siblings} loaded={loaded} onOpen={onOpen} />
             <Subtasks issue={issue} loaded={loaded} isLoaded={linked.isSuccess} onOpen={onOpen} />
             <Relations issue={issue} loaded={loaded} onOpen={onOpen} />
         </>
+    )
+}
+
+function Parent({
+    issue,
+    parent,
+    siblings,
+    loaded,
+    onOpen
+}: {
+    issue: IssueDetail
+    parent?: IssueDetail
+    siblings: number[]
+    loaded: ReadonlyMap<number, Issue>
+    onOpen: (id: number) => void
+}) {
+    const { t } = useI18n()
+    if (!issue.parent) return null
+    const parentId = issue.parent.id
+    const siblingSubject = (id: number) => parent?.children.find((child) => child.id === id)?.subject
+    return (
+        <Section title={t('issue.parentField')}>
+            <LinkedIssueList>
+                <LinkedIssueRow
+                    id={parentId}
+                    issue={loaded.get(parentId)}
+                    knownSubject={parent?.subject}
+                    onOpen={onOpen}
+                />
+                {siblings.length > 0 && (
+                    <LinkedIssueGroupLabel>{t('issue.siblings', { id: parentId })}</LinkedIssueGroupLabel>
+                )}
+                {siblings.map((id) => (
+                    <LinkedIssueRow
+                        key={id}
+                        id={id}
+                        issue={loaded.get(id)}
+                        knownSubject={siblingSubject(id)}
+                        onOpen={onOpen}
+                    />
+                ))}
+            </LinkedIssueList>
+        </Section>
     )
 }
 

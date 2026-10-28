@@ -41,6 +41,21 @@ describe('sortIssues', () => {
         expect(sorted.map((item) => item.fixed_version?.name)).toEqual(['3.9', '3.10', undefined])
     })
 
+    it('sorts by estimated hours either way, issues without an estimate (or zero) last', () => {
+        const estimated = [
+            issue(1, { estimated_hours: 8 }),
+            issue(2, { estimated_hours: null }),
+            issue(3, { estimated_hours: 2.5 }),
+            issue(4, { estimated_hours: 0 })
+        ]
+        const ascending = sortIssues(estimated, { column: 'estimate', direction: 'asc' }, context)
+        const descending = sortIssues(estimated, { column: 'estimate', direction: 'desc' }, context)
+        expect(ascending.map((item) => item.id).slice(0, 2)).toEqual([3, 1])
+        expect(descending.map((item) => item.id).slice(0, 2)).toEqual([1, 3])
+        expect(ascending.slice(2).map((item) => item.id)).toEqual(expect.arrayContaining([2, 4]))
+        expect(descending.slice(2).map((item) => item.id)).toEqual(expect.arrayContaining([2, 4]))
+    })
+
     it('flips the direction on the same column and starts a new one ascending (priority descending)', () => {
         expect(nextSort({ column: 'id', direction: 'asc' }, 'id')).toEqual({ column: 'id', direction: 'desc' })
         expect(nextSort({ column: 'id', direction: 'asc' }, 'subject')).toEqual({ column: 'subject', direction: 'asc' })

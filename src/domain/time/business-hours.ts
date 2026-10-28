@@ -55,6 +55,12 @@ function dayIntervals(schedule: WorkSchedule): [number, number][] {
 
 const toHours = (milliseconds: number) => Math.round((milliseconds / 3_600_000) * 100) / 100
 
+/** Working hours of one work day (overlapping periods count once): 9 with the default schedule. */
+export function scheduledHoursPerDay(schedule: WorkSchedule): number {
+    const minutes = dayIntervals(schedule).reduce((sum, [start, end]) => sum + end - start, 0)
+    return toHours(minutes * MINUTE_MS)
+}
+
 /**
  * Time from `since` to `now`, as in the redmine-adapter: what falls inside the work periods is normal time, the
  * break between two periods of a work day (lunch) counts as neither, and the rest (nights, weekends) is overtime.

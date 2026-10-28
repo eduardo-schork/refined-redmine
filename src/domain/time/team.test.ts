@@ -74,6 +74,14 @@ describe('groupEntries and focus', () => {
         expect(() => assertValidTeam({ id: 't', name: ' ', members: [ana] })).toThrow('team.nameRequired')
         expect(() => assertValidTeam({ id: 't', name: 'Dev', members: [] })).toThrow('team.noMembers')
     })
+
+    it('accepts own hours per day between half an hour and 24 hours', () => {
+        const team = (hoursPerDay?: number) => ({ id: 't', name: 'Dev', members: [{ ...ana, hoursPerDay }] })
+        expect(() => assertValidTeam(team(4))).not.toThrow()
+        expect(() => assertValidTeam(team(undefined))).not.toThrow()
+        expect(() => assertValidTeam(team(0))).toThrow('team.memberHours')
+        expect(() => assertValidTeam(team(25))).toThrow('team.memberHours')
+    })
 })
 
 describe('hoursByPersonAndActivity', () => {

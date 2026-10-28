@@ -7,6 +7,7 @@ import { MonitorService } from './services/monitor-service'
 import { LoginUseCase } from './use-cases/session'
 import {
     BoardFilterResolver,
+    CountBoardIssuesUseCase,
     DeleteBoardUseCase,
     MoveIssueToColumnUseCase,
     SaveBoardUseCase,
@@ -508,6 +509,43 @@ describe('boards', () => {
 
         expect(gateway.filters[0]).toMatchObject({ assignedTo: 'me', status: 'open' })
         expect(suggestion).toEqual({ statusIds: [1, 2], total: 3 })
+    })
+
+    it('counts the issues of a board by its source, for the sidebar', async () => {
+        const gateway = new FakeGateway()
+        const settings = new MemorySettings()
+        gateway.issues = [issue(1), issue(2)]
+        const board: Board = {
+            id: 'b',
+            name: 'Q',
+            source: { type: 'mine' },
+            columns: [{ id: 'new', name: 'New', statusIds: [1] }],
+            swimlanes: 'none'
+        }
+        settings.save({ ...settings.get(), boards: [board] })
+        const resolver = new BoardFilterResolver(new ListSprintsUseCase(gateway, settings, new FixedClock(new Date())))
+
+        const total = await new CountBoardIssuesUseCase(gateway, settings, resolver).execute('b')
+
+        expect(gateway.filters[0]).toMatchObject({ assignedTo: 'me', status: [1] })
+        expect(total).toBe(2)
+    })
+
+    it('has no count for an automatic sprint board with no sprint today', async () => {
+        const gateway = new FakeGateway()
+        const settings = new MemorySettings()
+        const board: Board = {
+            id: 'b',
+            name: 'S',
+            source: { type: 'sprint', auto: 'dev' },
+            columns: [],
+            swimlanes: 'none'
+        }
+        settings.save({ ...settings.get(), boards: [board] })
+        const resolver = new BoardFilterResolver(new ListSprintsUseCase(gateway, settings, new FixedClock(new Date())))
+
+        expect(await new CountBoardIssuesUseCase(gateway, settings, resolver).execute('b')).toBeNull()
+        expect(gateway.filters).toEqual([])
     })
 
     it('moves the card to the column status that is allowed', async () => {

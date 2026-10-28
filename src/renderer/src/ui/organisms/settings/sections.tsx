@@ -102,6 +102,12 @@ export function WorkspaceSection() {
                     label={t('settings.workspaceRestore')}
                 />
             )}
+            <ToggleField
+                checked={workspace.issueTabs}
+                onChange={(issueTabs) => save({ workspace: { ...workspace, issueTabs } })}
+                label={t('settings.issueTabs')}
+                description={t('settings.issueTabsHint')}
+            />
         </Card>
     )
 }

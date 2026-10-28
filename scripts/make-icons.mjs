@@ -1,6 +1,9 @@
-// Generates the app and tray icons as PNG, with no external dependencies.
+// Generates the app and tray icons as PNG, with no external dependencies, and on macOS the app's .icns.
 // Usage: npm run icons
-import { writeFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { deflateSync } from 'node:zlib'
 
 const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
@@ -145,8 +148,33 @@ const trayShade = (sampleX, sampleY) => {
     return isPainted ? BLACK : null
 }
 
+// Sizes in points of an .iconset; each has a 1x and a @2x file.
+const ICONSET_POINTS = [16, 32, 128, 256, 512]
+
+// The .icns electron-builder makes from a PNG keeps 16–64 px as PNG in `icp4`/`icp5`/`icp6`, which macOS draws as
+// noise in System Settings and notifications. Apple's iconutil stores them as `ic04`/`ic05`, like other apps do.
+function writeMacIcon(outputPath) {
+    if (process.platform !== 'darwin') {
+        console.log(`${outputPath} kept as it is: iconutil only exists on macOS`)
+        return
+    }
+    const workDir = mkdtempSync(join(tmpdir(), 'refined-redmine-icons-'))
+    const iconset = join(workDir, 'icon.iconset')
+    mkdirSync(iconset)
+    try {
+        for (const points of ICONSET_POINTS) {
+            writeFileSync(join(iconset, `icon_${points}x${points}.png`), render(points, appShade))
+            writeFileSync(join(iconset, `icon_${points}x${points}@2x.png`), render(points * 2, appShade))
+        }
+        execFileSync('iconutil', ['-c', 'icns', '-o', outputPath, iconset])
+    } finally {
+        rmSync(workDir, { recursive: true, force: true })
+    }
+}
+
 writeFileSync('build/icon.png', render(1024, appShade))
 writeFileSync('resources/icon.png', render(256, appShade))
 writeFileSync('resources/trayTemplate.png', render(16, trayShade))
 writeFileSync('resources/trayTemplate@2x.png', render(32, trayShade))
+writeMacIcon('build/icon.icns')
 console.log('icons generated')

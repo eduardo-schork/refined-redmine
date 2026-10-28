@@ -3,19 +3,33 @@ import { AppError } from '../shared/errors'
 import { addDays, parseLocal, toLocalDate, type LocalDate } from '../shared/date'
 import type { TimeEntry } from './time-entry'
 
+/** `hoursPerDay` only for someone whose working day differs from the app's work schedule (part time). */
+export interface TeamMember extends Named {
+    hoursPerDay?: number
+}
+
 /** A group of people whose hours are seen together. Kept only in the app; members come from project memberships. */
 export interface Team {
     id: string
     name: string
-    members: Named[]
+    members: TeamMember[]
 }
 
 export const MAX_TEAM_MEMBERS = 60
+export const MIN_MEMBER_HOURS = 0.5
+export const MAX_MEMBER_HOURS = 24
+
+const hasValidHours = (member: TeamMember) =>
+    member.hoursPerDay === undefined ||
+    (member.hoursPerDay >= MIN_MEMBER_HOURS && member.hoursPerDay <= MAX_MEMBER_HOURS)
 
 export function assertValidTeam(team: Team): void {
     if (!team.name.trim()) throw new AppError('team.nameRequired')
     if (!team.members.length) throw new AppError('team.noMembers')
     if (team.members.length > MAX_TEAM_MEMBERS) throw new AppError('team.tooMany', { max: MAX_TEAM_MEMBERS })
+    if (!team.members.every(hasValidHours)) {
+        throw new AppError('team.memberHours', { min: MIN_MEMBER_HOURS, max: MAX_MEMBER_HOURS })
+    }
 }
 
 export type TeamPeriod = 'today' | 'thisWeek' | 'lastWeek' | 'thisMonth'

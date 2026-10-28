@@ -31,11 +31,12 @@ function invalidateTimeViews(queryClient: QueryClient, issueId?: number) {
     if (issueId) void queryClient.invalidateQueries({ queryKey: qk.issue(issueId) })
 }
 
-export function useLogTime() {
+/** `refreshIssue: false` in trâmites, which read the issue again once at the end (`useRefreshIssueViews`). */
+export function useLogTime(refreshIssue = true) {
     const queryClient = useQueryClient()
     return useMutation({
         mutationFn: (draft: TimeEntryDraft) => api.time.log(draft),
-        onSuccess: (_entry, draft) => invalidateTimeViews(queryClient, draft.issueId)
+        onSuccess: (_entry, draft) => invalidateTimeViews(queryClient, refreshIssue ? draft.issueId : undefined)
     })
 }
 

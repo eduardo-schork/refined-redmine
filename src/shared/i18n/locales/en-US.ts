@@ -97,6 +97,7 @@ export const enUS: Resources = {
         'team.nameRequired': 'Give the team a name.',
         'team.noMembers': 'Pick at least one person.',
         'team.tooMany': 'A team can have up to {{max}} people.',
+        'team.memberHours': 'Hours per day must be between {{min}} and {{max}}.',
         'overtime.hours': 'Overtime must be more than zero and up to {{max}} per entry.',
         'overtime.day': 'Pick the day of the overtime.',
         'overtime.issue': 'The issue goes by number (e.g. #1234).',
@@ -104,7 +105,7 @@ export const enUS: Resources = {
         'overtime.notFound': 'This overtime no longer exists.',
         'issue.tooManyUploads': 'You can attach up to {{max}} files at once.',
         'issue.uploadTooLarge': '“{{name}}” is larger than {{max}} MB. Attach it in Redmine.',
-        'time.hours': 'Enter the hours: more than 0 and up to {{max}} (e.g. 1.5 · 1:30 · 1h30 · 90m).',
+        'time.hours': 'Enter the hours: more than 0 and up to {{max}} (e.g. 1:30 · 1.5 · 1h30 · 90m).',
         'time.date': 'Enter a valid date.',
         'time.comment': 'Write a comment about what was done.',
         'time.issue': 'Choose the issue of the entry.',
@@ -175,6 +176,8 @@ export const enUS: Resources = {
             more: '(+{{count}})'
         },
         via: 'via {{names}}',
+        sourceBoard: 'board {{name}}',
+        sourceMonitor: 'monitor {{name}}',
         reminder: {
             startingNow: 'Starting now',
             inTime: 'In {{time}}',
@@ -310,6 +313,9 @@ export const enUS: Resources = {
         members_other: '{{count}} people in the team',
         noneYet: 'Nobody yet: pick a project and check people.',
         removeMember: 'Remove {{name}}',
+        hoursHint:
+            'Hours per day: empty follows the work schedule ({{hours}}); fill it only for someone who works differently.',
+        hoursPerDay: 'Hours per day for {{name}}',
         fromProject: 'Add people from a project',
         filter: 'Filter people…',
         checkAll: 'Check everyone shown',
@@ -368,6 +374,8 @@ export const enUS: Resources = {
         tooMuch: 'Overtime cannot exceed the logged hours.'
     },
     nav: {
+        resize: 'Sidebar width',
+        resizeHint: 'Drag to change the sidebar width; double-click to go back to the default.',
         overtime: 'Overtime',
         team: 'Team time',
         monitors: 'Monitors',
@@ -376,6 +384,8 @@ export const enUS: Resources = {
         calendar: 'Calendar',
         sprints: 'Sprints',
         boards: 'Boards',
+        boardCount_one: '{{count}} issue in this query',
+        boardCount_other: '{{count}} issues in this query',
         newBoard: 'New board',
         firstBoard: 'Create your first board',
         app: 'App',
@@ -446,6 +456,10 @@ export const enUS: Resources = {
         noNotifications: 'No notifications yet.'
     },
     sprints: {
+        tabs: {
+            issues: 'Issues',
+            capacity: 'Capacity'
+        },
         active: 'Active',
         groups: 'Groups',
         recent: 'Recently released',
@@ -525,6 +539,25 @@ export const enUS: Resources = {
             addedHint: 'Created after the estimated start',
             remaining: 'Estimate of the open ones'
         },
+        capacity: {
+            title: 'Team capacity until the dev deadline ({{date}})',
+            titleRange: 'Team capacity from {{from}} to {{to}}',
+            windowRange: 'Working hours from {{from}} to {{to}}',
+            windowFromNow: 'Working hours from now to {{to}}',
+            team: 'Team',
+            hint: 'Working hours by the work schedule, from now to the end of the deadline day, against the hours each person still has to do (estimate × share left, in new, in progress, paused or awaiting approval).',
+            noTeam: 'Create a team in Team time to see the capacity of each person.',
+            deadlinePassed: 'The dev deadline has passed: no working hours are left.',
+            person: 'Person',
+            issues: 'Issues',
+            remaining: 'To do',
+            available: 'Working hours',
+            balance: 'Balance',
+            spare: '{{hours}} spare',
+            missing: '{{hours}} short',
+            total: 'Team total',
+            perDay: '{{hours}}/day'
+        },
         summary: {
             empty: 'No issues on this board.',
             total: 'Issues',
@@ -533,6 +566,8 @@ export const enUS: Resources = {
             closedShort: 'Closed',
             estimated: 'Total estimate',
             estimatedShort: 'Estimated',
+            remaining: 'Hours to do',
+            remainingShort: 'To do',
             overdue: 'Overdue',
             overdueShort: 'Overdue',
             highPriority: 'High priority',
@@ -578,6 +613,7 @@ export const enUS: Resources = {
                 subject: 'Subject',
                 assignee: 'Assignee',
                 version: 'Version',
+                estimate: 'Estimate',
                 due: 'Due'
             },
             empty: 'No issues with these filters.'
@@ -688,8 +724,8 @@ export const enUS: Resources = {
         today: 'Today',
         yesterday: 'Yesterday',
         hours: 'Hours',
-        hoursHint: 'E.g. 1.5 · 1:30 · 1h30 · 90m',
-        hoursInvalid: 'Not understood. Use 1.5 · 1:30 · 1h30 · 90m',
+        hoursHint: 'E.g. 1:30 · 1.5 · 1h30 · 90m',
+        hoursInvalid: 'Not understood. Use 1:30 · 1.5 · 1h30 · 90m',
         activity: 'Activity',
         activityHint: 'The kind of work in Redmine (not the issue).',
         comment: 'Comment',
@@ -761,7 +797,8 @@ export const enUS: Resources = {
         notes: 'Notes cited in the handoff',
         allNotes: 'Show all notes ({{count}})',
         target: 'Issue that receives the handoff',
-        searching: 'Searching the linked issues…',
+        searching: 'Looking for the linked issues and their notes…',
+        searchingHint: 'Sending is available once it finishes.',
         noCandidates: 'No linked issue of the expected tracker. Type its number below.',
         otherIssue: 'Other: #1234',
         alsoOn: 'Also apply to',
@@ -772,6 +809,7 @@ export const enUS: Resources = {
         timeComment: 'Handoff',
         closing: 'Then change the status to',
         dontChange: 'Do not change',
+        via: 'Goes through {{statuses}} first',
         noneOfTracker: 'No linked issue of that tracker.',
         send: 'Send handoff',
         sendTo: 'Send to #{{id}}',
@@ -886,6 +924,10 @@ export const enUS: Resources = {
         targetTracker: 'Tracker of the target issue',
         anyTracker: 'Any tracker',
         defaultStatus: 'Default status',
+        statusPathHint:
+            'If the Redmine workflow does not allow going straight there, add the statuses on the way: the handoff goes through each one, in order, and the last one is the final status.',
+        thenStatus: '+ Then change to…',
+        removeStatus: 'Remove status',
         peopleFrom: 'Project (to list people)',
         defaultAssignee: 'Default assignee',
         sameTemplate: 'Default comment (optional, completed when sending)',
@@ -900,7 +942,8 @@ export const enUS: Resources = {
         activity: 'Default activity',
         chooseLater: 'Choose when sending',
         closing: 'Closing (optional)',
-        closingHint: 'After sending, changes the status of nearby issues of these trackers (checked when sending).',
+        closingHint:
+            'After sending, changes the status of nearby issues of these trackers (checked when sending); with several statuses, goes through each one, in order.',
         pickTracker: 'Tracker…',
         pickStatus: 'Status…',
         addStep: 'Add status',
@@ -1017,11 +1060,14 @@ export const enUS: Resources = {
         subtasks: 'Subtasks ({{count}})',
         subtasksClosed: '{{closed}} of {{total}} closed',
         relations: 'Relations',
+        siblings: 'Other subtasks of #{{id}}',
         tabs: {
+            description: 'Description',
+            history: 'History',
             links: 'Related issues',
             attachments: 'Attachments',
             time: 'Time',
-            noLinks: 'No subtasks or relations.',
+            noLinks: 'No parent, subtasks or relations.',
             noAttachments: 'No attachments.'
         },
         history: 'History ({{count}})',
@@ -1041,6 +1087,7 @@ export const enUS: Resources = {
         start: 'Start',
         due: 'Due',
         estimated: 'Estimated',
+        estimateTitle: 'Estimated time',
         spent: 'Spent',
         done: '% done',
         watchers: 'Watchers ({{count}})',
@@ -1273,6 +1320,9 @@ export const enUS: Resources = {
             'Each screen and each board opens in a tab, as in a browser. Ctrl+Tab goes to the next one and {{key}}1…9 jumps to one.',
         workspaceTabs: 'Open screens in tabs',
         workspaceRestore: 'Reopen the tabs when the app starts',
+        issueTabs: 'Issue detail in tabs',
+        issueTabsHint:
+            'Description, related issues, attachments, hours and history as tabs at the top of the issue, one at a time, without scrolling down.',
         diagnostics: 'Diagnostics',
         diagnosticsHint: 'Tools to investigate problems: the log lists the requests and the monitor cycles.',
         showLog: 'Show Log in the sidebar',
@@ -1567,6 +1617,15 @@ export const enUS: Resources = {
         releaseNotes: 'What is new in {{version}}',
         viewOnGithub: 'View on GitHub',
         sidebar: 'Version {{version}} available'
+    },
+    crash: {
+        title: 'Something went wrong',
+        tabHint:
+            'This tab stopped because of an unexpected error; the menu and the other tabs keep working. Copy the details to report the problem.',
+        appHint: 'The app stopped because of an unexpected error. Copy the details to report the problem, then reload.',
+        copy: 'Copy details',
+        retry: 'Try again',
+        reload: 'Reload'
     },
     whatsNew: {
         title: 'What is new in version {{version}}',

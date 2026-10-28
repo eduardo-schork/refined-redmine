@@ -14,6 +14,9 @@
     --accent: var(--accent-base, #0085ff);
     --accent-soft: color-mix(in srgb, var(--accent) 11%, var(--panel));
     --on-accent: var(--accent-text-light, #ffffff);
+    /* Claude Code actions: Claude's orange, darker on light backgrounds and lighter on dark ones for contrast. */
+    --claude: #c15f3c;
+    --claude-soft: color-mix(in srgb, var(--claude) 11%, var(--panel));
     /*
      * Issue colors (--st-*, --pr-*, --due-*) and --ok/--warn/--danger come from the color preset and the user's
      * colors (domain/settings/colors.ts), injected by useApplyAppearance with their light and dark values.
@@ -44,6 +47,8 @@
         --accent: color-mix(in srgb, var(--accent-base, #0085ff) 78%, white);
         --accent-soft: color-mix(in srgb, var(--accent) 18%, var(--panel));
         --on-accent: var(--accent-text-dark, #ffffff);
+        --claude: #e5906f;
+        --claude-soft: color-mix(in srgb, var(--claude) 16%, var(--panel));
         color-scheme: dark;
     }
     :root[data-dark-palette='midnight'] {
@@ -110,6 +115,8 @@
     --color-accent: var(--accent);
     --color-accent-soft: var(--accent-soft);
     --color-on-accent: var(--on-accent);
+    --color-claude: var(--claude);
+    --color-claude-soft: var(--claude-soft);
     --color-ok: var(--ok);
     --color-warn: var(--warn);
     --color-danger: var(--danger);
