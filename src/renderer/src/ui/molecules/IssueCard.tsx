@@ -9,6 +9,7 @@ import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/cn'
 import { Avatar } from '../atoms/Avatar'
 import { DueChip, EstimateChip, PriorityChip, TrackerLabel, VersionChip } from './issue-chips'
+import { RelatedMarkChip, type RelatedMarkView } from './RelatedMarkChip'
 import { StatusTag } from './StatusTag'
 
 export interface IssueCardOptions {
@@ -16,6 +17,8 @@ export interface IssueCardOptions {
     /** Boards with more than one project show the project on each card. */
     showProject?: boolean
     staleDays: number
+    /** By issue: related issues to show on the card. */
+    related?: ReadonlyMap<number, RelatedMarkView[]>
 }
 
 /**
@@ -72,7 +75,9 @@ function CardTags({ issue, now, options }: { issue: Issue; now: Date; options: I
     const hasVersion = Boolean(issue.fixed_version)
     const hasEstimate = Boolean(issue.estimated_hours)
     const hasDue = Boolean(issue.due_date) && !issue.status.is_closed
-    const hasTags = hasVersion || hasEstimate || hasDue || options.showStatus || options.showProject
+    const related = options.related?.get(issue.id) ?? []
+    const hasTags =
+        hasVersion || hasEstimate || hasDue || options.showStatus || options.showProject || related.length > 0
     if (!hasTags) return null
     return (
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -81,6 +86,9 @@ function CardTags({ issue, now, options }: { issue: Issue; now: Date; options: I
             <DueChip issue={issue} now={now} />
             {options.showStatus && <StatusTag status={issue.status} />}
             {options.showProject && <span className="truncate text-2xs text-muted">{issue.project.name}</span>}
+            {related.map((mark) => (
+                <RelatedMarkChip key={mark.relatedId} mark={mark} />
+            ))}
         </div>
     )
 }

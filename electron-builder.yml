@@ -9,6 +9,12 @@ files:
   - package.json
 asarUnpack:
   - resources/**
+# refined-redmine://open?url=<Redmine link> opens the issue in the app (browser extension, bookmark). The app only
+# accepts links to the configured Redmine (appLinkTarget in src/domain/redmine/links.ts).
+protocols:
+  - name: Refined Redmine
+    schemes:
+      - refined-redmine
 # Electron "fuses" are baked into the executable at build time. These close the ways another local program could
 # run code with the app's identity (and its Keychain/DPAPI access to the Redmine key and the GitHub token):
 # running the binary as plain Node, NODE_OPTIONS / --inspect injection, and a modified app.asar.

@@ -86,3 +86,12 @@ export function splitWorkTime(since: Date, now: Date, schedule: WorkSchedule): W
     const total = now.getTime() - since.getTime()
     return { business: toHours(business), overtime: toHours(total - business - pause) }
 }
+
+/**
+ * Overtime longer than a whole work day usually means the stopwatch or the trâmite ran overnight: the user forgot to
+ * pause at the end of the day. Without work periods there is no work day to compare with.
+ */
+export function overtimeLooksForgotten(overtime: number, schedule: WorkSchedule): boolean {
+    const workDay = scheduledHoursPerDay(schedule)
+    return workDay > 0 && overtime > workDay
+}

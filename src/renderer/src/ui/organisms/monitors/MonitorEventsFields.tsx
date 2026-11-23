@@ -1,7 +1,15 @@
-import { availableEvents, type CountRule, type MonitorEvent, type MonitorSourceType } from '@domain/monitor/monitor'
+import {
+    availableEvents,
+    type CountRule,
+    type MonitorEvent,
+    type MonitorSourceType,
+    type RelatedStatusRule
+} from '@domain/monitor/monitor'
+import { useStatuses, useTrackers } from '@/hooks/reference'
 import { useI18n } from '@/lib/i18n'
 import { Input, Select } from '../../atoms/fields'
 import { ToggleField } from '../../molecules/Field'
+import { ChipChoice } from '../settings/HandoffRuleEditor'
 
 type Events = Record<MonitorEvent, boolean>
 
@@ -15,23 +23,30 @@ function useEventHint(sourceType: MonitorSourceType) {
 }
 
 const DEFAULT_COUNT: CountRule = { op: 'below', value: 2 }
+// Starts without a tracker or status: saving asks for them.
+const EMPTY_RELATED: RelatedStatusRule = { trackerId: 0, statusIds: [] }
 
 /**
  * One switch per event the source can report. With `onCountChange` (query, filter and board monitors) the alert by
- * number of issues is one more switch of the same list, with its limit right below it when on.
+ * number of issues is one more switch of the same list, with its limit right below it when on; `onRelatedChange`
+ * does the same for the related issue that reaches a status.
  */
 export function MonitorEventsFields({
     sourceType,
     events,
     onChange,
     count,
-    onCountChange
+    onCountChange,
+    related,
+    onRelatedChange
 }: {
     sourceType: MonitorSourceType
     events: Events
     onChange: (events: Events) => void
     count?: CountRule
     onCountChange?: (count?: CountRule) => void
+    related?: RelatedStatusRule
+    onRelatedChange?: (related?: RelatedStatusRule) => void
 }) {
     const { t } = useI18n()
     const hintOf = useEventHint(sourceType)
@@ -57,6 +72,55 @@ export function MonitorEventsFields({
                     {count && <CountLimit count={count} onChange={onCountChange} />}
                 </div>
             )}
+            {onRelatedChange && (
+                <div className="col-span-2">
+                    <ToggleField
+                        checked={Boolean(related)}
+                        onChange={(enabled) => onRelatedChange(enabled ? EMPTY_RELATED : undefined)}
+                        label={t('monitors.related.title')}
+                        description={t('monitors.related.hint')}
+                    />
+                    {related && <RelatedRuleFields rule={related} onChange={onRelatedChange} />}
+                </div>
+            )}
+        </div>
+    )
+}
+
+/** Tracker of the related issue and the statuses that notify, under the switch. */
+function RelatedRuleFields({
+    rule,
+    onChange
+}: {
+    rule: RelatedStatusRule
+    onChange: (rule: RelatedStatusRule) => void
+}) {
+    const { t } = useI18n()
+    const trackers = useTrackers().data ?? []
+    const statuses = useStatuses().data ?? []
+    return (
+        <div className="flex flex-col gap-2 pb-2 pl-12">
+            <Select
+                className="w-64"
+                aria-label={t('monitors.related.tracker')}
+                value={rule.trackerId || ''}
+                onChange={(event) => onChange({ ...rule, trackerId: Number(event.target.value) })}
+            >
+                <option value="" disabled>
+                    {t('monitors.related.chooseTracker')}
+                </option>
+                {trackers.map((tracker) => (
+                    <option key={tracker.id} value={tracker.id}>
+                        {tracker.name}
+                    </option>
+                ))}
+            </Select>
+            <span className="text-xs text-muted">{t('monitors.related.statuses')}</span>
+            <ChipChoice
+                options={statuses}
+                chosen={rule.statusIds}
+                onChange={(statusIds) => onChange({ ...rule, statusIds })}
+            />
         </div>
     )
 }

@@ -122,6 +122,8 @@ export function MonitorEditor({
                         onChange={(events) => patch({ events })}
                         count={draft.count}
                         onCountChange={isMine ? undefined : (count) => patch({ count })}
+                        related={draft.related}
+                        onRelatedChange={isMine ? undefined : (related) => patch({ related })}
                     />
                 </div>
 

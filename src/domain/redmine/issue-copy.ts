@@ -1,7 +1,7 @@
 /** What the quick actions of the issue detail copy to the clipboard. */
-export type CopyFormat = 'link' | 'number' | 'title' | 'reference' | 'markdown'
+export type CopyFormat = 'link' | 'number' | 'id' | 'title' | 'reference' | 'markdown'
 
-export const COPY_FORMATS: CopyFormat[] = ['link', 'number', 'title', 'reference', 'markdown']
+export const COPY_FORMATS: CopyFormat[] = ['link', 'number', 'id', 'title', 'reference', 'markdown']
 
 interface CopyableIssue {
     id: number
@@ -14,6 +14,7 @@ export function copyText(format: CopyFormat, issue: CopyableIssue, url: string):
     const texts: Record<CopyFormat, string> = {
         link: url,
         number: `#${issue.id}`,
+        id: String(issue.id),
         title: issue.subject.trim(),
         reference,
         // Square brackets in the title would close the link text early.

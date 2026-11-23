@@ -2,42 +2,39 @@ import type { ReactNode } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ImageIcon } from 'lucide-react'
+import { linkIssueReferences } from '@domain/redmine/issue-reference'
 import type { RedmineLinks } from '@domain/redmine/links'
 import { useI18n } from '@/lib/i18n'
 
-// Turns "#1234" references (3+ digits, at line start or after space/parenthesis) into issue links.
-const ISSUE_REFERENCE = /(^|[\s(])#(\d{3,})\b/g
-
-const linkIssueReferences = (text: string) =>
-    text.replace(ISSUE_REFERENCE, (_match, prefix, id) => `${prefix}[#${id}](/issues/${id})`)
-
 /**
- * Redmine text (Markdown). Raw HTML is ignored. Issue links call `onIssue`, the others open in the browser.
- * `renderImage` draws the images it knows (the issue's attachments); the others become links, because
- * Redmine files require a session.
+ * Redmine text (Markdown). Raw HTML is ignored. Issue links (also to a note) call `onIssue`, the others open in the
+ * browser. `issueId` is the issue the text belongs to, for "#note-5". `renderImage` draws the images it knows (the
+ * issue's attachments); the others become links, because Redmine files require a session.
  */
 export function Markdown({
     text,
     links,
+    issueId,
     onIssue,
     onExternal,
     renderImage
 }: {
     text: string
     links: RedmineLinks
-    onIssue: (id: number) => void
+    issueId?: number
+    onIssue: (id: number, note?: number) => void
     onExternal: (url: string) => void
     renderImage?: (source: string, alt: string) => ReactNode
 }) {
     const { t } = useI18n()
-    const linked = linkIssueReferences(text)
+    const linked = linkIssueReferences(text, issueId)
     const follow = (href: string) => {
-        const { url, issueId } = links.resolve(href)
-        if (issueId) {
-            onIssue(issueId)
+        const target = links.resolve(href)
+        if (target.issueId) {
+            onIssue(target.issueId, target.note)
             return
         }
-        onExternal(url)
+        onExternal(target.url)
     }
     return (
         <div className="md">

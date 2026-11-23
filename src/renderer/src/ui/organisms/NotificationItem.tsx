@@ -89,6 +89,13 @@ function ChangePiece({ change }: { change: IssueChange }) {
                     <StatusTag status={statusNamed(change.from)} />→<StatusTag status={statusNamed(change.to)} />
                 </span>
             )
+        case 'relatedStatusChanged':
+            return (
+                <span className="inline-flex flex-wrap items-center gap-1" title={change.relatedSubject}>
+                    {t('notificationsPage.related', { tracker: change.tracker, id: change.relatedId })}
+                    <StatusTag status={statusNamed(change.from)} />→<StatusTag status={statusNamed(change.to)} />
+                </span>
+            )
         case 'commented':
             return <span>{t('notificationsPage.commented')}</span>
         case 'mentioned':
@@ -140,7 +147,7 @@ function NotificationDetail({ notification, fallback }: { notification: AppNotif
     const payload = notification.payload
     switch (payload.type) {
         case 'issueChanged':
-            return <ChangesDetail actor={payload.actor} changes={payload.changes} />
+            return <ChangesDetail actor={payload.actor || t('common.someone')} changes={payload.changes} />
         case 'issueCreated':
             return <ActorLine actor={payload.actor} />
         case 'queueExit': {

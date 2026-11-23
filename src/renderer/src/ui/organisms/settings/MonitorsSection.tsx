@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import { availableEvents, MINE_MONITOR_ID, type MineScopes, type Monitor } from '@domain/monitor/monitor'
-import { useSavedQueries } from '@/hooks/reference'
+import { useSavedQueries, useStatuses, useTrackers } from '@/hooks/reference'
 import { useSettings, useUpdateSettings } from '@/hooks/session'
 import { useI18n } from '@/lib/i18n'
 import { cn } from '@/lib/cn'
@@ -117,6 +117,18 @@ function useSourceDescription() {
     }
 }
 
+/** "Qualidade: Finalizada, Rejeitada" for a monitor with a related-status rule. */
+function useRelatedSummary(monitor: Monitor): string | undefined {
+    const { t } = useI18n()
+    const trackers = useTrackers().data ?? []
+    const statuses = useStatuses().data ?? []
+    if (!monitor.related) return undefined
+    const { trackerId, statusIds } = monitor.related
+    const tracker = trackers.find((candidate) => candidate.id === trackerId)?.name ?? `#${trackerId}`
+    const statusNames = statusIds.map((id) => statuses.find((status) => status.id === id)?.name ?? `#${id}`)
+    return t('monitors.related.summary', { tracker, statuses: statusNames.join(', ') })
+}
+
 function MonitorRow({
     monitor,
     onToggle,
@@ -139,7 +151,8 @@ function MonitorRow({
         t(`monitors.count.${monitor.count.op === 'below' ? 'summaryBelow' : 'summaryAbove'}`, {
             value: monitor.count.value
         })
-    const eventsSummary = [...eventNames, ...(countSummary ? [countSummary] : [])].join(', ')
+    const relatedSummary = useRelatedSummary(monitor)
+    const eventsSummary = [...eventNames, countSummary, relatedSummary].filter(Boolean).join(', ')
 
     return (
         <div className="flex items-center gap-3 rounded-lg border border-line px-3 py-2.5">

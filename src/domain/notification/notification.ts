@@ -21,6 +21,15 @@ export type IssueChange =
     | { type: 'attachmentAdded' }
     | { type: 'commented'; excerpt: string }
     | { type: 'mentioned'; excerpt: string }
+    /** A related issue (e.g. the Quality one) reached a status the monitor waits for; names, not ids. */
+    | {
+          type: 'relatedStatusChanged'
+          relatedId: number
+          relatedSubject: string
+          tracker: string
+          from: string
+          to: string
+      }
 
 export type QueueExitReason =
     | { type: 'reassigned'; to?: string }
@@ -95,5 +104,8 @@ export const calendarRoute = (date: LocalDate, eventId: string) => `/calendar?da
 
 export const boardRoute = (boardId: string) => `/board?id=${encodeURIComponent(boardId)}`
 
-/** Opens the issue's detail inside the app. */
-export const issueRoute = (issueId: number) => `/issue?id=${issueId}`
+/** Opens the issue's detail inside the app; with a note, at that note of the history. */
+export const issueRoute = (issueId: number, note?: number) => {
+    if (!note) return `/issue?id=${issueId}`
+    return `/issue?id=${issueId}&note=${note}`
+}

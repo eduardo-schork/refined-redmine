@@ -30,6 +30,7 @@ export type ErrorCode =
     | 'monitor.nameRequired'
     | 'monitor.sourceRequired'
     | 'monitor.countInvalid'
+    | 'monitor.relatedInvalid'
     | 'update.rateLimited'
     | 'update.checksum'
     | 'update.unauthorized'

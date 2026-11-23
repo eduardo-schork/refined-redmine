@@ -28,6 +28,9 @@ function loadRenderer(browserWindow: BrowserWindow, devUrl: string | undefined):
 export class MainWindow {
     private browserWindow: BrowserWindow | null = null
     private quitting = false
+    // Routes sent before the screen listens would be lost: they wait until it asks for them (takePendingRoute).
+    private rendererListening = false
+    private pendingRoute: string | undefined
 
     markQuitting(): void {
         this.quitting = true
@@ -58,6 +61,9 @@ export class MainWindow {
             void openExternal(url)
             return { action: 'deny' }
         })
+        browserWindow.webContents.on('did-start-loading', () => {
+            this.rendererListening = false
+        })
         const devUrl = process.env['ELECTRON_RENDERER_URL']
         browserWindow.webContents.on('will-navigate', (event, url) => {
             if (devUrl && url.startsWith(devUrl)) return
@@ -71,7 +77,20 @@ export class MainWindow {
         if (!this.browserWindow) this.create()
         this.browserWindow!.show()
         this.browserWindow!.focus()
-        if (route) this.send('navigate', route)
+        if (!route) return
+        if (this.rendererListening) {
+            this.send('navigate', route)
+            return
+        }
+        this.pendingRoute = route
+    }
+
+    /** The screen listens for routes from now on; returns the one that arrived while it was loading. */
+    takePendingRoute(): string | null {
+        this.rendererListening = true
+        const route = this.pendingRoute ?? null
+        this.pendingRoute = undefined
+        return route
     }
 
     send<Event extends keyof AppEvents>(event: Event, payload: AppEvents[Event]): void {

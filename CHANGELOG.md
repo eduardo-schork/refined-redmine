@@ -2,6 +2,16 @@
 
 Versões do Refined Redmine. A versão instalada aparece em **Configurações → Geral → Sobre**.
 
+## Próxima versão
+
+- **Horas do trâmite atualizadas**: ao lado de "Contar as horas desde", **Recontar** refaz a conta até agora (para quando o envio ficou aberto esperando um QA). Ao lado da hora extra, **Tirar a hora extra do total** apaga a extra e a desconta das horas, deixando só o que caiu no expediente. Se a hora extra passar de um expediente inteiro, o envio pergunta antes de lançar: costuma ser atividade que não foi pausada no fim do dia.
+- **Copiar só o número**: o menu de cópia do detalhe ganhou **Só o número** (`1234`, sem `#`); a opção antiga agora se chama **#Número**.
+- **Links para notas**: `#1234#note-5`, `#1234-5` e `#note-5` viram links, como no Redmine, e abrem a tarefa com o histórico rolado até a nota, destacada. Links do Redmine com `#note-5` também. Cada item do histórico mostra o número da nota (`#5`); clicar copia o link dela.
+- **Links do Redmine abrindo no app**: cole um link de tarefa no `⌘K` para abri-la (na nota, se tiver). O app passa a atender links `refined-redmine://`, e a nova **extensão de navegador** (pasta `browser-extension`, Chrome, Edge, Brave ou Arc) manda para o app os links de tarefas clicados no Slack ou no e-mail, com botão na barra e opção no menu do botão direito. Instalação no manual, em "Abrir links do Redmine no app".
+- **Monitor de tarefa relacionada**: monitores de consulta, filtro ou quadro ganharam a opção **Tarefa relacionada mudou de situação**. Escolha o tipo da relacionada (ex.: Qualidade) e as situações (ex.: Finalizada, Rejeitada): quando o QA marca a de Qualidade ligada à tarefa de dev (direto ou pela de Negócio), chega o aviso na tarefa de dev, com quem mudou. O card do quadro, a Lista e o Início mostram a relacionada e a situação dela ao lado da tarefa.
+- **Lista em janelas estreitas**: o título não some mais nem fica embaixo das outras colunas; a lista passa a rolar para o lado.
+- **Histórico com o valor antigo e o novo**: alterações de responsável, prioridade, versão, tipo, datas, horas e título mostram de → para, como no Redmine web (ex.: "responsável: Lucas Pereira → Marina Costa"), em vez de só "alterou responsável".
+
 ## 0.13.0
 
 - **Trâmites com situação em etapas**: quando o fluxo do Redmine não deixa ir direto para a situação desejada (ex.: Em andamento → Nova), a regra pode passar antes por outras, em ordem (ex.: Em pausa → Nova). Vale para a situação padrão da regra e para cada passo de fechamento das tarefas ligadas; o diálogo mostra "Passa antes por …".

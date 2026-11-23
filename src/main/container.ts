@@ -6,6 +6,7 @@ import { release, type as osType } from 'node:os'
 import { join } from 'node:path'
 import type { AppEventsPublisher } from '@application/ports/system'
 import { MonitorService } from '@application/services/monitor-service'
+import { relatedMarksOf } from '@application/services/monitor/related-check'
 import { UpdateService } from '@application/services/update-service'
 import {
     BoardFilterResolver,
@@ -36,6 +37,7 @@ import { UpdateSettingsUseCase } from '@application/use-cases/settings'
 import { BuildSupportReportUseCase } from '@application/use-cases/support'
 import { GetVersionStatsUseCase, InspectSprintProjectUseCase, ListSprintsUseCase } from '@application/use-cases/sprints'
 import { issueRoute, type AppNotification } from '@domain/notification/notification'
+import { appLinkTarget, RedmineLinks } from '@domain/redmine/links'
 import type { AppCopy } from '@domain/notification/permission'
 import { electronLoginItem } from '@infra/electron/login-item'
 import { ElectronSystemNotifier } from '@infra/electron/electron-notifier'
@@ -81,6 +83,7 @@ import { electronIdleProbe } from '@infra/electron/idle-probe'
 export interface Presentation {
     publisher: AppEventsPublisher
     showWindow(route?: string): void
+    takePendingRoute(): string | null
     quitApp(): void
 }
 
@@ -385,7 +388,8 @@ export function createContainer(presentation: () => Presentation) {
         },
         monitor: {
             status: () => monitor.getStatus(),
-            runNow: () => monitor.runNow()
+            runNow: () => monitor.runNow(),
+            relatedMarks: () => relatedMarksOf(settings.get().monitors, state)
         },
         log: {
             list: () => activityLog.list(),
@@ -407,12 +411,20 @@ export function createContainer(presentation: () => Presentation) {
             pickFolder: async () => {
                 const picked = await dialog.showOpenDialog({ properties: ['openDirectory', 'createDirectory'] })
                 return picked.canceled ? null : (picked.filePaths[0] ?? null)
-            }
+            },
+            takePendingRoute: () => presentation().takePendingRoute()
         },
         claude: {
             open: (actionId, issue) => openClaude.execute(actionId, issue)
         }
     }
 
-    return { api, monitor, reminders, updates, localization, feed, timer, fileOpener }
+    // refined-redmine://open?url=… (browser extension, bookmark): only issues of the configured Redmine open.
+    const appLinkRoute = (appUrl: string) => {
+        const target = appLinkTarget(appUrl, new RedmineLinks(settings.get().baseUrl))
+        if (!target) return undefined
+        return issueRoute(target.issueId, target.note)
+    }
+
+    return { api, monitor, reminders, updates, localization, feed, timer, fileOpener, appLinkRoute }
 }

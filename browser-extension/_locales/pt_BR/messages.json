@@ -1,0 +1,17 @@
+{
+  "name": { "message": "Refined Redmine" },
+  "description": { "message": "Abre no app Refined Redmine os links de tarefas do Redmine." },
+  "openInApp": { "message": "Abrir no Refined Redmine" },
+  "handoffTitle": { "message": "Abrindo no Refined Redmine…" },
+  "handoffHint": {
+    "message": "Se o navegador perguntar, permita abrir o Refined Redmine (marque “Sempre permitir” para não perguntar de novo). Esta aba fecha sozinha quando o app abrir."
+  },
+  "openInBrowser": { "message": "Ver no navegador" },
+  "redmineUrl": { "message": "Endereço do Redmine (o mesmo configurado no app)" },
+  "autoOpen": { "message": "Abrir no app os links de tarefas clicados fora do navegador (Slack, e-mail…)" },
+  "autoOpenHint": {
+    "message": "Links seguidos dentro do Redmine continuam no navegador. O botão da extensão e o menu do botão direito em links de tarefas abrem no app a qualquer momento."
+  },
+  "save": { "message": "Salvar" },
+  "saved": { "message": "Salvo." }
+}

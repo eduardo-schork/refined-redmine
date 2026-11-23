@@ -6,6 +6,11 @@ describe('parseIssueSearch', () => {
         expect(parseIssueSearch('#1203')).toEqual({ type: 'id', id: 1203 })
         expect(parseIssueSearch(' 42 ')).toEqual({ type: 'id', id: 42 })
     })
+    it('a note of an issue, as Redmine writes it', () => {
+        expect(parseIssueSearch('#1203#note-4')).toEqual({ type: 'id', id: 1203, note: 4 })
+        expect(parseIssueSearch('#1203-4')).toEqual({ type: 'id', id: 1203, note: 4 })
+        expect(parseIssueSearch('2026-11')).toEqual({ type: 'text', term: '2026-11' })
+    })
     it('text needs at least two characters', () => {
         expect(parseIssueSearch('a')).toEqual({ type: 'empty' })
         expect(parseIssueSearch('  cupom ')).toEqual({ type: 'text', term: 'cupom' })

@@ -60,12 +60,21 @@ export interface NavigateOptions {
 export const NavContext = createContext<(route: Route, options?: NavigateOptions) => void>(() => {})
 export const useNavigate = () => useContext(NavContext)
 
-/** The issue of an `/issue?id=1234` route (a click on a system notification), or undefined for other routes. */
-export function parseIssueRoute(path: string): number | undefined {
+const positiveInteger = (value: string | null) => {
+    const number = Number(value)
+    return Number.isInteger(number) && number > 0 ? number : undefined
+}
+
+/**
+ * The issue (and note) of an `/issue?id=1234&note=5` route (a click on a system notification, a refined-redmine://
+ * link), or undefined for other routes.
+ */
+export function parseIssueRoute(path: string): { id: number; note?: number } | undefined {
     const url = new URL(path, 'app://local')
     if (url.pathname !== '/issue') return undefined
-    const id = Number(url.searchParams.get('id'))
-    return Number.isInteger(id) && id > 0 ? id : undefined
+    const id = positiveInteger(url.searchParams.get('id'))
+    if (!id) return undefined
+    return { id, note: positiveInteger(url.searchParams.get('note')) }
 }
 
 interface NotificationOpeners {

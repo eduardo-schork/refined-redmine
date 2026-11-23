@@ -204,7 +204,7 @@ function Preview({
                 <Markdown
                     text={text}
                     links={links}
-                    onIssue={(id) => openExternal(links.issue(id))}
+                    onIssue={(id, note) => openExternal(note ? links.note(id, note) : links.issue(id))}
                     onExternal={openExternal}
                     renderImage={renderImage}
                 />

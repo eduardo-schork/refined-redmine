@@ -3,6 +3,7 @@ import {
     useCallback,
     useContext,
     useEffect,
+    useMemo,
     useRef,
     useState,
     type KeyboardEvent,
@@ -12,13 +13,16 @@ import {
 import { ArrowDownUp, Copy, ExternalLink, Pencil, X } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { CustomFieldValue, IssueDetail, Journal, JournalDetail } from '@domain/redmine/entities'
+import { noteNumber } from '@domain/automation/handoff'
 import { COPY_FORMATS, copyText } from '@domain/redmine/issue-copy'
 import { MAX_SUBJECT_LENGTH, subtaskDefaults, type NewIssueDefaults } from '@domain/redmine/issue-edit'
+import { journalValue, namesById, peopleOfIssue, type JournalNames } from '@domain/redmine/journal-detail'
 import { RedmineLinks } from '@domain/redmine/links'
-import { useChangeIssueStatus, useCommentAndChange, useIssue } from '@/hooks/issues'
-import { useStatuses } from '@/hooks/reference'
+import { useChangeIssueStatus, useCommentAndChange, useIssue, useIssueEditOptions } from '@/hooks/issues'
+import { usePriorities, useProjects, useStatuses, useTrackers } from '@/hooks/reference'
 import { useSettings } from '@/hooks/session'
 import { api } from '@/lib/api'
+import { cn } from '@/lib/cn'
 import { useI18n } from '@/lib/i18n'
 import { loadJournalOrder, saveJournalOrder, type JournalOrder } from '@/lib/journal-order'
 import { qk } from '@/lib/query-keys'
@@ -57,14 +61,17 @@ const DESCRIPTION_VISIBLE_LINES = 25
 
 interface MarkdownLinkProps {
     links: RedmineLinks
-    onIssue: (id: number) => void
+    issueId?: number
+    onIssue: (id: number, note?: number) => void
     onExternal: (url: string) => void
     renderImage?: (source: string, alt: string) => ReactNode
 }
 
-// Any screen can open the modal with openIssue(id); opened issues form a stack so "← back" returns to the previous one.
-// Inside a tab it opens in that tab's modal; outside (sidebar, search, system notifications), in the tab in front.
-const OpenIssueContext = createContext<(id: number) => void>(() => {})
+// Any screen can open the modal with openIssue(id, note?); opened issues form a stack so "← back" returns to the
+// previous one. Inside a tab it opens in that tab's modal; outside (sidebar, search, system notifications), in the tab
+// in front. With a note, the history scrolls to it.
+type IssueOpener = (id: number, note?: number) => void
+const OpenIssueContext = createContext<IssueOpener>(() => {})
 export const useOpenIssue = () => useContext(OpenIssueContext)
 
 // Any screen can open the "New issue" form; the created issue then opens in the modal. Without defaults, the form
@@ -87,13 +94,7 @@ export function useScreenIssueDefaults({ projectId, fixedVersionId }: NewIssueDe
 }
 
 /** Outside the tabs: issues and the "New issue" form (also ⌘N) open in the tab in front. */
-export function IssueModalProvider({
-    onOpenIssue,
-    children
-}: {
-    onOpenIssue: (id: number) => void
-    children: ReactNode
-}) {
+export function IssueModalProvider({ onOpenIssue, children }: { onOpenIssue: IssueOpener; children: ReactNode }) {
     const frontTabNewIssue = useRef<NewIssueOpener>(undefined)
     const openNewIssue = useCallback((defaults?: NewIssueDefaults) => frontTabNewIssue.current?.(defaults), [])
     useModifierShortcut('n', openNewIssue)
@@ -121,16 +122,19 @@ function useFrontTabNewIssue(openNewIssue: NewIssueOpener) {
 
 /**
  * The issue modal and "New issue" form of one tab. They are hidden with the tab and come back as they were, so each
- * tab can have its own issue open. `issues` is the tab's stack, oldest first.
+ * tab can have its own issue open. `issues` is the tab's stack, oldest first; `focusNote` is the note of the issue on
+ * top to show.
  */
 export function TabIssueModals({
     issues,
+    focusNote,
     onOpenIssue,
     onBack,
     children
 }: {
     issues: number[]
-    onOpenIssue: (id: number) => void
+    focusNote?: number
+    onOpenIssue: IssueOpener
     onBack: () => void
     children: ReactNode
 }) {
@@ -151,7 +155,13 @@ export function TabIssueModals({
                     {children}
                 </ScreenDefaultsContext.Provider>
                 {current !== undefined && (
-                    <IssueModal key={current} id={current} canGoBack={issues.length > 1} onClose={onBack} />
+                    <IssueModal
+                        key={current}
+                        id={current}
+                        focusNote={focusNote}
+                        canGoBack={issues.length > 1}
+                        onClose={onBack}
+                    />
                 )}
                 {newIssue && (
                     <IssueCreateDialog
@@ -169,7 +179,17 @@ function openExternal(url: string) {
     void api.app.openExternal(url)
 }
 
-function IssueModal({ id, onClose, canGoBack }: { id: number; onClose: () => void; canGoBack: boolean }) {
+function IssueModal({
+    id,
+    focusNote,
+    onClose,
+    canGoBack
+}: {
+    id: number
+    focusNote?: number
+    onClose: () => void
+    canGoBack: boolean
+}) {
     const { t, error } = useI18n()
     const toast = useToast()
     const openIssue = useOpenIssue()
@@ -189,6 +209,7 @@ function IssueModal({ id, onClose, canGoBack }: { id: number; onClose: () => voi
     const saving = changeStatus.isPending || comment.isPending
     const markdownLinks: MarkdownLinkProps = {
         links,
+        issueId: id,
         onIssue: openIssue,
         onExternal: openExternal,
         renderImage: issue ? inlineAttachmentRenderer(issue.attachments, links) : undefined
@@ -229,11 +250,12 @@ function IssueModal({ id, onClose, canGoBack }: { id: number; onClose: () => voi
                         <IssueMain
                             issue={issue}
                             tabsOnTop={settings.workspace.issueTabs}
+                            focusNote={focusNote}
                             description={<DescriptionSection issue={issue} {...markdownLinks} />}
                             history={
                                 <History
                                     issue={issue}
-                                    statusName={statusName}
+                                    focusNote={focusNote}
                                     composer={<CommentBox issue={issue} comment={comment} saving={saving} />}
                                     {...markdownLinks}
                                 />
@@ -255,6 +277,7 @@ function IssueModal({ id, onClose, canGoBack }: { id: number; onClose: () => voi
 function IssueMain({
     issue,
     tabsOnTop,
+    focusNote,
     description,
     history,
     links,
@@ -263,19 +286,21 @@ function IssueMain({
 }: {
     issue: IssueDetail
     tabsOnTop: boolean
+    focusNote?: number
     description: ReactNode
     history: ReactNode
     links: RedmineLinks
     onOpenIssue: (id: number) => void
     onNewSubtask: () => void
 }) {
-    // A new key also when the layout changes, so the first tab is the right one for it.
+    // A new key also when the layout changes or a note is asked for, so the first tab is the right one for it.
     const tabs = (
         <IssueDetailTabs
-            key={`${issue.id}:${tabsOnTop}`}
+            key={`${issue.id}:${tabsOnTop}:${focusNote ?? ''}`}
             issue={issue}
             links={links}
             wholeIssue={tabsOnTop ? { description, history } : undefined}
+            startOnHistory={Boolean(focusNote)}
             onOpenIssue={onOpenIssue}
             onNewSubtask={onNewSubtask}
         />
@@ -672,12 +697,40 @@ function fieldLabel(name: string, t: Translate) {
     return t(`fields.${name}` as 'fields.subject', { defaultValue: name })
 }
 
-// Long or id-valued fields only say "changed" instead of showing raw before/after values.
-function isOpaqueField(name: string) {
-    return name === 'description' || name === 'subject' || name.endsWith('_id')
+type Dates = ReturnType<typeof useI18n>['dates']
+
+/** What the history needs to name the values of a journal's changes. */
+interface DetailContext {
+    t: Translate
+    dates: Dates
+    names: JournalNames
+    /** Custom field names, by id (the journal only has the id). */
+    customFields: ReadonlyMap<number, string>
 }
 
-function describeJournalDetail(detail: JournalDetail, t: Translate, statusName: Map<number, string>): string {
+// Dates, hours and percentages are shown as in the rest of the app.
+const FORMAT_OF_FIELD: Record<string, (value: string, dates: Dates) => string> = {
+    start_date: (value, dates) => dates.date(value),
+    due_date: (value, dates) => dates.date(value),
+    estimated_hours: (value, dates) => dates.hours(Number(value)),
+    done_ratio: (value) => `${value}%`
+}
+
+function shownValue(fieldName: string, value: string | null | undefined, context: DetailContext): string {
+    const shown = journalValue(fieldName, value, context.names)
+    const format = FORMAT_OF_FIELD[fieldName]
+    if (!format || shown === '—') return shown
+    return format(shown, context.dates)
+}
+
+function describeCustomField(detail: JournalDetail, context: DetailContext): string {
+    const field = context.customFields.get(Number(detail.name))
+    if (!field) return context.t('issue.journal.customField')
+    return context.t('issue.journal.value', { field, from: detail.old_value || '—', to: detail.new_value || '—' })
+}
+
+function describeJournalDetail(detail: JournalDetail, context: DetailContext): string {
+    const { t } = context
     if (detail.property === 'attachment') {
         if (detail.new_value) return t('issue.journal.attachmentAdded', { name: detail.new_value })
         return t('issue.journal.attachmentRemoved', { name: detail.old_value ?? '' })
@@ -686,28 +739,73 @@ function describeJournalDetail(detail: JournalDetail, t: Translate, statusName: 
         const relatedId = detail.new_value ?? detail.old_value ?? ''
         return t('issue.journal.relation', { name: detail.name, id: relatedId })
     }
-    if (detail.property === 'cf') return t('issue.journal.customField')
-    if (detail.name === 'status_id') {
-        const nameOf = (value?: string | null) => statusName.get(Number(value)) ?? value ?? '—'
-        return t('issue.journal.status', { from: nameOf(detail.old_value), to: nameOf(detail.new_value) })
-    }
+    if (detail.property === 'cf') return describeCustomField(detail, context)
     const field = fieldLabel(detail.name, t)
-    if (isOpaqueField(detail.name)) return t('issue.journal.changed', { field })
-    return t('issue.journal.value', { field, from: detail.old_value || '—', to: detail.new_value || '—' })
+    // The description is too long for "before → after".
+    if (detail.name === 'description') return t('issue.journal.changed', { field })
+    const from = shownValue(detail.name, detail.old_value, context)
+    const to = shownValue(detail.name, detail.new_value, context)
+    return t('issue.journal.value', { field, from, to })
+}
+
+/** Names for the ids in the journals, from lists the screen already loads (the project's ones come from the cache). */
+function useJournalNames(issue: IssueDetail): JournalNames {
+    const statuses = useStatuses().data
+    const priorities = usePriorities().data
+    const trackers = useTrackers().data
+    const projects = useProjects().data
+    const options = useIssueEditOptions(issue.project.id).data
+    return useMemo(
+        () => ({
+            statuses: namesById(statuses),
+            priorities: namesById(priorities),
+            trackers: namesById(trackers),
+            versions: namesById(options?.versionNames),
+            people: namesById([...peopleOfIssue(issue), ...(options?.assignees ?? [])]),
+            projects: namesById(projects)
+        }),
+        [statuses, priorities, trackers, projects, options, issue]
+    )
 }
 
 function hasJournalContent(journal: Journal) {
     return Boolean(journal.notes?.trim()) || journal.details.length > 0
 }
 
+// The description above is cut to 25 lines only after it is measured, which moves the notes up: scrolling right
+// away left the note half hidden at the top.
+const SCROLL_TO_NOTE_DELAY_MS = 300
+
+/** Brings the note asked for (a link to "#1234#note-5") into view. */
+function useScrollToNote(focusNote: number | undefined) {
+    const listRef = useRef<HTMLOListElement>(null)
+    useEffect(() => {
+        if (!focusNote) return
+        const timer = setTimeout(() => {
+            const item = listRef.current?.querySelector(`[data-note="${focusNote}"]`)
+            item?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+        }, SCROLL_TO_NOTE_DELAY_MS)
+        return () => clearTimeout(timer)
+    }, [focusNote])
+    return listRef
+}
+
 function History({
     issue,
-    statusName,
     composer,
+    focusNote,
     ...markdownLinks
-}: { issue: IssueDetail; statusName: Map<number, string>; composer: ReactNode } & MarkdownLinkProps) {
-    const { t } = useI18n()
+}: {
+    issue: IssueDetail
+    composer: ReactNode
+    focusNote?: number
+} & MarkdownLinkProps) {
+    const { t, dates } = useI18n()
+    const names = useJournalNames(issue)
+    const customFields = new Map((issue.custom_fields ?? []).map((field) => [field.id, field.name]))
+    const detailContext: DetailContext = { t, dates, names, customFields }
     const [order, setOrder] = useState<JournalOrder>(loadJournalOrder)
+    const listRef = useScrollToNote(focusNote)
     const withContent = issue.journals.filter(hasJournalContent)
     const newestFirst = order === 'newest'
     const journals = newestFirst ? [...withContent].reverse() : withContent
@@ -726,45 +824,85 @@ function History({
             </div>
             {/* The comment box stays next to the newest notes. */}
             {newestFirst && <div className="mb-5">{composer}</div>}
-            <ol className="flex flex-col gap-4">
-                {journals.map((journal) => (
-                    <JournalItem
-                        key={journal.id}
-                        issue={issue}
-                        journal={journal}
-                        statusName={statusName}
-                        {...markdownLinks}
-                    />
-                ))}
+            <ol ref={listRef} className="flex flex-col gap-4">
+                {journals.map((journal) => {
+                    // Counted among all the journals, as Redmine does (also the ones the history hides).
+                    // ponytail: a private note the user cannot see is left out by the API and shifts the numbers
+                    // after it; the API does not send Redmine's own number.
+                    const number = noteNumber(issue.journals, journal.id)
+                    return (
+                        <JournalItem
+                            key={journal.id}
+                            issue={issue}
+                            journal={journal}
+                            number={number}
+                            focused={number === focusNote}
+                            detailContext={detailContext}
+                            {...markdownLinks}
+                        />
+                    )
+                })}
             </ol>
             {!newestFirst && composer}
         </section>
     )
 }
 
+/** "#5" next to a note, as in Redmine web; a click copies the link to the note. */
+function NoteNumber({ issueId, number, links }: { issueId: number; number: number; links: RedmineLinks }) {
+    const { t } = useI18n()
+    const copy = useCopy()
+    const label = t('issue.copy.noteLink')
+    return (
+        <button
+            type="button"
+            className="shrink-0 cursor-default text-muted hover:text-fg"
+            title={label}
+            aria-label={label}
+            onClick={() => void copy(links.note(issueId, number))}
+        >
+            #{number}
+        </button>
+    )
+}
+
 function JournalItem({
     issue,
     journal,
-    statusName,
+    number,
+    focused,
+    detailContext,
     ...markdownLinks
-}: { issue: IssueDetail; journal: Journal; statusName: Map<number, string> } & MarkdownLinkProps) {
+}: {
+    issue: IssueDetail
+    journal: Journal
+    number: number
+    focused: boolean
+    detailContext: DetailContext
+} & MarkdownLinkProps) {
     const { t, dates } = useI18n()
+    const itemClass = cn('flex gap-3', focused && 'rounded-md outline-2 outline-offset-4 outline-accent')
     return (
-        <li className="flex gap-3">
+        <li className={itemClass} data-note={number}>
             <Avatar name={journal.user.name} className="mt-0.5 h-6 w-6 text-2xs" />
             <div className="min-w-0 flex-1">
-                <div className="text-xs">
-                    <span className="font-medium">{journal.user.name}</span>{' '}
-                    <span className="text-muted">· {dates.dateTime(journal.created_on)}</span>
-                    <SendNoteButton issue={issue} journal={journal} />
-                    {journal.private_notes && (
-                        <span className="ml-1 rounded bg-panel-2 px-1 text-2xs text-muted">{t('common.private')}</span>
-                    )}
+                <div className="flex items-baseline gap-2 text-xs">
+                    <div className="min-w-0 flex-1">
+                        <span className="font-medium">{journal.user.name}</span>{' '}
+                        <span className="text-muted">· {dates.dateTime(journal.created_on)}</span>
+                        <SendNoteButton issue={issue} journal={journal} />
+                        {journal.private_notes && (
+                            <span className="ml-1 rounded bg-panel-2 px-1 text-2xs text-muted">
+                                {t('common.private')}
+                            </span>
+                        )}
+                    </div>
+                    <NoteNumber issueId={issue.id} number={number} links={markdownLinks.links} />
                 </div>
                 {journal.details.length > 0 && (
                     <ul className="mt-0.5 text-xs text-muted">
                         {journal.details.map((detail, index) => (
-                            <li key={index}>• {describeJournalDetail(detail, t, statusName)}</li>
+                            <li key={index}>• {describeJournalDetail(detail, detailContext)}</li>
                         ))}
                     </ul>
                 )}

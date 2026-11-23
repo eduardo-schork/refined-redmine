@@ -52,7 +52,11 @@ ciclo (MonitorService.runChecks)
  │   └─ Consulta / filtro / quadro (source-check.ts)
  │       ├─ GET /issues.json?query_id=… | <parâmetros da URL> | <filtro do quadro>   (até 500) → entrou/saiu, aviso por quantidade
  │       │   quadro com mais de 500 no ciclo anterior (minhas tarefas, projeto, sprint): só a contagem (limit=1) + as alteradas desde a marca (updated_on>=, até 100)
- │       └─ GET /issues/:id.json?include=journals  (as com updated_on > marca do monitor, e as que saíram se "Tarefa saiu" estiver desligado; reaproveita o que já foi lido)
+ │       ├─ GET /issues/:id.json?include=journals  (as com updated_on > marca do monitor, e as que saíram se "Tarefa saiu" estiver desligado; reaproveita o que já foi lido)
+ │       └─ com "Tarefa relacionada mudou de situação" (related-check.ts):
+ │           ├─ GET /issues/:id.json?include=relations,children + GET /issues.json?issue_id=…  (ligações das tarefas novas, alteradas ou guardadas há mais de 6 h; até 40 por ciclo)
+ │           ├─ GET /issues.json?issue_id=<relacionadas>&status_id=*   (situação de todas as relacionadas, 1 listagem por 100)
+ │           └─ GET /issues/:id.json?include=journals  (só a relacionada que mudou para uma situação escolhida, para saber quem mudou; conta no limite de 40)
  ├─ grava a marca de cada monitor (maior updated_on da listagem dele) e a geral (maior visto por qualquer um)
  ├─ notificações: state.json + notificação do sistema + evento para a janela
  └─ log: "Verificação concluída: N monitores, X notificações em Y ms"
@@ -63,8 +67,11 @@ ciclo (MonitorService.runChecks)
 - Históricos lidos: no máximo **40 por ciclo** somando todos os monitores (`MAX_JOURNAL_READS_PER_CYCLE`); saídas da fila têm limite próprio de 15. `MonitorCycle` guarda cada histórico lido em memória durante o ciclo e funde notificações repetidas.
 - Um monitor com erro não interrompe os outros (erro no status da tela Notificações e no Log).
 - Clique numa notificação do sistema: se ela é de uma tarefa, o processo principal mostra a janela e envia o evento `navigate` com `/issue?id=<número>`, e a interface abre a tarefa no detalhe (`openNotificationTarget` → `parseIssueRoute`). Sem tarefa, abre a rota gravada ou o link no navegador; a resumida abre a tela Notificações.
+- Link `refined-redmine://open?url=<link do Redmine>` (extensão do navegador, favorito): o macOS entrega pelo evento `open-url` (registrado antes do `ready`), o Windows pela linha de comando (`second-instance` ou `process.argv` na partida). O processo principal confere o link com `appLinkTarget` contra o Redmine configurado e mostra a janela com `/issue?id=<número>&note=<nota>`.
+- Rota que chega antes da tela ouvir (app aberto pelo link ou por uma notificação, tela recarregando): a janela guarda a última e a tela pede com `app.takePendingRoute` assim que assina o evento `navigate`. Cada carregamento da tela (`did-start-loading`) volta a guardar até ela pedir de novo.
 - Com `query_id` o Redmine ignora outros filtros, por isso a comparação "mudou depois da marca" é feita no app, sobre o resultado.
 - O **aviso por quantidade** ("menos de N" / "mais de N") não faz requisição a mais: usa o `total_count` da mesma listagem e a contagem da foto anterior (`state.json` → `querySnapshots`). Monitor desligado perde a foto; ao religar, se a condição já valer, avisa uma vez.
+- **Tarefa relacionada mudou de situação**: as ligações (tarefa da lista → relacionadas do tipo escolhido) e a última situação vista de cada relacionada ficam em `state.json` → `relatedWatch`, por monitor; somem com o monitor (`pruneSnapshots`) e no logout (`reset`). O selo do card (`monitor.relatedMarks`) é montado a partir desse estado, sem requisição; a tela relê depois de cada ciclo (evento `monitor.status`).
 
 ## 4. Requisições HTTP
 
@@ -206,6 +213,8 @@ Pasta: macOS `~/Library/Application Support/Refined Redmine/` · Windows `%APPDA
 - Janela com `sandbox: true` e `contextIsolation: true`; `window.bridge` só expõe os métodos do contrato.
 - CSP: `default-src 'self'`, sem scripts nem conexões externas.
 - Links externos abrem no navegador só se forem `http(s)`.
+- **Esquema `refined-redmine://`** (registrado no `electron-builder.yml` e com `setAsDefaultProtocolClient`): qualquer página ou app pode abri-lo, então a única ação é abrir no detalhe uma tarefa do Redmine configurado (`appLinkTarget`: só `refined-redmine://open?url=`, link `http(s)` dentro da base configurada e caminho `/issues/<número>`). Qualquer outra coisa só mostra a janela; nada é lido nem alterado no Redmine além da leitura normal da tarefa aberta.
+- **Extensão do navegador** (`browser-extension/`): permissões `storage`, `webNavigation`, `contextMenus` e `activeTab`, sem acesso ao conteúdo das páginas. Guarda só o endereço do Redmine e a opção de abrir automaticamente (`chrome.storage.sync`); não vê a chave do Redmine nem fala com ele.
 - **Backup de configurações** (`settings.exportBackup`/`importBackup`): o processo principal abre o diálogo nativo de salvar/abrir e grava ou lê o arquivo escolhido pelo usuário (JSON, até 5 MB); a tela nunca recebe nem escolhe caminhos. O arquivo não tem a conexão, a API key nem o token do GitHub; a importação passa pelas mesmas conferências de `settings.update`.
 - A visualização de anexos citados na descrição recolhida abre inteira: o esmaecimento do texto é uma camada por cima (degradê), não `mask-image`, que recortava também a janela `fixed` aberta de dentro do texto.
 - **Ações do Claude Code**: a tela só manda o id da ação e o número/título da tarefa (`claude.open`); o processo principal monta o link a partir da ação salva em `config.json` (`claude-cli://open?cwd=…&q=…` ou `claude://code/new?q=…`, com `encodeURIComponent`) e abre com `shell.openExternal`. Assim a tela não consegue abrir outros esquemas nem outras pastas. No modo app, o prompt também vai para a área de transferência. A pasta é escolhida pelo seletor nativo (`app.pickFolder`).

@@ -71,6 +71,9 @@ export function TramiteDialog({
         Boolean(comment.trim()) || files.uploads.length > 0 || !nothingChosen(choices) || timeSteps.length > 0
 
     const send = async () => {
+        // Asked only while the hours are still to be logged, not again on a retry after they were.
+        const hoursPending = steps.pending(timeSteps).length > 0
+        if (hoursPending && !hours.confirmLargeOvertime()) return
         const clean = await steps.run(planned)
         if (clean) {
             toast(t('handoff.sent', { id: issue.id }))

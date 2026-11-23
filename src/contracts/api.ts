@@ -22,6 +22,7 @@ import type { Board } from '@domain/board/board'
 import type { CalendarEvent } from '@domain/calendar/calendar-event'
 import type { LogEntry } from '@domain/log/log-entry'
 import type { MonitorStatus } from '@domain/monitor/monitor-status'
+import type { RelatedMark } from '@domain/monitor/related-status'
 import type { AppNotification } from '@domain/notification/notification'
 import type { NotifyPermissionInfo, NotifyProbeResult } from '@domain/notification/permission'
 import type {
@@ -164,6 +165,8 @@ export interface RefinedApi {
     monitor: {
         status(): MonitorStatus
         runNow(): MonitorStatus
+        /** Related issues in a status a monitor waits for, for the cards (from the monitors' state, no request). */
+        relatedMarks(): RelatedMark[]
     }
     log: {
         list(): LogEntry[]
@@ -185,6 +188,11 @@ export interface RefinedApi {
         supportReport(): SupportReport
         /** Native folder picker; null when cancelled. */
         pickFolder(): string | null
+        /**
+         * Called once the screen listens for `navigate`: returns the route that arrived while it was loading (the app
+         * opened by a refined-redmine:// link or a notification), or null.
+         */
+        takePendingRoute(): string | null
     }
     claude: {
         /** Opens Claude with a saved action (Settings → Automations) for this issue. */
@@ -232,10 +240,10 @@ export const API_METHODS = {
         'permission',
         'openSettings'
     ],
-    monitor: ['status', 'runNow'],
+    monitor: ['status', 'runNow', 'relatedMarks'],
     log: ['list', 'clear'],
     updates: ['status', 'check', 'setToken', 'testToken', 'download', 'install'],
-    app: ['openExternal', 'info', 'openDataFolder', 'supportReport', 'pickFolder'],
+    app: ['openExternal', 'info', 'openDataFolder', 'supportReport', 'pickFolder', 'takePendingRoute'],
     claude: ['open']
 } as const satisfies { [Group in keyof RefinedApi]: readonly (keyof RefinedApi[Group])[] }
 

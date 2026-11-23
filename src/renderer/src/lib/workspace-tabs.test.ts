@@ -3,6 +3,7 @@ import { parseRoute } from './router'
 import {
     closeOtherTabs,
     closeTab,
+    focusedNote,
     keepTabs,
     loadTabs,
     moveTab,
@@ -121,6 +122,13 @@ describe('issues open in a tab', () => {
         expect(issuesOf(openTab(opened, { page: 'board', boardId: 'b1' }), 'board:b1')).toEqual([3])
         expect(issuesOf(moveTab(opened, 'board:b1', 'home'), 'board:b1')).toEqual([3])
         expect(closeTab(opened, 'board:b1').tabs.flatMap((tab) => tab.issues ?? [])).toEqual([])
+    })
+    it('show the note asked for only while its issue is on top', () => {
+        const homeTab = (tabs: WorkspaceTabs) => tabs.tabs.find((tab) => tab.key === 'home')!
+        const atNote = pushIssue(pushIssue(state, 'home', 1), 'home', 2, 5)
+        expect(focusedNote(homeTab(atNote))).toBe(5)
+        expect(focusedNote(homeTab(popIssue(atNote, 'home')))).toBeUndefined()
+        expect(focusedNote(homeTab(pushIssue(atNote, 'home', 2)))).toBeUndefined()
     })
 })
 

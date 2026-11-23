@@ -206,6 +206,10 @@ export class HttpRedmineGateway implements RedmineGateway {
         return this.issue(id, 'journals')
     }
 
+    getIssueLinks(id: number) {
+        return this.issue(id, 'relations,children')
+    }
+
     async allowedStatuses(issueId: number): Promise<IssueStatus[]> {
         const issue = await this.issue(issueId, 'allowed_statuses')
         return issue.allowed_statuses

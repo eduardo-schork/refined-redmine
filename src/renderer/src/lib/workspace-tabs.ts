@@ -7,6 +7,8 @@ export interface WorkspaceTab {
     route: Route
     /** Issues open in this tab's modal, oldest first: the last one is shown and "← back" returns to the previous. */
     issues?: number[]
+    /** The note asked for when an issue was opened from a link to it ("#1234#note-5"); not saved between sessions. */
+    focus?: { issueId: number; note: number }
 }
 
 export interface WorkspaceTabs {
@@ -113,9 +115,21 @@ function changeIssues(state: WorkspaceTabs, key: string, change: (issues: number
     return { ...state, tabs }
 }
 
-/** Opens an issue in the tab's modal, on top of the ones already open there (unless it is already on top). */
-export function pushIssue(state: WorkspaceTabs, key: string, issueId: number): WorkspaceTabs {
-    return changeIssues(state, key, (issues) => (issues.at(-1) === issueId ? issues : [...issues, issueId]))
+/**
+ * Opens an issue in the tab's modal, on top of the ones already open there (unless it is already on top), at `note`
+ * of its history when given.
+ */
+export function pushIssue(state: WorkspaceTabs, key: string, issueId: number, note?: number): WorkspaceTabs {
+    const pushed = changeIssues(state, key, (issues) => (issues.at(-1) === issueId ? issues : [...issues, issueId]))
+    const focus = note ? { issueId, note } : undefined
+    const tabs = pushed.tabs.map((tab) => (tab.key === key ? { ...tab, focus } : tab))
+    return { ...pushed, tabs }
+}
+
+/** The note to show in the tab's modal: only while the issue it belongs to is the one on top. */
+export function focusedNote(tab: WorkspaceTab): number | undefined {
+    if (!tab.focus || tab.focus.issueId !== tab.issues?.at(-1)) return undefined
+    return tab.focus.note
 }
 
 /** "← back" or closing the modal: the previous issue of that tab shows again, or the modal closes. */

@@ -1,6 +1,7 @@
 import type { OvertimeBank } from '@domain/time/overtime'
 import type { CalendarEvent } from '@domain/calendar/calendar-event'
 import type { QuerySnapshot } from '@domain/monitor/query-diff'
+import type { RelatedWatch } from '@domain/monitor/related-status'
 import type { AppNotification, NotificationKind } from '@domain/notification/notification'
 import type { AppCopy, DeliveryConfirmation } from '@domain/notification/permission'
 import type { Settings } from '@domain/settings/settings'
@@ -36,6 +37,8 @@ export interface StateFile {
     notifyConfirmation?: DeliveryConfirmation
     events: (AppNotification | LegacyNotification)[]
     querySnapshots: Record<string, QuerySnapshot>
+    /** By monitor: links and statuses of the related issues (monitors with a related-status rule). */
+    relatedWatch?: Record<string, RelatedWatch>
     /** Running or paused stopwatch (instants only). */
     timer?: TimerState
 }

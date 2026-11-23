@@ -69,6 +69,7 @@ export const enUS: Resources = {
         'monitor.nameRequired': 'Give the monitor a name.',
         'monitor.sourceRequired': 'Choose where the monitor issues come from.',
         'monitor.countInvalid': 'Enter a whole number of issues for the count alert.',
+        'monitor.relatedInvalid': 'Choose the tracker of the related issue and at least one status.',
         'update.unauthorized': 'GitHub refused the token (invalid or expired).',
         'update.notFound':
             "The app's repository is not reachable on GitHub (still private? Then only with a token that has access).",
@@ -156,7 +157,8 @@ export const enUS: Resources = {
             fieldChanged: 'changed {{field}}',
             attachmentAdded: 'attached a file',
             commented: 'commented: “{{excerpt}}”',
-            mentioned: 'mentioned you: “{{excerpt}}”'
+            mentioned: 'mentioned you: “{{excerpt}}”',
+            relatedStatusChanged: 'changed {{tracker}} #{{id}}: {{from}} → {{to}}'
         },
         exit: {
             reassigned: 'handed it to {{name}}',
@@ -828,6 +830,10 @@ export const enUS: Resources = {
         countFrom: 'Count the hours from',
         countFromHint: 'Inside working hours it is normal time; outside, overtime (Settings → Automations).',
         typeHours: 'Type the hours',
+        refreshHours: 'Recount the hours up to now',
+        dropOvertime: 'Remove the overtime from the total',
+        confirmLargeOvertime:
+            'The overtime ({{overtime}}) is longer than a work day ({{workDay}}). It looks like the activity was not paused at the end of the day. Log it anyway?',
         fromTimer: 'Stopwatch ({{time}}), reset when sent',
         since: {
             status: 'Status changed',
@@ -1001,8 +1007,11 @@ export const enUS: Resources = {
             descriptionAction: 'Copy the description (Markdown)',
             link: 'Link',
             linkHint: 'Copy the issue link in Redmine',
-            number: 'Number',
+            number: '#Number',
             numberHint: 'Copy the number, e.g. #1234',
+            id: 'Number only',
+            idHint: 'Copy only the digits, e.g. 1234',
+            noteLink: 'Copy the link to this note',
             title: 'Title',
             titleHint: 'Copy the title only',
             reference: '#Number and title',
@@ -1110,7 +1119,6 @@ export const enUS: Resources = {
             attachmentRemoved: 'removed attachment {{name}}',
             relation: 'relation {{name}}: #{{id}}',
             customField: 'changed a custom field',
-            status: 'status: {{from}} → {{to}}',
             changed: 'changed {{field}}',
             value: '{{field}}: {{from}} → {{to}}'
         }
@@ -1230,6 +1238,7 @@ export const enUS: Resources = {
         yesterday: 'Yesterday',
         commented: 'commented',
         mentioned: 'mentioned you',
+        related: 'changed {{tracker}} #{{id}}:',
         markRead: 'Mark as read',
         markUnread: 'Mark as unread',
         remove: 'Remove',
@@ -1494,6 +1503,14 @@ export const enUS: Resources = {
         events: 'Notify me when',
         movedHint: 'Monitors now have their own screen in the sidebar, right above the boards.',
         open: 'Open Monitors',
+        related: {
+            title: 'Related issue changed status',
+            hint: 'Notifies on the listed issue when one linked to it (parent, subtask or relation, up to 3 levels; e.g. the Quality one, through the Business one) reaches one of the chosen statuses. The card shows the status.',
+            tracker: 'Tracker of the related issue',
+            chooseTracker: 'Related tracker (e.g. Quality)',
+            statuses: 'Notify when it reaches',
+            summary: '{{tracker}}: {{statuses}}'
+        },
         count: {
             title: 'Number of issues',
             below: 'Fewer than',

@@ -16,6 +16,8 @@ import { useIssueStyle } from '@/lib/issue-style'
 import { cn } from '@/lib/cn'
 import { Avatar } from '../atoms/Avatar'
 import { hasPriorityChip, PriorityChip, TrackerLabel, VersionChip } from '../molecules/issue-chips'
+import { RelatedMarkChip, type RelatedMarkView } from '../molecules/RelatedMarkChip'
+import { useRelatedMarksByIssue } from './related-marks'
 import { StatusTag } from '../molecules/StatusTag'
 import { IssueActionsMenu } from './IssueActionsMenu'
 
@@ -31,8 +33,10 @@ const COLUMNS: { column: ListColumn; labelKey: string }[] = [
     { column: 'due', labelKey: 'board.list.column.due' }
 ]
 
+// The fixed columns, gaps and padding take 70rem; the title keeps at least 12rem, so the card is at least 82rem wide
+// and narrow windows scroll sideways instead of squeezing the title to nothing.
 const GRID =
-    'grid grid-cols-[5rem_8.5rem_10rem_7rem_minmax(0,1fr)_11rem_6rem_5.5rem_6.5rem_1.75rem] items-center gap-3 px-4'
+    'grid grid-cols-[5rem_8.5rem_10rem_7rem_minmax(12rem,1fr)_11rem_6rem_5.5rem_6.5rem_1.75rem] items-center gap-3 px-4'
 
 const DUE_TONE: Record<DueState, string> = {
     overdue: 'font-medium text-due-overdue',
@@ -63,6 +67,7 @@ export function IssueList({
     const loadedStatuses = useStatuses().data
     const statuses = useMemo(() => loadedStatuses ?? [], [loadedStatuses])
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+    const related = useRelatedMarksByIssue()
     const groups = useMemo(() => {
         const statusOrder = statuses.map((status) => status.id)
         const sorted = sortIssues(issues, sort, { rules, statusOrder })
@@ -84,7 +89,7 @@ export function IssueList({
         // The sticky header sticks below the scroller's padding, so the gap above the card is a margin, not padding.
         <div className="flex-1 overflow-auto px-4 pb-4">
             {/* overflow-clip, not overflow-hidden: a hidden overflow would keep the sticky header from sticking. */}
-            <div className="mt-3 min-w-[60rem] overflow-clip rounded-xl border border-line bg-panel">
+            <div className="mt-3 min-w-[82rem] overflow-clip rounded-xl border border-line bg-panel">
                 <ListHeader sort={sort} onSort={onSort} />
                 {groups.map((group) => (
                     <ListGroup
@@ -95,6 +100,7 @@ export function IssueList({
                         collapsed={collapsed.has(group.key)}
                         onToggle={() => toggleGroup(group.key)}
                         onOpen={onOpen}
+                        related={related}
                     />
                 ))}
             </div>
@@ -148,7 +154,8 @@ function ListGroup({
     groupBy,
     collapsed,
     onToggle,
-    onOpen
+    onOpen,
+    related
 }: {
     group: IssueGroup
     showHeader: boolean
@@ -156,6 +163,8 @@ function ListGroup({
     collapsed: boolean
     onToggle: () => void
     onOpen: (id: number) => void
+    /** By issue: related issues to show next to the subject. */
+    related: ReadonlyMap<number, RelatedMarkView[]>
 }) {
     const Chevron = collapsed ? ChevronRight : ChevronDown
     const label = useGroupLabel(group, groupBy)
@@ -175,12 +184,23 @@ function ListGroup({
                     </span>
                 </button>
             )}
-            {!collapsed && group.issues.map((issue) => <ListRow key={issue.id} issue={issue} onOpen={onOpen} />)}
+            {!collapsed &&
+                group.issues.map((issue) => (
+                    <ListRow key={issue.id} issue={issue} onOpen={onOpen} marks={related.get(issue.id)} />
+                ))}
         </section>
     )
 }
 
-function ListRow({ issue, onOpen }: { issue: Issue; onOpen: (id: number) => void }) {
+function ListRow({
+    issue,
+    onOpen,
+    marks = []
+}: {
+    issue: Issue
+    onOpen: (id: number) => void
+    marks?: RelatedMarkView[]
+}) {
     const { t, dates } = useI18n()
     const due = dueState(issue, new Date(), useIssueStyle().dueSoonDays)
     const assignee = issue.assigned_to?.name
@@ -207,8 +227,11 @@ function ListRow({ issue, onOpen }: { issue: Issue; onOpen: (id: number) => void
             <span className="min-w-0">
                 <PriorityCell issue={issue} />
             </span>
-            <span className="min-w-0 truncate" title={issue.subject}>
-                {issue.subject}
+            <span className="flex min-w-0 items-center gap-2 overflow-hidden" title={issue.subject}>
+                <span className="min-w-0 truncate">{issue.subject}</span>
+                {marks.map((mark) => (
+                    <RelatedMarkChip key={mark.relatedId} mark={mark} compact />
+                ))}
             </span>
             <span className="flex min-w-0 items-center gap-2">
                 <Avatar name={assignee} />

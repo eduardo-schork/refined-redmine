@@ -63,6 +63,25 @@ Cada tela e cada quadro abrem numa **aba** no topo da janela, como no navegador.
 
 Fechar a janela não encerra o app: ele continua na bandeja (barra de menus no macOS), verificando o Redmine e disparando lembretes. Pelo ícone da bandeja você abre o app, a Agenda ou as Notificações, força uma verificação (**Verificar agora**) ou sai (**Sair**).
 
+### Abrir links do Redmine no app
+
+Links de tarefas que chegam pelo Slack, e-mail ou navegador podem abrir direto no app, inclusive numa nota (`…/issues/1234#note-5`):
+
+- **Colar na busca**: copie o link, aperte `⌘K` (`Ctrl+K`) e cole. O app abre a tarefa, já na nota.
+- **Extensão do navegador** (Chrome, Edge, Brave, Arc): abre no app os links de tarefas clicados fora do navegador; links seguidos dentro do Redmine continuam no navegador. Também põe um botão na barra (abre no app a tarefa da aba) e **Abrir no Refined Redmine** no menu do botão direito em links de tarefas.
+  1. Em `chrome://extensions`, ligue o **Modo do desenvolvedor**, clique em **Carregar sem compactação** e escolha a pasta `browser-extension` do projeto.
+  2. Nas opções da extensão, informe o mesmo endereço do Redmine configurado no app e salve.
+  3. Na primeira vez, o navegador pergunta se pode abrir o Refined Redmine: marque **Sempre permitir** e confirme. A aba de passagem fecha sozinha quando o app abre; **Ver no navegador** segue para o Redmine web.
+- **Favorito, sem extensão**: crie um favorito com o endereço abaixo; numa tarefa aberta no Redmine web, clique nele para levá-la ao app.
+
+  ```text
+  javascript:location.href='refined-redmine://open?url='+encodeURIComponent(location.href)
+  ```
+
+- **Roteador de links** (quem usa [Finicky](https://github.com/johnste/finicky) no macOS): uma regra que troca `https://<seu-redmine>/issues/…` por `refined-redmine://open?url=<link codificado>` manda esses links direto para o app.
+
+O app só abre tarefas do Redmine em que você está conectado; qualquer outro link é ignorado.
+
 ## 2. Início
 
 ![Tela Início](images/home.png)
@@ -93,7 +112,8 @@ Aperte `⌘K` (Mac) ou `Ctrl+K` (Windows), em qualquer tela, ou clique em **Busc
 ![Busca no Início](images/home-search.png)
 
 - Sem digitar nada, aparecem as **tarefas recentes** (as últimas que você abriu), os quadros e as telas do app.
-- **Número da tarefa**: digite `#1234` ou só `1234` e aperte `Enter` para abrir a tarefa.
+- **Número da tarefa**: digite `#1234` ou só `1234` e aperte `Enter` para abrir a tarefa. `#1234#note-5` (ou `#1234-5`) abre já na nota 5.
+- **Link do Redmine**: cole o link de uma tarefa (do Slack, de um e-mail) para abri-la; com `#note-5` no fim, abre na nota.
 - **Texto**: a partir de 2 letras, busca no título das tarefas de todos os projetos que você vê, em qualquer status (até 20 resultados, das mais recentes para as mais antigas).
 - Quadros e telas também são filtrados pelo texto, sem diferenciar acentos ("configuracoes" acha "Configurações").
 - Navegue com `↑` `↓`, abra com `Enter` e feche com `Esc`.
@@ -219,7 +239,7 @@ Listas longas (consultas salvas, projetos, sprints, versões, pessoas) têm um c
 Clicar em uma tarefa, em qualquer tela, abre o detalhe sem sair do app. As tarefas abertas ficam na lista de recentes da [busca rápida](#busca-rápida).
 
 - **Título**: o lápis ao lado do título abre a edição. `Enter` salva e `Esc` cancela. O ícone de copiar ao lado copia só o título.
-- **Copiar**: o ícone ao lado do número (`#1234`) abre o menu de cópia: **Link** da tarefa no Redmine, **Número** (`#1234`), **#Número e título** (`#1234 Título`, para mensagens e commits) e link em **Markdown** (`[#1234 Título](link)`). Ao lado de **Editar** da descrição, o ícone copia a descrição em Markdown. Um aviso mostra o que foi copiado.
+- **Copiar**: o ícone ao lado do número (`#1234`) abre o menu de cópia: **Link** da tarefa no Redmine, **#Número** (`#1234`), **Só o número** (`1234`), **#Número e título** (`#1234 Título`, para mensagens e commits) e link em **Markdown** (`[#1234 Título](link)`). Ao lado de **Editar** da descrição, o ícone copia a descrição em Markdown. Um aviso mostra o que foi copiado.
 - **Atualizar** (setas circulares, ao lado de **Abrir no Redmine**) lê a tarefa de novo no Redmine, com as relacionadas e as horas. Útil quando um agente ou outra pessoa acabou de mudar a tarefa.
 - **Tamanho**: o detalhe ocupa 85% da área da aba, e dá para arrastar o canto inferior direito para redimensionar. O tamanho escolhido fica guardado como proporção da área, para as próximas tarefas e para janelas de outros tamanhos. As outras janelas também usam uma parte da área, com limite em telas muito largas: formulários pequenos ~40%, editores ~60%, trâmites, alterar em massa e tarefas da sprint ~80%.
 - **Descrição**, com formatação (listas, tabelas, negrito, links).
@@ -231,6 +251,9 @@ Clicar em uma tarefa, em qualquer tela, abre o detalhe sem sair do app. As taref
   ![Detalhe da tarefa em abas](images/issue-tabs.png)
 
 - **Histórico**, abaixo das abas: comentários e mudanças de campos. O botão à direita do título alterna entre **Mais antigas primeiro** (como no Redmine) e **Mais recentes primeiro**; a escolha fica guardada. Com as mais recentes primeiro, a caixa de comentário vai para o topo do histórico.
+  - Cada item mostra à direita o **número da nota** (`#5`), como no Redmine web. Clique nele para copiar o link da nota.
+  - Cada alteração mostra o valor antigo e o novo, como no Redmine web: "responsável: Lucas Pereira → Marina Costa", "versão: 3.79 → 3.80.1", "prioridade: Normal → Alta". Só a descrição continua como "alterou descrição".
+  - Nos textos, `#1234#note-5`, `#1234-5` e `#note-5` (nota desta tarefa) viram links, como no Redmine. Clicar abre a tarefa com o histórico rolado até a nota, que fica destacada (com **Tudo em abas**, a tarefa abre na aba Histórico).
 - **Tarefas relacionadas**: a **Tarefa pai** (com as **outras subtarefas** dela), as **Subtarefas** e as **Relações**. Cada tarefa aparece em uma linha com o **número** (clique na linha para abrir), o **tipo** (com a cor dele), o **título**, o **status**, a **versão**, o **tempo estimado** (quando há) e o **responsável**. Tarefas fechadas ficam com o número riscado.
   - As subtarefas mostram quantas já foram fechadas ("1 de 3 fechadas") com uma barra de progresso.
   - As relações ficam agrupadas pelo tipo, com o que segura a tarefa primeiro: **Bloqueada por**, **Bloqueia**, **Precede**, **Segue**, **Relacionada a**, **Duplica**, **Duplicada por**, **Copiada de** e **Copiada para**.
@@ -304,6 +327,9 @@ Os botões de trâmite ficam na linha de ações do detalhe da tarefa:
   - Com o **cronômetro** rodando nesta tarefa, as horas vêm dele; depois de enviar, o cronômetro é zerado (o tempo já foi lançado).
   - Sem cronômetro, escolha um momento da tarefa: um trâmite do histórico (situação alterada, comentário, alterações, com quem e quando), um lançamento de horas ou a criação. Nos botões configurados vem marcado o **seu último trâmite** na tarefa (ou a última mudança de situação); o **Novo trâmite** começa vazio, mas a lista está lá.
   - O tempo até agora é dividido pelo **expediente** (Configurações → Automações, padrão seg–sex 8h–12h e 13h–18h): o que cai dentro vira horas normais, o almoço entre dois períodos não conta e o resto (noite, fim de semana) vira **hora extra**. Os campos continuam editáveis.
+  - **Recontar** (setas circulares, ao lado de "Contar as horas desde") refaz a conta até agora. Use quando o envio ficou aberto um tempo (esperando um QA, por exemplo) e as horas ficaram para trás.
+  - **Tirar a hora extra do total** (borracha, ao lado da hora extra) apaga a hora extra e a desconta das horas: fica só o que caiu no expediente.
+  - Se a hora extra passar de um expediente inteiro (9 h no expediente padrão), **Enviar trâmite** pergunta antes de lançar: costuma ser atividade que não foi pausada no fim do dia. Cancele para corrigir as horas.
 - O envio acontece em passos (comentário, cada tarefa a mais, horas, hora extra, fechamento). Se algum falhar, os que deram certo ficam marcados e **Tentar de novo** repete só o resto, sem comentar duas vezes. Se o Redmine não aplicar uma mudança (workflow ou sem permissão), aparece um aviso.
 
 ### Alterar em massa
@@ -502,17 +528,18 @@ Um monitor não precisa de quadro: para só ser avisado (por exemplo, quando a f
 
 Cada monitor escolhe sobre o que avisar:
 
-| Aviso                 | Quando                                                                               |
-| --------------------- | ------------------------------------------------------------------------------------ |
-| **Nova tarefa**       | Criada por outra pessoa (só em Minhas tarefas)                                       |
-| **Atribuída a mim**   | Alguém passou a tarefa para você                                                     |
-| **Mudança de status** | Ex.: Em andamento → Em aprovação; em quadros, mostra as colunas                      |
-| **Novo comentário**   | Nota adicionada por outra pessoa                                                     |
-| **Menção**            | Comentário que cita o seu `@login`                                                   |
-| **Outras alterações** | Prioridade, versão, datas, anexos… (desligado por padrão)                            |
-| **Tarefa entrou**     | Passou a aparecer no resultado da consulta, filtro ou quadro                         |
-| **Tarefa saiu**       | Deixou de aparecer; em Minhas tarefas, é a saída da sua fila (reatribuída, fechada…) |
-| **Pela quantidade**   | Consulta, filtro ou quadro com **menos de N** ou **mais de N** tarefas (ver abaixo)  |
+| Aviso                                    | Quando                                                                               |
+| ---------------------------------------- | ------------------------------------------------------------------------------------ |
+| **Nova tarefa**                          | Criada por outra pessoa (só em Minhas tarefas)                                       |
+| **Atribuída a mim**                      | Alguém passou a tarefa para você                                                     |
+| **Mudança de status**                    | Ex.: Em andamento → Em aprovação; em quadros, mostra as colunas                      |
+| **Novo comentário**                      | Nota adicionada por outra pessoa                                                     |
+| **Menção**                               | Comentário que cita o seu `@login`                                                   |
+| **Outras alterações**                    | Prioridade, versão, datas, anexos… (desligado por padrão)                            |
+| **Tarefa entrou**                        | Passou a aparecer no resultado da consulta, filtro ou quadro                         |
+| **Tarefa saiu**                          | Deixou de aparecer; em Minhas tarefas, é a saída da sua fila (reatribuída, fechada…) |
+| **Pela quantidade**                      | Consulta, filtro ou quadro com **menos de N** ou **mais de N** tarefas (ver abaixo)  |
+| **Tarefa relacionada mudou de situação** | Uma tarefa ligada (ex.: a de Qualidade) chegou a uma situação escolhida (ver abaixo) |
 
 Regras importantes:
 
@@ -542,6 +569,10 @@ Na tela **Monitores**, na barra lateral logo acima dos quadros (antes ficava em 
 - **Origem das tarefas** primeiro (consulta salva, filtro por URL ou quadro), depois a consulta, o filtro ou o quadro e por fim o **Nome**, como no editor de quadro. O nome vem da consulta ou do quadro escolhido e acompanha cada troca até você digitar um nome seu.
 - **Notificar quando**: os avisos que esse monitor manda.
 - **Quantidade de tarefas** (consulta, filtro ou quadro), na mesma lista de **Notificar quando**: ligue o switch e escolha **Menos de** ou **Mais de** um número logo abaixo. Exemplo: uma consulta "tarefas abertas da Ana" com **menos de 2** avisa quando a fila dela está acabando e é hora de mandar mais trabalho. O aviso vem **uma vez**, quando a quantidade passa a ficar assim (inclusive na primeira verificação de um monitor novo); só avisa de novo depois que a quantidade sair da condição e voltar. Pode ser o único aviso do monitor (desligue os outros).
+- **Tarefa relacionada mudou de situação** (consulta, filtro ou quadro): ligue o switch, escolha o **tipo** da tarefa relacionada e as **situações** que devem avisar. Exemplo: um monitor com as tarefas de Desenvolvimento **Em teste**, com o tipo **Qualidade** e as situações **Finalizada** e **Rejeitada**. Quando o QA marca a de Qualidade (ligada à de Negócio, que está ligada à de dev), chega o aviso na tarefa de dev, com quem mudou ("mudou Qualidade #1220: Em teste → Rejeitada"), e o clique abre a de dev para devolver ao desenvolvedor ou resolver.
+  - O app segue pai, subtarefas e relações, até 3 níveis, e para no primeiro nível em que acha uma do tipo escolhido.
+  - Na primeira verificação o app só anota a situação atual de cada relacionada; avisa a partir das mudanças seguintes. Mudanças feitas por você não avisam.
+  - No card dos **quadros**, na **Lista** (ao lado do título) e no **Início** (fila, paradas e prazos), essas tarefas mostram a relacionada e a situação dela (ex.: "Qualidade #1220 [Rejeitada]") enquanto ela estiver numa das situações escolhidas. Na Lista e no Início o selo é mais curto ("#1220 [Rejeitada]"); o tipo e o título da relacionada aparecem ao passar o mouse.
 - **Horário próprio** (opcional): só verifica esse monitor nos dias e horas escolhidos, além do horário geral.
 
 ## 8. Log

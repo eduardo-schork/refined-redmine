@@ -137,6 +137,80 @@ describe('MonitorService', () => {
         expect(setup.notifier.shown.map((notification) => notification.kind)).toEqual(['unqueued'])
     })
 
+    it('related status: tells on the dev issue when its QA issue (through the business one) is finished', async () => {
+        const setup = monitorSetup()
+        setup.state.watermark = SINCE
+        const QUALITY = { id: 4, name: 'Qualidade' }
+        const REJECTED = { id: 6, name: 'Rejeitada', is_closed: false }
+        setup.gateway.statuses = [...setup.gateway.statuses, REJECTED]
+        const inTest: Monitor = {
+            id: 'em-teste',
+            name: 'Em teste',
+            enabled: true,
+            source: { type: 'query', queryId: 110 },
+            events: defaultEvents('query'),
+            related: { trackerId: QUALITY.id, statusIds: [5, 6] }
+        }
+        setMonitors(setup, [inTest])
+        const dev = issue(1213, { parent: { id: 1201 } })
+        const business = issue(1201, { tracker: { id: 7, name: 'Negócio' } })
+        const quality = issue(1220, { tracker: QUALITY, subject: 'QA do CEP' })
+        setup.gateway.byFilter.set(JSON.stringify({ queryId: 110 }), [dev])
+        setup.gateway.issues = [dev, business, quality]
+        setup.gateway.details.set(1213, detail(dev))
+        setup.gateway.details.set(
+            1201,
+            detail(business, {
+                children: [{ id: 1213, tracker: { id: 42, name: 'Desenvolvimento' }, subject: dev.subject }],
+                relations: [{ id: 5, issue_id: 1220, issue_to_id: 1201, relation_type: 'relates' }]
+            })
+        )
+        const qaChangedTo = (status: typeof REJECTED, journalId: number, user: { id: number; name: string }) => {
+            const changed = { ...quality, status, updated_on: `2026-09-28T14:${journalId}:00Z` }
+            const transition = {
+                property: 'attr' as const,
+                name: 'status_id',
+                old_value: '1',
+                new_value: String(status.id)
+            }
+            const journal: Journal = { id: journalId, user, created_on: changed.updated_on, details: [transition] }
+            setup.gateway.issues = [dev, business, changed]
+            setup.gateway.details.set(1220, detail(changed, { journals: [journal] }))
+        }
+        const relatedChanges = () =>
+            setup.notifier.shown.flatMap((notification) => {
+                const payload = notification.payload
+                if (payload.type !== 'issueChanged') return []
+                return [{ issueId: notification.issueId, actor: payload.actor, change: payload.changes[0] }]
+            })
+
+        await setup.monitor.runNow()
+        expect(relatedChanges()).toEqual([])
+        expect(setup.state.relatedWatches.get('em-teste')?.links[1213]?.relatedIds).toEqual([1220])
+
+        qaChangedTo({ id: 5, name: 'Finalizada', is_closed: true }, 30, LUCAS)
+        await setup.monitor.runNow()
+        await setup.monitor.runNow()
+        expect(relatedChanges()).toEqual([
+            {
+                issueId: 1213,
+                actor: 'Lucas',
+                change: {
+                    type: 'relatedStatusChanged',
+                    relatedId: 1220,
+                    relatedSubject: 'QA do CEP',
+                    tracker: 'Qualidade',
+                    from: 'Nova',
+                    to: 'Finalizada'
+                }
+            }
+        ])
+
+        qaChangedTo(REJECTED, 40, ME_NAMED)
+        await setup.monitor.runNow()
+        expect(relatedChanges()).toHaveLength(1)
+    })
+
     it('saved query: reports entries and exits, drops my own moves and merges the same change from two monitors', async () => {
         const setup = monitorSetup()
         setup.state.watermark = SINCE

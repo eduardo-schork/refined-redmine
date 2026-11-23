@@ -32,6 +32,7 @@ import { StatusToneDot } from '../molecules/StatusTag'
 import { useToast } from '../molecules/Toast'
 import { IssueActionsMenu } from './IssueActionsMenu'
 import { useGroupLabel } from './IssueList'
+import { useRelatedMarksByIssue } from './related-marks'
 
 const DROP_ID_SEPARATOR = '::'
 
@@ -66,10 +67,11 @@ export function KanbanBoard({
     const staleDays = useSettings().dashboard.staleDays
     const statuses = useStatuses().data
     const firstStatusOf = (column: BoardColumn) => statuses?.find((status) => status.id === column.statusIds[0])
+    const related = useRelatedMarksByIssue()
     const cardOptions = useMemo(() => {
         const projects = new Set(issues.map((issue) => issue.project.id))
-        return { staleDays, showProject: projects.size > 1 }
-    }, [issues, staleDays])
+        return { staleDays, showProject: projects.size > 1, related }
+    }, [issues, staleDays, related])
 
     const lanes = useMemo(() => groupIssues(issues, laneBy, statuses ?? []), [issues, laneBy, statuses])
     const hasLanes = laneBy !== 'none'

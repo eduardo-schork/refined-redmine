@@ -40,9 +40,9 @@ function frontTabOnly(state: WorkspaceTabs): WorkspaceTabs {
 }
 
 /** An issue opened outside any screen (search, a system notification) goes to the tab in front, or to a new Home tab. */
-function openIssueInFront(state: WorkspaceTabs, issueId: number): WorkspaceTabs {
+function openIssueInFront(state: WorkspaceTabs, issueId: number, note?: number): WorkspaceTabs {
     const withTab = state.activeKey ? state : openTab(state, HOME)
-    return withTab.activeKey ? pushIssue(withTab, withTab.activeKey, issueId) : withTab
+    return withTab.activeKey ? pushIssue(withTab, withTab.activeKey, issueId, note) : withTab
 }
 
 function initialTabs(preferences: WorkspacePreferences): WorkspaceTabs {
@@ -80,12 +80,12 @@ export function useWorkspaceTabs(preferences: WorkspacePreferences, boards: Boar
         [boards, preferences.tabs, update]
     )
     const openIssue = useCallback(
-        (key: string, issueId: number) => update((state) => pushIssue(state, key, issueId)),
+        (key: string, issueId: number, note?: number) => update((state) => pushIssue(state, key, issueId, note)),
         [update]
     )
     const closeIssue = useCallback((key: string) => update((state) => popIssue(state, key)), [update])
     const openIssueInFrontTab = useCallback(
-        (issueId: number) => update((state) => openIssueInFront(state, issueId)),
+        (issueId: number, note?: number) => update((state) => openIssueInFront(state, issueId, note)),
         [update]
     )
     const duplicate = (key: string) =>

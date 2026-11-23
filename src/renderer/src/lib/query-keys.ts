@@ -26,6 +26,7 @@ export const qk = {
     calendar: ['calendar'] as const,
     notifications: ['notifications'] as const,
     monitorStatus: ['monitor-status'] as const,
+    relatedMarks: ['related-marks'] as const,
     permission: ['permission'] as const,
     activityLog: ['activity-log'] as const,
     appInfo: ['app-info'] as const,

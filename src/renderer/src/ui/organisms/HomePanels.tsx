@@ -18,6 +18,7 @@ import { IssueRow } from '../molecules/IssueRow'
 import { Alert, EmptyRow, Panel, StatTile } from '../molecules/surfaces'
 import { useOpenIssue } from './IssueModal'
 import { NotificationRows } from './NotificationList'
+import { useRelatedMarksByIssue } from './related-marks'
 import { StatusTag } from '../molecules/StatusTag'
 
 const QUEUE_PREVIEW_LIMIT = 12
@@ -172,6 +173,7 @@ export function QueuePanels() {
     const { t, error } = useI18n()
     const openIssue = useOpenIssue()
     const { mine, queue, analysis, staleDays, loaded } = useQueue()
+    const related = useRelatedMarksByIssue()
     const today = new Date()
     const hiddenQueueCount = queue.length - QUEUE_PREVIEW_LIMIT
 
@@ -196,6 +198,7 @@ export function QueuePanels() {
                             key={issue.id}
                             issue={issue}
                             onOpen={openIssue}
+                            marks={related.get(issue.id)}
                             right={<StatusTag status={issue.status} />}
                         />
                     ))}
@@ -220,6 +223,7 @@ export function QueuePanels() {
                             key={issue.id}
                             issue={issue}
                             onOpen={openIssue}
+                            marks={related.get(issue.id)}
                             right={<StaleLabel issue={issue} today={today} />}
                         />
                     ))}
@@ -237,6 +241,7 @@ export function QueuePanels() {
                             key={issue.id}
                             issue={issue}
                             onOpen={openIssue}
+                            marks={related.get(issue.id)}
                             right={<DeadlineLabel issue={issue} today={today} />}
                         />
                     ))}

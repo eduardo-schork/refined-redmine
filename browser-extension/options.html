@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Refined Redmine</title>
+        <link rel="stylesheet" href="page.css" />
+    </head>
+    <body>
+        <main>
+            <form id="form">
+                <label>
+                    <span data-i18n="redmineUrl"></span>
+                    <input id="redmineUrl" type="url" required placeholder="https://redmine.example.com" />
+                </label>
+                <label class="check">
+                    <input id="autoOpen" type="checkbox" />
+                    <span data-i18n="autoOpen"></span>
+                </label>
+                <p class="hint" data-i18n="autoOpenHint"></p>
+                <button type="submit" data-i18n="save"></button>
+                <span id="status" class="hint" role="status"></span>
+            </form>
+        </main>
+        <script type="module" src="options.js"></script>
+    </body>
+</html>

@@ -1,6 +1,12 @@
 import type { Board } from '@domain/board/board'
 import type { LogLevel, LogRecord } from '@domain/log/log-entry'
-import { countRuleReached, isEventEnabled, type Monitor, type MonitorSource } from '@domain/monitor/monitor'
+import {
+    countRuleReached,
+    isEventEnabled,
+    type CountRule,
+    type Monitor,
+    type MonitorSource
+} from '@domain/monitor/monitor'
 import {
     diffMembership,
     isComplete,
@@ -21,6 +27,7 @@ import type { RedmineGateway } from '../../ports/redmine-gateway'
 import type { MonitorStateRepository } from '../../ports/repositories'
 import type { BoardFilterResolver } from '../../use-cases/boards'
 import { notifyJournals } from './journal-notifications'
+import { checkRelated } from './related-check'
 import { countKey, issueRef, membershipKey, type MonitorCycle } from './monitor-cycle'
 
 /** Largest result compared between cycles; beyond it only the count is compared. */
@@ -113,24 +120,33 @@ export async function checkSource(
             await notifyDepartedChanges(change.left, monitor, notificationSource, cycle, resolved.board)
         }
     }
-    if (monitor.count && countRuleReached(previous?.count, current.count, monitor.count)) {
-        const payload = {
-            type: 'queryCount' as const,
-            queryName: notificationSource.name,
-            count: current.count,
-            ...monitor.count
-        }
-        cycle.add(countKey(monitor.id), { kind: 'query', payload, target: resolved.listTarget }, notificationSource)
-    }
+    if (monitor.count) notifyCount(monitor.id, monitor.count, previous, current, notificationSource, resolved, cycle)
 
     const changedIssues = page.items.filter((issue) => cycle.isNew(issue, monitor.id))
     for (const issue of changedIssues) {
         cycle.sawUpdate(monitor.id, issue)
         await notifyJournals(issue, monitor, notificationSource, cycle, resolved.board)
     }
+    if (monitor.related) {
+        await checkRelated(monitor.id, monitor.related, current.ids, page.items, notificationSource, cycle, deps)
+    }
 
     const params = { monitor: monitor.id, total: current.count, changed: changedIssues.length }
     deps.log({ type: 'monitor', event: 'monitorChecked', params })
+}
+
+function notifyCount(
+    monitorId: string,
+    rule: CountRule,
+    previous: QuerySnapshot | undefined,
+    current: QuerySnapshot,
+    source: NotificationSource,
+    resolved: ResolvedSource,
+    cycle: MonitorCycle
+): void {
+    if (!countRuleReached(previous?.count, current.count, rule)) return
+    const payload = { type: 'queryCount' as const, queryName: source.name, count: current.count, ...rule }
+    cycle.add(countKey(monitorId), { kind: 'query', payload, target: resolved.listTarget }, source)
 }
 
 /**

@@ -65,7 +65,7 @@ export class IssueQueries {
         }
     }
 
-    /** Trackers, people and versions of the issue's project; the closed versions are kept out. */
+    /** Trackers, people and versions of the issue's project; the closed versions only name the history's changes. */
     async editOptions(projectId: number): Promise<IssueEditOptions> {
         const [trackers, members, versions] = await Promise.all([
             this.gateway.listProjectTrackers(projectId),
@@ -75,7 +75,8 @@ export class IssueQueries {
         return {
             trackers,
             assignees: [...members].sort(byName),
-            versions: versions.filter((version) => version.status !== 'closed').sort(byName)
+            versions: versions.filter((version) => version.status !== 'closed').sort(byName),
+            versionNames: versions.map((version) => ({ id: version.id, name: version.name }))
         }
     }
 

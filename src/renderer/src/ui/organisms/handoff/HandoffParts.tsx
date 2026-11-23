@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Eraser, RefreshCw } from 'lucide-react'
 import { NEW_TRAMITE_RULE, type HandoffRule } from '@domain/automation/handoff'
 import { defaultSince, hoursSinceOptions, type SinceOption } from '@domain/automation/hours-since'
 import type { Attachment, IssueDetail } from '@domain/redmine/entities'
-import { splitWorkTime } from '@domain/time/business-hours'
+import { overtimeLooksForgotten, scheduledHoursPerDay, splitWorkTime } from '@domain/time/business-hours'
 import { elapsedHours, elapsedMs, formatClock } from '@domain/time/timer'
 import { toLocalDate } from '@domain/shared/date'
 import { defaultActivityId, parseHours, type TimeEntryDraft } from '@domain/time/time-entry'
@@ -16,6 +17,7 @@ import { useI18n } from '@/lib/i18n'
 import { lastActivityId } from '@/lib/last-activity'
 import type { Step } from '@/lib/steps'
 import { Input, Select } from '../../atoms/fields'
+import { IconButton } from '../../atoms/IconButton'
 import { AttachmentPicker } from '../../molecules/AttachmentPicker'
 import { Field } from '../../molecules/Field'
 import { UploadPreviewDialog } from '../attachments/UploadPreviewDialog'
@@ -56,9 +58,11 @@ function useHoursSources(issue: IssueDetail, enabled: boolean) {
  * larger than the hours, block sending. The overtime part also goes to the app's overtime bank. The hours come from
  * the stopwatch running on the issue; without it, a configured rule counts them from the user's last trâmite
  * (split by the working hours into normal time and overtime), and any moment of the issue can be picked instead.
+ * The count can be redone up to now (the dialog may stay open for a while), and overtime longer than a work day asks
+ * for confirmation before sending.
  */
 export function useHandoffHours(rule: HandoffRule, issue: IssueDetail) {
-    const { dates } = useI18n()
+    const { t, dates } = useI18n()
     const activities = useTimeActivities().data ?? []
     const sources = useHoursSources(issue, rule.logTime)
     const [source, setSource] = useState(TYPED)
@@ -86,6 +90,27 @@ export function useHandoffHours(rule: HandoffRule, issue: IssueDetail) {
         setTypedOvertime(split.overtime ? dates.hoursInput(split.overtime) : '')
     }
 
+    const refresh = () => countFrom(source)
+
+    // Removing the overtime also takes it out of the total: what is left is the time inside the working hours.
+    const dropOvertime = () => {
+        setTypedOvertime('')
+        if (hours == null || !overtime) return
+        const remaining = Math.round((hours - overtime) * 100) / 100
+        setTypedHours(remaining > 0 ? dates.hoursInput(remaining) : '')
+    }
+
+    const confirmLargeOvertime = () => {
+        if (!rule.logTime || !hours || !overtime) return true
+        if (!overtimeLooksForgotten(overtime, sources.schedule)) return true
+        const workDay = scheduledHoursPerDay(sources.schedule)
+        const question = t('handoff.confirmLargeOvertime', {
+            overtime: dates.hours(overtime),
+            workDay: dates.hours(workDay)
+        })
+        return confirm(question)
+    }
+
     // Filled once when the dialog opens. "Novo trâmite" starts empty unless the stopwatch runs on the issue.
     const prefilled = useRef(false)
     useEffect(() => {
@@ -109,6 +134,10 @@ export function useHandoffHours(rule: HandoffRule, issue: IssueDetail) {
         blocked: rule.logTime && (unreadable || overtimeTooLarge),
         source,
         countFrom,
+        refresh,
+        canRefresh: source !== TYPED,
+        dropOvertime,
+        confirmLargeOvertime,
         timer: sources.timer,
         sinceOptions: sources.options,
         fromTimer: source === TIMER
@@ -125,19 +154,24 @@ function CountFromField({ hours }: { hours: HandoffHours }) {
     }
     return (
         <Field label={t('handoff.countFrom')} hint={t('handoff.countFromHint')}>
-            <Select value={hours.source} onChange={(event) => hours.countFrom(event.target.value)}>
-                <option value={TYPED}>{t('handoff.typeHours')}</option>
-                {hours.timer && (
-                    <option value={TIMER}>
-                        {t('handoff.fromTimer', { time: formatClock(elapsedMs(hours.timer, new Date())) })}
-                    </option>
+            <div className="flex items-center gap-1">
+                <Select value={hours.source} onChange={(event) => hours.countFrom(event.target.value)}>
+                    <option value={TYPED}>{t('handoff.typeHours')}</option>
+                    {hours.timer && (
+                        <option value={TIMER}>
+                            {t('handoff.fromTimer', { time: formatClock(elapsedMs(hours.timer, new Date())) })}
+                        </option>
+                    )}
+                    {hours.sinceOptions.map((option) => (
+                        <option key={option.key} value={option.key}>
+                            {sinceLabel(option)}
+                        </option>
+                    ))}
+                </Select>
+                {hours.canRefresh && (
+                    <IconButton label={t('handoff.refreshHours')} icon={<RefreshCw />} onClick={hours.refresh} />
                 )}
-                {hours.sinceOptions.map((option) => (
-                    <option key={option.key} value={option.key}>
-                        {sinceLabel(option)}
-                    </option>
-                ))}
-            </Select>
+            </div>
         </Field>
     )
 }
@@ -158,12 +192,21 @@ export function HoursFields({ hours }: { hours: HandoffHours }) {
                     />
                 </Field>
                 <Field label={t('overtime.ofTheseHours')}>
-                    <Input
-                        inputMode="decimal"
-                        placeholder="0"
-                        value={hours.typedOvertime}
-                        onChange={(event) => hours.setTypedOvertime(event.target.value)}
-                    />
+                    <div className="flex items-center gap-1">
+                        <Input
+                            inputMode="decimal"
+                            placeholder="0"
+                            value={hours.typedOvertime}
+                            onChange={(event) => hours.setTypedOvertime(event.target.value)}
+                        />
+                        {hours.typedOvertime.trim() && (
+                            <IconButton
+                                label={t('handoff.dropOvertime')}
+                                icon={<Eraser />}
+                                onClick={hours.dropOvertime}
+                            />
+                        )}
+                    </div>
                 </Field>
                 {hours.activities.length > 1 && (
                     <Field label={t('time.activity')}>

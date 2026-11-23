@@ -46,6 +46,8 @@ export interface RedmineGateway {
     countIssues(filter: IssueFilter): Promise<number>
     getIssue(id: number): Promise<IssueDetail>
     getIssueWithJournals(id: number): Promise<IssueDetail>
+    /** The issue with its parent, subtasks and relations only (no history): to follow its links. */
+    getIssueLinks(id: number): Promise<IssueDetail>
     allowedStatuses(issueId: number): Promise<IssueStatus[]>
     updateIssue(id: number, update: IssueUpdate): Promise<void>
     /** `uploads`: files already sent with `uploadFile`, attached to the new issue. */

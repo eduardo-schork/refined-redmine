@@ -30,7 +30,18 @@ const policy = (from, to) => ({
 })
 
 export default tseslint.config(
-    { ignores: ['out/**', 'dist/**', 'node_modules/**', 'build/**', 'resources/**', 'scripts/**', '*.config.*'] },
+    {
+        ignores: [
+            'out/**',
+            'dist/**',
+            'node_modules/**',
+            'build/**',
+            'resources/**',
+            'scripts/**',
+            'browser-extension/**',
+            '*.config.*'
+        ]
+    },
     js.configs.recommended,
     ...tseslint.configs.recommended,
     {

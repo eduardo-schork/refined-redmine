@@ -8,6 +8,7 @@ describe('copyText', () => {
     it('formats each kind of copy', () => {
         expect(copyText('link', issue, url)).toBe(url)
         expect(copyText('number', issue, url)).toBe('#1234')
+        expect(copyText('id', issue, url)).toBe('1234')
         expect(copyText('title', issue, url)).toBe('Ajustar [layout] do preço')
         expect(copyText('reference', issue, url)).toBe('#1234 Ajustar [layout] do preço')
     })

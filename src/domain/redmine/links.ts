@@ -10,6 +10,11 @@ export class RedmineLinks {
         return `${this.base}/issues/${id}`
     }
 
+    /** A note of the issue, numbered as in the Redmine history (#1, #2…). */
+    note(issueId: number, note: number): string {
+        return `${this.issue(issueId)}#note-${note}`
+    }
+
     attachment(id: number): string {
         return `${this.base}/attachments/${id}`
     }
@@ -19,14 +24,20 @@ export class RedmineLinks {
         return `${this.base}/issues?query_id=${queryId}`
     }
 
-    /** Resolves relative links in Redmine texts. Returns the id if it is a link to an issue. */
-    resolve(href: string): { url: string; issueId?: number } {
+    /** Resolves relative links in Redmine texts. Returns the id if it is a link to an issue, and the note it points to. */
+    resolve(href: string): { url: string } & IssueTarget {
         const url = absoluteUrl(this.base, href)
-        return { url, issueId: issueIdOf(this.base, url) }
+        return { url, ...issueTargetOf(this.base, url) }
     }
 }
 
-const ISSUE_PATH = /^\/issues\/(\d+)\/?(?:[?#].*)?$/
+export interface IssueTarget {
+    issueId?: number
+    note?: number
+}
+
+const ISSUE_PATH = /^\/issues\/(\d+)\/?(?:\?[^#]*)?(?:#(.*))?$/
+const NOTE_ANCHOR = /^note-(\d+)$/
 
 function absoluteUrl(base: string, href: string): string {
     if (isHttpUrl(href)) return href
@@ -34,11 +45,13 @@ function absoluteUrl(base: string, href: string): string {
     return `${base}${separator}${href}`
 }
 
-function issueIdOf(base: string, url: string): number | undefined {
-    if (!url.startsWith(base)) return undefined
+function issueTargetOf(base: string, url: string): IssueTarget {
+    if (!url.startsWith(base)) return {}
     const path = url.slice(base.length)
     const match = path.match(ISSUE_PATH)
-    return match ? Number(match[1]) : undefined
+    if (!match) return {}
+    const note = match[2]?.match(NOTE_ANCHOR)?.[1]
+    return { issueId: Number(match[1]), note: note ? Number(note) : undefined }
 }
 
 export function normalizeBaseUrl(url: string): string {
@@ -46,3 +59,25 @@ export function normalizeBaseUrl(url: string): string {
 }
 
 export const isHttpUrl = (url: string) => /^https?:\/\//i.test(url)
+
+export const APP_LINK_SCHEME = 'refined-redmine'
+
+/**
+ * `refined-redmine://open?url=<Redmine link>` (from the browser extension or a bookmark) opens that issue, at the note,
+ * in the app. Any web page can open such a link, so only issues of the configured Redmine are accepted.
+ */
+export function appLinkTarget(appUrl: string, links: RedmineLinks): { issueId: number; note?: number } | undefined {
+    if (!links.base) return undefined
+    let parsed: URL
+    try {
+        parsed = new URL(appUrl)
+    } catch {
+        return undefined
+    }
+    if (parsed.protocol !== `${APP_LINK_SCHEME}:` || parsed.hostname !== 'open') return undefined
+    const redmineUrl = parsed.searchParams.get('url')
+    if (!redmineUrl || !isHttpUrl(redmineUrl)) return undefined
+    const { issueId, note } = links.resolve(redmineUrl)
+    if (!issueId) return undefined
+    return { issueId, note }
+}

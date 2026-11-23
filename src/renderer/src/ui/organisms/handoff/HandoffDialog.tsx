@@ -149,6 +149,9 @@ export function HandoffDialog({
     const ready = !searching && Boolean(targetId) && Boolean(notes.comment.trim()) && !hours.blocked
 
     const send = async () => {
+        // Asked only while the hours are still to be logged, not again on a retry after they were.
+        const hoursPending = steps.pending(timeSteps).length > 0
+        if (hoursPending && !hours.confirmLargeOvertime()) return
         const clean = await steps.run(planned)
         if (clean) {
             toast(t('handoff.sentTo', { id: targetId }))
@@ -325,7 +328,7 @@ function NoteText({ issue, text }: { issue: IssueDetail; text: string }) {
             <Markdown
                 text={text}
                 links={links}
-                onIssue={(id) => openExternal(links.issue(id))}
+                onIssue={(id, note) => openExternal(note ? links.note(id, note) : links.issue(id))}
                 onExternal={openExternal}
                 renderImage={inlineAttachmentRenderer(issue.attachments, links)}
             />

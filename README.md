@@ -56,6 +56,7 @@ Como usar cada tela: [manual do usuário](docs/MANUAL.md).
 - **Horas extras** (banco no app, meses no banco ou pagos) e **Tempo do time** (horas por pessoa e dia, médias, detalhe por tarefa ou atividade).
 - **Criar tarefa** pela barra lateral, por `⌘N`/`Ctrl+N` ou pelo quadro (já no projeto e na sprint do quadro), e **Nova subtarefa** no detalhe: projeto, tipo, título, descrição, campos personalizados do tipo (com sugestões; a subtarefa herda da pai), anexos (escolher, arrastar ou colar, com miniaturas), prioridade, responsável, versão, tarefa pai, datas e estimativa.
 - **Busca rápida** (`⌘K` / `Ctrl+K`): tarefa por `#número` ou título, quadros, telas e tarefas recentes. Links `#1234` abrem no próprio modal. Botão "Abrir no Redmine".
+- **Links do Redmine no app**: `#1234#note-5` abre a tarefa na nota; um link de tarefa colado no `⌘K` abre no app; `refined-redmine://open?url=<link>` e a extensão de navegador em `browser-extension/` (Chrome/Edge/Brave/Arc, "Carregar sem compactação") mandam para o app os links clicados no Slack ou no e-mail. Passo a passo em `docs/MANUAL.md` → Abrir links do Redmine no app.
 
 **Kanban**
 

@@ -2,6 +2,7 @@ import { applyChange } from '@domain/calendar/event-editing'
 import type { CalendarChange, CalendarEvent } from '@domain/calendar/calendar-event'
 import type { LogEntry, LogLevel, LogRecord } from '@domain/log/log-entry'
 import type { QuerySnapshot } from '@domain/monitor/query-diff'
+import type { RelatedWatch } from '@domain/monitor/related-status'
 import type { MonitorStatus } from '@domain/monitor/monitor-status'
 import type { AppNotification } from '@domain/notification/notification'
 import type { DeliveryConfirmation, DeliveryRecord, NotifyPermissionInfo } from '@domain/notification/permission'
@@ -62,6 +63,9 @@ export class FakeGateway implements RedmineGateway {
         return found
     }
     getIssueWithJournals(id: number) {
+        return this.getIssue(id)
+    }
+    getIssueLinks(id: number) {
         return this.getIssue(id)
     }
     async allowedStatuses(id: number) {
@@ -219,6 +223,7 @@ export class MemoryMonitorState implements MonitorStateRepository {
     watermark?: string
     monitorWatermarks: Record<string, string> = {}
     snapshots = new Map<string, QuerySnapshot>()
+    relatedWatches = new Map<string, RelatedWatch>()
     delivery?: DeliveryRecord
     confirmation?: DeliveryConfirmation
     getWatermark() {
@@ -246,11 +251,21 @@ export class MemoryMonitorState implements MonitorStateRepository {
         for (const id of [...this.snapshots.keys()]) {
             if (!keepIds.includes(id)) this.snapshots.delete(id)
         }
+        for (const id of [...this.relatedWatches.keys()]) {
+            if (!keepIds.includes(id)) this.relatedWatches.delete(id)
+        }
+    }
+    getRelatedWatch(monitorId: string) {
+        return this.relatedWatches.get(monitorId)
+    }
+    setRelatedWatch(monitorId: string, watch: RelatedWatch) {
+        this.relatedWatches.set(monitorId, watch)
     }
     reset() {
         this.watermark = undefined
         this.monitorWatermarks = {}
         this.snapshots.clear()
+        this.relatedWatches.clear()
     }
     getDelivery() {
         return this.delivery

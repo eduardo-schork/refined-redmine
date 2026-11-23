@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import type { Issue } from '@domain/redmine/entities'
 import { parseIssueSearch } from '@domain/redmine/issue-search'
+import { isHttpUrl, RedmineLinks } from '@domain/redmine/links'
 import { foldForSearch } from '@domain/shared/text'
 import { useIssueSearch } from '@/hooks/issues'
 import { useSettings } from '@/hooks/session'
@@ -62,15 +63,29 @@ function issueResult(issue: Issue, open: (id: number) => void): SearchResult {
     }
 }
 
+/** A pasted link to an issue of the Redmine (Slack, e-mail) is searched as "#1234", or "#1234#note-5" with a note. */
+function asIssueReference(input: string, links: RedmineLinks): string {
+    const trimmed = input.trim()
+    if (!isHttpUrl(trimmed)) return input
+    const { issueId, note } = links.resolve(trimmed)
+    if (!issueId) return input
+    if (!note) return `#${issueId}`
+    return `#${issueId}#note-${note}`
+}
+
 function useResults(input: string, onDone: () => void) {
     const { t } = useI18n()
     const settings = useSettings()
     const navigate = useNavigate()
     const openIssue = useOpenIssue()
-    const debounced = useDebounced(input, SEARCH_DELAY_MS)
+    const query = asIssueReference(input, new RedmineLinks(settings.baseUrl))
+    const debounced = useDebounced(query, SEARCH_DELAY_MS)
     const search = useIssueSearch(debounced)
-    const term = foldForSearch(input.trim())
-    const searching = parseIssueSearch(debounced).type !== 'empty'
+    const term = foldForSearch(query.trim())
+    const reference = parseIssueSearch(debounced)
+    const searching = reference.type !== 'empty'
+    const referencedNote = reference.type === 'id' ? reference.note : undefined
+    const referencedId = reference.type === 'id' ? reference.id : undefined
 
     const items = useMemo(() => {
         const goTo = (route: Route) => {
@@ -79,7 +94,7 @@ function useResults(input: string, onDone: () => void) {
         }
         const open = (id: number) => {
             onDone()
-            openIssue(id)
+            openIssue(id, id === referencedId ? referencedNote : undefined)
         }
         const matches = (label: string) => !term || foldForSearch(label).includes(term)
         const visiblePages = PAGES.filter((page) => settings.showLog || page.route.page !== 'log')
@@ -113,9 +128,21 @@ function useResults(input: string, onDone: () => void) {
               }))
         const issues = searching ? (search.data ?? []).map((issue) => issueResult(issue, open)) : []
         return [...recent, ...issues, ...boards, ...pages]
-    }, [term, searching, search.data, settings.boards, settings.showLog, t, onDone, navigate, openIssue])
+    }, [
+        term,
+        searching,
+        search.data,
+        referencedId,
+        referencedNote,
+        settings.boards,
+        settings.showLog,
+        t,
+        onDone,
+        navigate,
+        openIssue
+    ])
 
-    const loading = searching && (search.isFetching || debounced !== input)
+    const loading = searching && (search.isFetching || debounced !== query)
     return { items, loading, searchedTerm: debounced }
 }
 

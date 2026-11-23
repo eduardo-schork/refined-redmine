@@ -1,6 +1,7 @@
 import type { OvertimeBank } from '@domain/time/overtime'
 import type { CalendarChange, CalendarEvent } from '@domain/calendar/calendar-event'
 import type { QuerySnapshot } from '@domain/monitor/query-diff'
+import type { RelatedWatch } from '@domain/monitor/related-status'
 import type { AppNotification } from '@domain/notification/notification'
 import type { DeliveryConfirmation, DeliveryRecord } from '@domain/notification/permission'
 import type { Settings } from '@domain/settings/settings'
@@ -38,8 +39,11 @@ export interface MonitorStateRepository {
     getSnapshot(id: string): QuerySnapshot | undefined
     setSnapshot(id: string, snapshot: QuerySnapshot): void
     deleteSnapshot(id: string): void
-    /** Deletes every snapshot whose id is not in the list. */
+    /** Deletes every snapshot (and related-status watch) whose id is not in the list. */
     pruneSnapshots(keepIds: string[]): void
+    /** Links and last statuses kept by a monitor with a related-status rule. */
+    getRelatedWatch(monitorId: string): RelatedWatch | undefined
+    setRelatedWatch(monitorId: string, watch: RelatedWatch): void
     /** Clears the watermarks and snapshots (on logout). */
     reset(): void
     getDelivery(): DeliveryRecord | undefined

@@ -33,7 +33,8 @@ describe('openNotification', () => {
 
 describe('parseIssueRoute', () => {
     it('reads the issue of a system notification click and ignores other routes', () => {
-        expect(parseIssueRoute(issueRoute(1201))).toBe(1201)
+        expect(parseIssueRoute(issueRoute(1201))).toEqual({ id: 1201 })
+        expect(parseIssueRoute(issueRoute(1201, 4))).toEqual({ id: 1201, note: 4 })
         expect(parseIssueRoute('/issue?id=abc')).toBeUndefined()
         expect(parseIssueRoute('/board?id=1201')).toBeUndefined()
     })

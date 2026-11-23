@@ -125,6 +125,26 @@ describe('monitor events', () => {
             'monitor.sourceRequired'
         )
     })
+
+    it('the related-status rule needs a tracker, a status and a query, filter or board', () => {
+        const monitor = {
+            id: 'x',
+            name: 'Em teste',
+            enabled: true,
+            source: { type: 'query' as const, queryId: 1 },
+            events: defaultEvents('query')
+        }
+        const rule = { trackerId: 4, statusIds: [5] }
+        expect(() => assertValidMonitor({ ...monitor, related: rule })).not.toThrow()
+        expect(() => assertValidMonitor({ ...monitor, related: { ...rule, statusIds: [] } })).toThrow(
+            'monitor.relatedInvalid'
+        )
+        expect(() => assertValidMonitor({ ...monitor, related: { ...rule, trackerId: 0 } })).toThrow(
+            'monitor.relatedInvalid'
+        )
+        const mine = createMineMonitor({ assigned: true, watched: false, authored: false })
+        expect(() => assertValidMonitor({ ...mine, related: rule })).toThrow('monitor.relatedInvalid')
+    })
 })
 
 describe('isWithinSchedule', () => {

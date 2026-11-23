@@ -63,7 +63,10 @@ export interface MyTimeEntries {
 export interface IssueEditOptions {
     trackers: Named[]
     assignees: Named[]
+    /** Open versions, to choose from. */
     versions: Version[]
+    /** Every version, closed ones too, to name the versions in the history. */
+    versionNames: Named[]
 }
 
 /** What "Copy support information" puts on the clipboard. Never includes the API key. */

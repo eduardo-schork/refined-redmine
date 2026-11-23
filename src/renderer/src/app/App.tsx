@@ -11,7 +11,7 @@ import { I18nProvider, useI18n } from '@/lib/i18n'
 import { IssueStyleContext } from '@/lib/issue-style'
 import { NavContext, type NavigateOptions, type Route } from '@/lib/router'
 import { useModifierShortcut, useTabShortcuts } from '@/lib/shortcuts'
-import { ActiveTabContext, type WorkspaceTab } from '@/lib/workspace-tabs'
+import { ActiveTabContext, focusedNote, type WorkspaceTab } from '@/lib/workspace-tabs'
 import BoardPage from '@/pages/BoardPage'
 import CalendarPage from '@/pages/CalendarPage'
 import HomePage from '@/pages/HomePage'
@@ -125,7 +125,7 @@ function AuthenticatedApp() {
 interface TabPanelProps {
     tab: WorkspaceTab
     active: boolean
-    onOpenIssue: (key: string, issueId: number) => void
+    onOpenIssue: (key: string, issueId: number, note?: number) => void
     onCloseIssue: (key: string) => void
     children: ReactNode
 }
@@ -143,7 +143,8 @@ function TabPanel({ tab, active, onOpenIssue, onCloseIssue, children }: TabPanel
                 <ErrorBoundary scope="tab">
                     <TabIssueModals
                         issues={tab.issues ?? []}
-                        onOpenIssue={(issueId) => onOpenIssue(tab.key, issueId)}
+                        focusNote={focusedNote(tab)}
+                        onOpenIssue={(issueId, note) => onOpenIssue(tab.key, issueId, note)}
                         onBack={() => onCloseIssue(tab.key)}
                     >
                         {children}

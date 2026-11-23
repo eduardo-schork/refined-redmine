@@ -1,13 +1,19 @@
-export type IssueSearch = { type: 'empty' } | { type: 'id'; id: number } | { type: 'text'; term: string }
+export type IssueSearch = { type: 'empty' } | { type: 'id'; id: number; note?: number } | { type: 'text'; term: string }
 
 export const MIN_SEARCH_LENGTH = 2
 export const MAX_SEARCH_RESULTS = 20
 
-/** "#1234" or "1234" opens that issue; two or more characters search the titles. */
+const ID_SEARCH = /^#?(\d+)$/
+// A note as Redmine writes it: "#1234#note-5" or "#1234-5".
+const NOTE_SEARCH = /^#(\d+)(?:#note-|-)(\d+)$/
+
+/** "#1234" or "1234" opens that issue ("#1234#note-5", at that note); two or more characters search the titles. */
 export function parseIssueSearch(input: string): IssueSearch {
     const trimmed = input.trim()
-    const idMatch = trimmed.match(/^#?(\d+)$/)
+    const idMatch = trimmed.match(ID_SEARCH)
     if (idMatch) return { type: 'id', id: Number(idMatch[1]) }
+    const noteMatch = trimmed.match(NOTE_SEARCH)
+    if (noteMatch) return { type: 'id', id: Number(noteMatch[1]), note: Number(noteMatch[2]) }
     if (trimmed.length < MIN_SEARCH_LENGTH) return { type: 'empty' }
     return { type: 'text', term: trimmed }
 }

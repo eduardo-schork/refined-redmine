@@ -66,6 +66,10 @@ export class MonitorCycle {
         return this.statuses.get(statusId)?.name
     }
 
+    now(): Date {
+        return this.deps.clock.now()
+    }
+
     /**
      * Since when a monitor looks for changes: the newest update of its own last listing. Monitors list one after the
      * other, so a shared watermark could pass a change made after one listed but before another saw something newer.
@@ -183,6 +187,11 @@ export const createdKey = (issueId: number) => `created:${issueId}`
 export const queueExitKey = (issueId: number) => `queue:${issueId}`
 export const membershipKey = (monitorId: string) => `members:${monitorId}`
 export const countKey = (monitorId: string) => `count:${monitorId}`
+/** A related issue's status change (its journal, or its update time when unknown), told on one issue of the source. */
+export const relatedKey = (relatedId: number, change: string, issueId: number) =>
+    `related:${relatedId}:${change}:${issueId}`
 
-/** A journal or a new issue is one change, notified once; entries, exits and counts can happen again. */
-export const isOneTimeKey = (key: string) => key.startsWith('journal:') || key.startsWith('created:')
+const ONE_TIME_PREFIXES = ['journal:', 'created:', 'related:']
+
+/** A journal, a new issue or a related issue's change is notified once; entries, exits and counts can happen again. */
+export const isOneTimeKey = (key: string) => ONE_TIME_PREFIXES.some((prefix) => key.startsWith(prefix))

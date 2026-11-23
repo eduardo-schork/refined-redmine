@@ -1,0 +1,17 @@
+{
+  "name": { "message": "Refined Redmine" },
+  "description": { "message": "Opens Redmine issue links in the Refined Redmine app." },
+  "openInApp": { "message": "Open in Refined Redmine" },
+  "handoffTitle": { "message": "Opening in Refined Redmine…" },
+  "handoffHint": {
+    "message": "If the browser asks, allow it to open Refined Redmine (tick “Always allow” so it does not ask again). This tab closes by itself once the app opens."
+  },
+  "openInBrowser": { "message": "View in the browser" },
+  "redmineUrl": { "message": "Redmine address (the same one set in the app)" },
+  "autoOpen": { "message": "Open in the app the issue links clicked outside the browser (Slack, e-mail…)" },
+  "autoOpenHint": {
+    "message": "Links followed inside Redmine stay in the browser. The extension button and the right-click menu on issue links open them in the app at any time."
+  },
+  "save": { "message": "Save" },
+  "saved": { "message": "Saved." }
+}

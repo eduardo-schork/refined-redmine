@@ -46,6 +46,13 @@ export function describeChange(issueChange: IssueChange, t: TFunction): string {
             return t('notification.change.commented', { excerpt: issueChange.excerpt })
         case 'mentioned':
             return t('notification.change.mentioned', { excerpt: issueChange.excerpt })
+        case 'relatedStatusChanged':
+            return t('notification.change.relatedStatusChanged', {
+                tracker: issueChange.tracker,
+                id: issueChange.relatedId,
+                from: issueChange.from,
+                to: issueChange.to
+            })
     }
 }
 
@@ -84,7 +91,8 @@ function formatIssueChanged(
     const changes = payload.changes.map((issueChange) => describeChange(issueChange, t)).join(SEPARATOR)
     return {
         title: titleWithIssue(t(`notification.kind.${notification.kind}`), payload.issue.id, t),
-        body: `${payload.issue.subject}\n${payload.actor} ${changes}`
+        // The person who changed a related issue may be unknown (its history was not read in that cycle).
+        body: `${payload.issue.subject}\n${payload.actor || t('common.someone')} ${changes}`
     }
 }
 

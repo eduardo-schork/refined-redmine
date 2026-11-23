@@ -13,6 +13,11 @@ import { IssueTimeSection } from './time/IssueTimeSection'
 
 type DetailTab = 'description' | 'links' | 'attachments' | 'time' | 'history'
 
+function firstTab(wholeIssue: boolean, startOnHistory: boolean): DetailTab {
+    if (!wholeIssue) return 'links'
+    return startOnHistory ? 'history' : 'description'
+}
+
 /** "Tabs on top": the description and the history also become tabs, first and last. */
 export interface WholeIssueTabs {
     description: ReactNode
@@ -21,24 +26,27 @@ export interface WholeIssueTabs {
 
 /**
  * Related issues, attachments and hours of the issue, one at a time; related issues first. With `wholeIssue`, the
- * description and the history are tabs too and the bar stays at the top while scrolling.
+ * description and the history are tabs too and the bar stays at the top while scrolling; `startOnHistory` opens on
+ * the history (a link to one of its notes).
  */
 export function IssueDetailTabs({
     issue,
     links,
     wholeIssue,
+    startOnHistory = false,
     onOpenIssue,
     onNewSubtask
 }: {
     issue: IssueDetail
     links: RedmineLinks
     wholeIssue?: WholeIssueTabs
+    startOnHistory?: boolean
     onOpenIssue: (id: number) => void
     onNewSubtask: () => void
 }) {
     const { t, dates } = useI18n()
     const tabsId = useId()
-    const [tab, setTab] = useState<DetailTab>(wholeIssue ? 'description' : 'links')
+    const [tab, setTab] = useState<DetailTab>(() => firstTab(Boolean(wholeIssue), startOnHistory))
     const linkedCount = linkedIssueIds(issue).length
     const spentHours = issue.spent_hours ?? 0
     const issueTabs: TabOption<DetailTab>[] = [

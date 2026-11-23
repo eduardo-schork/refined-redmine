@@ -10,6 +10,7 @@ import type {
 import { applyChange } from '@domain/calendar/event-editing'
 import type { CalendarChange } from '@domain/calendar/calendar-event'
 import type { QuerySnapshot } from '@domain/monitor/query-diff'
+import type { RelatedWatch } from '@domain/monitor/related-status'
 import { MAX_NOTIFICATIONS, type AppNotification, type NotificationTarget } from '@domain/notification/notification'
 import type { DeliveryConfirmation, DeliveryRecord } from '@domain/notification/permission'
 import { withDefaults, type Settings } from '@domain/settings/settings'
@@ -156,13 +157,25 @@ export class JsonMonitorStateRepository implements MonitorStateRepository {
     }
 
     pruneSnapshots(keepIds: string[]) {
-        const snapshots = this.file.read().querySnapshots
-        const staleIds = Object.keys(snapshots).filter((id) => !keepIds.includes(id))
+        const { querySnapshots, relatedWatch = {} } = this.file.read()
+        const storedIds = [...Object.keys(querySnapshots), ...Object.keys(relatedWatch)]
+        const staleIds = storedIds.filter((id) => !keepIds.includes(id))
         if (!staleIds.length) return
-        this.file.update((state) => {
-            const kept = Object.fromEntries(Object.entries(state.querySnapshots).filter(([id]) => keepIds.includes(id)))
-            return { ...state, querySnapshots: kept }
-        })
+        const keep = <Value>(entries: Record<string, Value>) =>
+            Object.fromEntries(Object.entries(entries).filter(([id]) => keepIds.includes(id)))
+        this.file.update((state) => ({
+            ...state,
+            querySnapshots: keep(state.querySnapshots),
+            relatedWatch: keep(state.relatedWatch ?? {})
+        }))
+    }
+
+    getRelatedWatch(monitorId: string) {
+        return this.file.read().relatedWatch?.[monitorId]
+    }
+
+    setRelatedWatch(monitorId: string, watch: RelatedWatch) {
+        this.file.update((state) => ({ ...state, relatedWatch: { ...state.relatedWatch, [monitorId]: watch } }))
     }
 
     reset() {
@@ -170,7 +183,8 @@ export class JsonMonitorStateRepository implements MonitorStateRepository {
             ...state,
             lastCheckAt: undefined,
             monitorWatermarks: undefined,
-            querySnapshots: {}
+            querySnapshots: {},
+            relatedWatch: undefined
         }))
     }
 

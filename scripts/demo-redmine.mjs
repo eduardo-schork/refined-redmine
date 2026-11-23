@@ -47,7 +47,9 @@ const statuses = [
     { id: 44, name: 'Em aprovação', is_closed: false },
     { id: 110, name: 'Em teste', is_closed: false },
     { id: 3, name: 'Resolvida', is_closed: false },
-    { id: 5, name: 'Finalizada', is_closed: true }
+    { id: 5, name: 'Finalizada', is_closed: true },
+    // Quality issues sent back to development (monitors: related issue reached a status).
+    { id: 6, name: 'Rejeitada', is_closed: false }
 ]
 const statusById = new Map(statuses.map((status) => [status.id, status]))
 // Like a real workflow: Em andamento → Nova is not allowed (go through Em pausa), and Redmine silently keeps the status.

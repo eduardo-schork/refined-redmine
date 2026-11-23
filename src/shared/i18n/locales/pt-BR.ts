@@ -71,6 +71,7 @@ export const ptBR = {
         'monitor.nameRequired': 'Dê um nome ao monitor.',
         'monitor.sourceRequired': 'Escolha de onde vêm as tarefas do monitor.',
         'monitor.countInvalid': 'Informe um número inteiro de tarefas para o aviso por quantidade.',
+        'monitor.relatedInvalid': 'Escolha o tipo da tarefa relacionada e ao menos uma situação.',
         'update.unauthorized': 'O GitHub recusou o token (inválido ou expirado).',
         'update.notFound':
             'O repositório do app não está acessível no GitHub (ainda privado? Então só com um token com acesso).',
@@ -159,7 +160,8 @@ export const ptBR = {
             fieldChanged: 'alterou {{field}}',
             attachmentAdded: 'anexou arquivo',
             commented: 'comentou: “{{excerpt}}”',
-            mentioned: 'mencionou você: “{{excerpt}}”'
+            mentioned: 'mencionou você: “{{excerpt}}”',
+            relatedStatusChanged: 'mudou {{tracker}} #{{id}}: {{from}} → {{to}}'
         },
         exit: {
             reassigned: 'passou para {{name}}',
@@ -833,6 +835,10 @@ export const ptBR = {
         countFrom: 'Contar as horas desde',
         countFromHint: 'Dentro do expediente vira horas; fora dele, hora extra (Configurações → Automações).',
         typeHours: 'Digitar as horas',
+        refreshHours: 'Recontar as horas até agora',
+        dropOvertime: 'Tirar a hora extra do total',
+        confirmLargeOvertime:
+            'A hora extra ({{overtime}}) passa de um expediente ({{workDay}}). Parece que a atividade não foi pausada no fim do dia. Lançar mesmo assim?',
         fromTimer: 'Cronômetro ({{time}}), zerado ao enviar',
         since: {
             status: 'Situação alterada',
@@ -1006,8 +1012,11 @@ export const ptBR = {
             descriptionAction: 'Copiar a descrição (Markdown)',
             link: 'Link',
             linkHint: 'Copiar o link da tarefa no Redmine',
-            number: 'Número',
+            number: '#Número',
             numberHint: 'Copiar o número, ex.: #1234',
+            id: 'Só o número',
+            idHint: 'Copiar só os dígitos, ex.: 1234',
+            noteLink: 'Copiar o link desta nota',
             title: 'Título',
             titleHint: 'Copiar só o título',
             reference: '#Número e título',
@@ -1115,7 +1124,6 @@ export const ptBR = {
             attachmentRemoved: 'removeu anexo {{name}}',
             relation: 'relação {{name}}: #{{id}}',
             customField: 'alterou campo personalizado',
-            status: 'status: {{from}} → {{to}}',
             changed: 'alterou {{field}}',
             value: '{{field}}: {{from}} → {{to}}'
         }
@@ -1235,6 +1243,7 @@ export const ptBR = {
         yesterday: 'Ontem',
         commented: 'comentou',
         mentioned: 'mencionou você',
+        related: 'mudou {{tracker}} #{{id}}:',
         markRead: 'Marcar como lida',
         markUnread: 'Marcar como não lida',
         remove: 'Remover',
@@ -1500,6 +1509,14 @@ export const ptBR = {
         events: 'Notificar quando',
         movedHint: 'Os monitores agora têm uma tela própria no menu lateral, logo acima dos quadros.',
         open: 'Abrir Monitores',
+        related: {
+            title: 'Tarefa relacionada mudou de situação',
+            hint: 'Avisa na tarefa da lista quando uma ligada a ela (pai, subtarefa ou relação, até 3 níveis; ex.: a de Qualidade, pela de Negócio) chega a uma das situações escolhidas. O card mostra a situação.',
+            tracker: 'Tipo da tarefa relacionada',
+            chooseTracker: 'Tipo da relacionada (ex.: Qualidade)',
+            statuses: 'Avisar quando chegar a',
+            summary: '{{tracker}}: {{statuses}}'
+        },
         count: {
             title: 'Quantidade de tarefas',
             below: 'Menos de',

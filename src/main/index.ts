@@ -1,5 +1,6 @@
 import { app, powerMonitor } from 'electron'
 import type { AppNotification } from '@domain/notification/notification'
+import { APP_LINK_SCHEME } from '@domain/redmine/links'
 import { createContainer, type Presentation } from './container'
 import { registerApi } from './ipc-router'
 import { TrayController } from './tray'
@@ -9,6 +10,9 @@ const APP_ID = 'com.eduardoschork.refinedredmine'
 
 const window = new MainWindow()
 let tray: TrayController
+// Known once the app is ready; a link that arrives before (the app opened by it) waits in `pendingAppLink`.
+let appLinkRoute: ((appUrl: string) => string | undefined) | undefined
+let pendingAppLink: string | undefined
 
 function countUnread(items: AppNotification[]): number {
     return items.filter((notification) => !notification.read).length
@@ -16,6 +20,7 @@ function countUnread(items: AppNotification[]): number {
 
 const presentation: Presentation = {
     showWindow: (route) => window.show(route),
+    takePendingRoute: () => window.takePendingRoute(),
     publisher: {
         notificationsChanged: (items) => {
             window.send('notifications.changed', items)
@@ -33,6 +38,32 @@ const presentation: Presentation = {
         window.markQuitting()
         app.quit()
     }
+}
+
+/** refined-redmine://open?url=… opens that Redmine issue in the app; anything else only shows the window. */
+function openAppLink(appUrl: string): void {
+    if (!appLinkRoute) {
+        pendingAppLink = appUrl
+        return
+    }
+    window.show(appLinkRoute(appUrl))
+}
+
+/** Windows and Linux pass the link as a command-line argument. */
+const appLinkIn = (argv: string[]) => argv.find((argument) => argument.startsWith(`${APP_LINK_SCHEME}://`))
+
+function registerAppLinks(): void {
+    // In development the app runs through the electron binary, which needs the script path to start it.
+    if (process.defaultApp && process.argv[1]) {
+        app.setAsDefaultProtocolClient(APP_LINK_SCHEME, process.execPath, [process.argv[1]])
+    } else {
+        app.setAsDefaultProtocolClient(APP_LINK_SCHEME)
+    }
+    // macOS: may arrive before the app is ready, so it is registered right away.
+    app.on('open-url', (event, url) => {
+        event.preventDefault()
+        openAppLink(url)
+    })
 }
 
 function startApp(): void {
@@ -54,6 +85,9 @@ function startApp(): void {
     container.localization.onChange(() => tray.render())
 
     window.create()
+    appLinkRoute = container.appLinkRoute
+    const startLink = pendingAppLink ?? appLinkIn(process.argv)
+    if (startLink) openAppLink(startLink)
     tray.create()
     tray.setUnread(countUnread(container.feed.list()))
     container.monitor.start()
@@ -75,7 +109,12 @@ function startApp(): void {
 }
 
 function registerLifecycle(): void {
-    app.on('second-instance', () => window.show())
+    registerAppLinks()
+    app.on('second-instance', (_event, argv) => {
+        const link = appLinkIn(argv)
+        if (link) openAppLink(link)
+        else window.show()
+    })
     void app.whenReady().then(startApp)
     app.on('before-quit', () => window.markQuitting())
     // Does not quit when the window is closed: keeps running in the tray.

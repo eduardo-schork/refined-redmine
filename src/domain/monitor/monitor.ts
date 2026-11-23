@@ -28,6 +28,15 @@ export interface CountRule {
     value: number
 }
 
+/**
+ * Query, filter or board: notify when an issue linked to one of the source's issues (e.g. the Quality issue of a
+ * Development issue in test, through the Business one) reaches one of these statuses.
+ */
+export interface RelatedStatusRule {
+    trackerId: number
+    statusIds: number[]
+}
+
 /** A set of issues watched by the monitor, with its own notification options. */
 export interface Monitor {
     id: string
@@ -39,6 +48,8 @@ export interface Monitor {
     schedule?: Schedule
     /** Query, filter or board: also notify when the number of issues reaches this rule. */
     count?: CountRule
+    /** Query, filter or board: also notify when a related issue reaches one of these statuses. */
+    related?: RelatedStatusRule
 }
 
 /** The built-in "my issues" monitor: always exists and cannot be deleted. */
@@ -104,12 +115,19 @@ function assertValidCount(rule: CountRule): void {
     if (!Number.isInteger(rule.value) || rule.value < lowest) throw new AppError('monitor.countInvalid')
 }
 
+function assertValidRelated(rule: RelatedStatusRule, source: MonitorSource): void {
+    const validTracker = Number.isInteger(rule.trackerId) && rule.trackerId > 0
+    const hasStatuses = rule.statusIds.length > 0
+    if (!validTracker || !hasStatuses || source.type === 'mine') throw new AppError('monitor.relatedInvalid')
+}
+
 /** The "my issues" monitor has a translated name, so an empty name is allowed only for it. */
 export function assertValidMonitor(monitor: Monitor): void {
     const isMine = monitor.id === MINE_MONITOR_ID
     if (!isMine && !monitor.name.trim()) throw new AppError('monitor.nameRequired')
     assertValidSource(monitor.source)
     if (monitor.count) assertValidCount(monitor.count)
+    if (monitor.related) assertValidRelated(monitor.related, monitor.source)
 }
 
 export function meetsCountRule(count: number, rule: CountRule): boolean {

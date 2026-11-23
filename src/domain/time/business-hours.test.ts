@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_WORK_SCHEDULE, scheduledHoursPerDay, splitWorkTime } from './business-hours'
+import { DEFAULT_WORK_SCHEDULE, overtimeLooksForgotten, scheduledHoursPerDay, splitWorkTime } from './business-hours'
 
 // 2026-10-26 is a Monday.
 const at = (day: number, hour: number, minute = 0) => new Date(2026, 9, day, hour, minute)
@@ -48,5 +48,16 @@ describe('scheduledHoursPerDay', () => {
             ]
         }
         expect(scheduledHoursPerDay(overlapping)).toBe(5.5)
+    })
+})
+
+describe('overtimeLooksForgotten', () => {
+    it('only overtime longer than a work day', () => {
+        expect(overtimeLooksForgotten(9, DEFAULT_WORK_SCHEDULE)).toBe(false)
+        expect(overtimeLooksForgotten(9.5, DEFAULT_WORK_SCHEDULE)).toBe(true)
+    })
+
+    it('never without work periods', () => {
+        expect(overtimeLooksForgotten(20, { weekdays: [1], periods: [] })).toBe(false)
     })
 })
